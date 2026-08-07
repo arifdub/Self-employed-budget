@@ -6,7 +6,7 @@
   --acc:#FFB020; --on-acc:#0B1018; --good:#7DD3C0; --bad:#FF7A66;
   --dspl:'Barlow Condensed',sans-serif; --body:'Barlow',sans-serif; --mono:'IBM Plex Mono',monospace;
   --r:14px;
-  --css-version:'0.2.3';
+  --css-version:'0.3.0';
   --safe-t:env(safe-area-inset-top,0px);
   --safe-b:env(safe-area-inset-bottom,0px);
 }
@@ -138,6 +138,11 @@ html[data-skin="day"] .rs{font-family:var(--body);letter-spacing:.01em;text-tran
 .rv{margin-left:auto;font-family:var(--mono);font-size:14.5px;color:var(--good)}
 .rv.neg{color:var(--bad)}
 .empty{padding:22px 4px;color:var(--mut);font-size:13.5px;line-height:1.5}
+.rowbtn{width:100%;background:none;border:0;border-bottom:1px solid var(--line);
+  font-family:var(--body);color:var(--txt);cursor:pointer}
+html[data-skin="day"] .rowbtn{border:0}
+.sec span{font-weight:600;font-size:12px}
+.danger{color:var(--bad)!important;background:transparent!important;border:1px solid var(--bad)!important}
 
 /* nav */
 .nav{position:sticky;bottom:0;z-index:20;

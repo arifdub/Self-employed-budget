@@ -6,6 +6,31 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [0.3.0] — 2026-08-08
+
+Entries now survive closing the app. This is the release that makes the app usable
+for real day-to-day tracking.
+
+### Added
+- **Persistence.** Every entry is saved to the device the moment it is added,
+  edited or deleted, and loaded back when the app opens. Works offline; nothing
+  leaves the phone. (Cloud sync across devices is v0.5.)
+- **Entries screen** — the full history, grouped by day with a net figure per day,
+  filterable by All / Income / Business / Home.
+- **Edit and delete.** Tap any entry to change its amount or remove it. All
+  totals, targets and reports update immediately.
+- Targets and the chosen theme are also remembered between sessions.
+
+### Changed
+- The More screen no longer warns that data resets on close.
+
+### Notes
+- Data lives in the browser's storage for this site. Deleting the site's website
+  data in iOS Settings, or clearing browsing data on Android, deletes the entries
+  with it — worth knowing before cloud backup exists.
+
+---
+
 ## [0.2.3] — 2026-08-08
 
 The "gap" under the bottom bar turned out to be the bar's own padding.

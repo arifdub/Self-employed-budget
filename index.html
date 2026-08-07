@@ -187,7 +187,7 @@
     <div class="body">
       <div class="card"><div class="crow"><span class="clab">Version</span>
         <span class="cval" id="verOut">v0.1</span></div>
-        <div class="crange">Local preview build — entries reset when you close the app. Saving to your device arrives in v0.2.</div></div>
+        <div class="crange">Your entries are saved on this device and survive closing the app. Cloud sync across devices arrives in v0.5.</div></div>
 
       <div class="sec">Install</div>
       <div class="card" id="installCard">
@@ -205,6 +205,33 @@
       <div style="height:20px"></div>
     </div>
   </section>
+
+  <!-- ============ ENTRIES ============ -->
+  <section class="sheet" id="ent" aria-hidden="true">
+    <div class="rhead"><h2>Entries</h2><button class="x" id="closeEnt" aria-label="Close">✕</button></div>
+    <div class="body">
+      <div class="tabs" id="etabs">
+        <button data-f="all" aria-pressed="true">All</button>
+        <button data-f="income" aria-pressed="false">Income</button>
+        <button data-f="business" aria-pressed="false">Business</button>
+        <button data-f="personal" aria-pressed="false">Home</button>
+      </div>
+      <div id="entList"></div>
+      <div style="height:16px"></div>
+    </div>
+  </section>
+
+  <!-- edit entry modal -->
+  <div class="modal" id="editModal" aria-hidden="true">
+    <div class="mbox">
+      <h4>Edit entry</h4>
+      <p id="editMeta"></p>
+      <div class="trow"><label for="eAmt">Amount</label><input id="eAmt" type="number" step="0.01" inputmode="decimal"></div>
+      <div class="trow last"><label>Delete this entry</label>
+        <button class="save ghost danger" id="eDel" style="margin:0;padding:9px 16px">Delete</button></div>
+      <button class="save" style="margin:14px 0 0;width:100%" id="eSave">Save changes</button>
+    </div>
+  </div>
 
   <!-- targets modal -->
   <div class="modal" id="modal" aria-hidden="true">

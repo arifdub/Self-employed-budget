@@ -1,7 +1,7 @@
 /* Self Employed Budget — app.js — v0.1
    Entries live in memory only. Device storage arrives in v0.2. */
 
-const APP_VERSION = '0.2.3';
+const APP_VERSION = '0.3.0';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -31,6 +31,53 @@ const state = {
   skin: 'night',
   draft: { type: 'income', cat: 'Fare', pay: 'Cash', val: '' }
 };
+
+
+/* ---------- storage ----------
+   Entries and settings persist in localStorage on the device. This is v0.3's
+   foundation; cloud sync in v0.5 will layer on top of the same functions.
+   Dates are stored as ISO strings and revived to Date objects on load. */
+const STORE_KEY = 'seb.entries.v1';
+const SETTINGS_KEY = 'seb.settings.v1';
+
+function saveEntries() {
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify(
+      state.entries.map(e => ({ ...e, at: e.at.toISOString() }))
+    ));
+  } catch (err) {
+    toast('Could not save — storage may be full');
+  }
+}
+
+function loadEntries() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw).map(e => ({ ...e, at: new Date(e.at) }))
+      .filter(e => e.id && e.amt > 0 && !isNaN(e.at));
+  } catch (err) {
+    return [];
+  }
+}
+
+function saveSettings() {
+  try {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify({
+      targets: state.targets, skin: state.skin
+    }));
+  } catch (err) { /* non-fatal */ }
+}
+
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem(SETTINGS_KEY);
+    if (!raw) return;
+    const s = JSON.parse(raw);
+    if (s.targets && s.targets.day > 0) state.targets = s.targets;
+    if (s.skin === 'day' || s.skin === 'night') state.skin = s.skin;
+  } catch (err) { /* defaults stand */ }
+}
 
 /* ---------- helpers ---------- */
 const $ = id => document.getElementById(id);
@@ -285,6 +332,7 @@ $('save').onclick = () => {
     id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random())),
     type: d.type, cat: d.cat, amt: v, pay: d.pay, at: new Date()
   });
+  saveEntries();
   closeSheet('sheet');
   render(true);
   const dayInc = total(bucket('income', 'day'));
@@ -292,6 +340,105 @@ $('save').onclick = () => {
     ? money(v) + ' from ' + d.cat + ' · ' + money(dayInc) + ' today'
     : money(v) + ' ' + (d.type === 'business' ? 'business' : 'home') + ' cost recorded');
 };
+
+
+/* ---------- entries screen ---------- */
+let entFilter = 'all';
+let editingId = null;
+
+function renderEntries() {
+  const rows = [...state.entries]
+    .filter(e => entFilter === 'all' || e.type === entFilter)
+    .sort((a, b) => b.at - a.at);
+
+  if (!rows.length) {
+    $('entList').innerHTML = '<div class="empty">Nothing here yet. ' +
+      (entFilter === 'all' ? 'Tap + to log your first entry.' : 'No entries of this type.') + '</div>';
+    return;
+  }
+
+  // group by calendar day
+  const groups = [];
+  let curKey = '', cur = null;
+  rows.forEach(e => {
+    const k = e.at.toDateString();
+    if (k !== curKey) {
+      curKey = k;
+      cur = { date: e.at, items: [], inc: 0, out: 0 };
+      groups.push(cur);
+    }
+    cur.items.push(e);
+    if (e.type === 'income') cur.inc += e.amt; else cur.out += e.amt;
+  });
+
+  const today = new Date().toDateString();
+  const yest = new Date(Date.now() - 864e5).toDateString();
+
+  $('entList').innerHTML = groups.map(g => {
+    const k = g.date.toDateString();
+    const label = k === today ? 'Today' : k === yest ? 'Yesterday'
+      : g.date.toLocaleDateString(LOCALE, { weekday: 'short', day: 'numeric', month: 'short' });
+    const net = g.inc - g.out;
+    return '<div class="sec" style="margin-top:16px">' + label +
+      '<span style="font-family:var(--mono);letter-spacing:0;text-transform:none;color:' +
+      (net >= 0 ? 'var(--good)' : 'var(--bad)') + '">' + (net >= 0 ? '+' : '−') + money(Math.abs(net)) + '</span></div>' +
+      g.items.map(e =>
+        '<button class="row rowbtn" data-eid="' + e.id + '">' +
+        '<span class="dot">' + (ICON[e.cat] || '•') + '</span>' +
+        '<span style="text-align:left"><span class="rn">' + e.cat + '</span>' +
+        '<span class="rs" style="display:block">' +
+        e.at.toLocaleTimeString(LOCALE, { hour: '2-digit', minute: '2-digit' }) + ' · ' + e.pay + '</span></span>' +
+        '<span class="rv ' + (e.type === 'income' ? '' : 'neg') + '">' +
+        (e.type === 'income' ? '+' : '−') + money(e.amt) + '</span></button>'
+      ).join('');
+  }).join('');
+
+  $('entList').querySelectorAll('.rowbtn').forEach(b =>
+    b.onclick = () => openEdit(b.dataset.eid));
+}
+
+function openEdit(id) {
+  const e = state.entries.find(x => x.id === id);
+  if (!e) return;
+  editingId = id;
+  $('editMeta').textContent = e.cat + ' · ' +
+    e.at.toLocaleDateString(LOCALE, { weekday: 'short', day: 'numeric', month: 'short' }) + ' · ' + e.pay;
+  $('eAmt').value = e.amt;
+  $('editModal').classList.add('on');
+  $('editModal').setAttribute('aria-hidden', 'false');
+}
+function closeEdit() {
+  editingId = null;
+  $('editModal').classList.remove('on');
+  $('editModal').setAttribute('aria-hidden', 'true');
+}
+$('editModal').onclick = e => { if (e.target === $('editModal')) closeEdit(); };
+
+$('eSave').onclick = () => {
+  const e = state.entries.find(x => x.id === editingId);
+  const v = parseFloat($('eAmt').value);
+  if (!e || !v || v <= 0) { toast('Enter a valid amount'); return; }
+  e.amt = v;
+  saveEntries(); closeEdit(); render(); renderEntries();
+  toast('Entry updated');
+};
+
+$('eDel').onclick = () => {
+  const i = state.entries.findIndex(x => x.id === editingId);
+  if (i < 0) return;
+  const gone = state.entries[i];
+  state.entries.splice(i, 1);
+  saveEntries(); closeEdit(); render(); renderEntries();
+  toast(money(gone.amt) + ' ' + gone.cat + ' deleted');
+};
+
+$('etabs').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  entFilter = b.dataset.f;
+  document.querySelectorAll('#etabs button').forEach(x => x.setAttribute('aria-pressed', x === b));
+  renderEntries();
+});
+$('closeEnt').onclick = () => closeSheet('ent');
 
 /* ---------- sheets & nav ---------- */
 function openSheet(id) {
@@ -317,6 +464,7 @@ document.querySelectorAll('.nb').forEach(b => b.onclick = () => {
   const go = b.dataset.go;
   document.querySelectorAll('.nb').forEach(x => x.classList.toggle('on', x === b));
   if (go === 'reports') { renderReport(); openSheet('rep'); }
+  else if (go === 'entries') { renderEntries(); openSheet('ent'); }
   else if (go === 'more') {
     if (!$('diag')) {
       const wrap = document.createElement('div');
@@ -328,7 +476,7 @@ document.querySelectorAll('.nb').forEach(b => b.onclick = () => {
     renderDiagnostics();
     openSheet('more');
   }
-  else { closeSheet('rep'); closeSheet('more'); if (go === 'entries') toast('Full entry history arrives in v0.2'); }
+  else { closeSheet('rep'); closeSheet('more'); closeSheet('ent'); }
 });
 
 $('tabs').addEventListener('click', e => {
@@ -359,6 +507,7 @@ $('saveT').onclick = () => {
   state.targets.day = +$('tD').value || state.targets.day;
   state.targets.week = +$('tW').value || state.targets.week;
   state.targets.month = +$('tM').value || state.targets.month;
+  saveSettings();
   closeTargets(); render(); toast('Targets updated');
 };
 
@@ -367,6 +516,7 @@ function setSkin(s) {
   state.skin = s;
   document.documentElement.dataset.skin = s;
   $('themeName').textContent = s === 'night' ? 'Night' : 'Day';
+  saveSettings();
 }
 const toggleSkin = () => setSkin(state.skin === 'night' ? 'day' : 'night');
 $('themeBtn').onclick = toggleSkin;
@@ -460,6 +610,8 @@ if ('serviceWorker' in navigator) {
 }
 
 /* ---------- go ---------- */
-setSkin('night');
+loadSettings();
+state.entries = loadEntries();
+setSkin(state.skin);
 drawDraft();
 render();
