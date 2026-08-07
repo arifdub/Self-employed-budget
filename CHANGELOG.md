@@ -6,6 +6,26 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [0.1.5] — 2026-08-07
+
+Two fixes that make every future update easier to verify.
+
+### Fixed
+- **Remaining gap under the bottom bar.** The nav had a fixed height that had to be
+  guessed against the home indicator. It now sizes to its own content plus
+  `max(safe-area, 8px)`, so it fits any device without arithmetic.
+
+### Added
+- **Automatic updates.** The app now registers its service worker with
+  `updateViaCache: 'none'`, checks for a new version every time it is brought back
+  to the foreground, and reloads itself once the new version is ready. Deploying a
+  change is now enough — no deleting the home screen icon, no clearing Safari.
+- **Version number in the header**, next to the date. If the app shows `v0.1.5`,
+  you are on the current build. This makes "is it cached?" a one-second check
+  instead of a guess.
+
+---
+
 ## [0.1.4] — 2026-08-07
 
 Layout fixes for phones. First build tested on a real device.

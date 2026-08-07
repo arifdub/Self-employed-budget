@@ -1,7 +1,7 @@
 /* Self Employed Budget — app.js — v0.1
    Entries live in memory only. Device storage arrives in v0.2. */
 
-const APP_VERSION = '0.1.4';
+const APP_VERSION = '0.1.5';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -90,7 +90,8 @@ const countOf = (type, p) => state.entries.filter(e => e.type === type && inRang
 /* ---------- render: home ---------- */
 function render(flash) {
   const now = new Date();
-  $('hDate').textContent = now.toLocaleDateString(LOCALE, { weekday: 'short', day: 'numeric', month: 'short' });
+  $('hDate').textContent = now.toLocaleDateString(LOCALE, { weekday: 'short', day: 'numeric', month: 'short' })
+    + ' · v' + APP_VERSION;
   const h = now.getHours();
   $('hGreet').textContent = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
 
@@ -381,10 +382,29 @@ function toast(msg) {
   toastTimer = setTimeout(() => e.classList.remove('on'), 2600);
 }
 
-/* ---------- service worker ---------- */
+/* ---------- service worker + auto update ----------
+   Without this, a phone that has already cached the app keeps showing the old
+   version after a deploy. updateViaCache:'none' forces the browser to fetch a
+   fresh sw.js every time, and the controllerchange listener reloads the page
+   once as soon as the new worker takes over. */
 if ('serviceWorker' in navigator) {
+  let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (reloading) return;
+    reloading = true;
+    location.reload();
+  });
+
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(() => { /* offline support unavailable */ });
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' })
+      .then(reg => {
+        reg.update();
+        // check again whenever the app is brought back to the foreground
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') reg.update();
+        });
+      })
+      .catch(() => { /* offline support unavailable */ });
   });
 }
 

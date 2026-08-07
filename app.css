@@ -127,7 +127,7 @@ html[data-skin="day"] .rs{font-family:var(--body);letter-spacing:.01em;text-tran
 .empty{padding:22px 4px;color:var(--mut);font-size:13.5px;line-height:1.5}
 
 /* nav */
-.nav{height:calc(62px + var(--safe-b));padding:0 6px var(--safe-b);display:flex;
+.nav{height:auto;flex:0 0 auto;padding:6px 6px max(var(--safe-b),8px);display:flex;
   align-items:center;justify-content:space-around;border-top:1px solid var(--line);background:var(--bg);flex:0 0 auto}
 .nb{background:none;border:0;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;
   font-family:var(--dspl);font-size:10px;letter-spacing:.09em;text-transform:uppercase;font-weight:700;color:var(--dim);padding:6px}
