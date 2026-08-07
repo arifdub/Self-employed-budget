@@ -202,6 +202,15 @@
       <div class="card"><div class="crow"><span class="clab">Appearance</span>
         <span class="cval" id="themeName">Night</span></div>
         <button class="save ghost" style="margin:12px 0 0;width:100%" id="themeBtn2">Switch theme</button></div>
+
+      <div class="sec">Danger zone</div>
+      <div class="card">
+        <div class="crow"><span class="clab">Reset all data</span>
+          <span class="cval" id="resetCount" style="font-size:14px"></span></div>
+        <div class="crange">Deletes every entry permanently — income, business costs and home costs.
+          Your targets and theme are kept. This cannot be undone.</div>
+        <button class="save ghost danger" style="margin:12px 0 0;width:100%" id="resetBtn">Delete all entries…</button>
+      </div>
       <div style="height:20px"></div>
     </div>
   </section>
@@ -230,6 +239,18 @@
       <div class="trow last"><label>Delete this entry</label>
         <button class="save ghost danger" id="eDel" style="margin:0;padding:9px 16px">Delete</button></div>
       <button class="save" style="margin:14px 0 0;width:100%" id="eSave">Save changes</button>
+    </div>
+  </div>
+
+  <!-- reset confirm modal -->
+  <div class="modal" id="resetModal" aria-hidden="true">
+    <div class="mbox">
+      <h4>Delete all entries?</h4>
+      <p id="resetMeta">This permanently deletes every entry on this device.</p>
+      <div class="trow last"><label for="rConfirm">Type <strong>DELETE</strong> to confirm</label>
+        <input id="rConfirm" type="text" autocapitalize="characters" autocomplete="off" placeholder="DELETE"></div>
+      <button class="save danger" style="margin:14px 0 0;width:100%" id="rGo" disabled>Delete everything</button>
+      <button class="save ghost" style="margin:8px 0 0;width:100%" id="rCancel">Keep my entries</button>
     </div>
   </div>
 

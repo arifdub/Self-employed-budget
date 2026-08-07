@@ -1,7 +1,7 @@
 /* Self Employed Budget — app.js — v0.1
    Entries live in memory only. Device storage arrives in v0.2. */
 
-const APP_VERSION = '0.3.0';
+const APP_VERSION = '0.3.1';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -474,6 +474,8 @@ document.querySelectorAll('.nb').forEach(b => b.onclick = () => {
       $('more').querySelector('.body').appendChild(wrap);
     }
     renderDiagnostics();
+    const n = state.entries.length;
+    $('resetCount').textContent = n + ' entr' + (n === 1 ? 'y' : 'ies');
     openSheet('more');
   }
   else { closeSheet('rep'); closeSheet('more'); closeSheet('ent'); }
@@ -509,6 +511,41 @@ $('saveT').onclick = () => {
   state.targets.month = +$('tM').value || state.targets.month;
   saveSettings();
   closeTargets(); render(); toast('Targets updated');
+};
+
+
+/* ---------- reset all data ----------
+   Deliberately two steps: open the confirm sheet, then type DELETE. A single-tap
+   destroyer next to ordinary settings is how people lose a month of records. */
+function openReset() {
+  const n = state.entries.length;
+  $('resetMeta').textContent = n === 0
+    ? 'There are no entries to delete.'
+    : 'This permanently deletes all ' + n + ' entr' + (n === 1 ? 'y' : 'ies') + ' on this device. Targets and theme are kept.';
+  $('rConfirm').value = '';
+  $('rGo').disabled = true;
+  $('resetModal').classList.add('on');
+  $('resetModal').setAttribute('aria-hidden', 'false');
+}
+function closeReset() {
+  $('resetModal').classList.remove('on');
+  $('resetModal').setAttribute('aria-hidden', 'true');
+}
+$('resetBtn').onclick = openReset;
+$('rCancel').onclick = closeReset;
+$('resetModal').onclick = e => { if (e.target === $('resetModal')) closeReset(); };
+$('rConfirm').addEventListener('input', () => {
+  $('rGo').disabled = $('rConfirm').value.trim().toUpperCase() !== 'DELETE';
+});
+$('rGo').onclick = () => {
+  if ($('rConfirm').value.trim().toUpperCase() !== 'DELETE') return;
+  const n = state.entries.length;
+  state.entries = [];
+  saveEntries();
+  closeReset();
+  render();
+  if (typeof renderEntries === 'function') renderEntries();
+  toast(n + ' entr' + (n === 1 ? 'y' : 'ies') + ' deleted — starting fresh');
 };
 
 /* ---------- theme ---------- */

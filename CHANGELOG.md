@@ -6,6 +6,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [0.3.1] — 2026-08-08
+
+### Added
+- **Reset all data**, under More → Danger zone. Shows how many entries exist,
+  then requires typing DELETE before the button arms. Removes every entry
+  permanently; targets and theme are kept. Deliberately two steps — a single-tap
+  destroyer next to ordinary settings is how people lose a month of records.
+
+---
+
 ## [0.3.0] — 2026-08-08
 
 Entries now survive closing the app. This is the release that makes the app usable
