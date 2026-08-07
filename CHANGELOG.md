@@ -6,6 +6,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [0.1.4] — 2026-08-07
+
+Layout fixes for phones. First build tested on a real device.
+
+### Fixed
+- **Blank band below the bottom bar on iPhone.** The nav bar was adding the home
+  indicator safe area twice — once to its height and again to its bottom padding —
+  leaving roughly 48px of empty space under the icons. It now reserves that space once.
+- **Dead scroll space at the end of every screen.** The content area still carried
+  96px of bottom padding from the prototype, where the nav floated over the content.
+  The nav is now a normal sibling, so that padding is gone.
+- **Gap when iOS Safari hides its toolbar.** The app now uses `100dvh` where supported,
+  which follows the browser chrome as it appears and disappears, with `100%` as a fallback.
+- Background colour applied to `html` as well as `body`, so an overscroll bounce never
+  shows a white strip.
+- Toast repositioned to sit just above the shorter nav bar.
+
+---
+
 ## [0.1.3] — 2026-08-07
 
 Renamed to **Self Employed Budget**. No functional changes.
