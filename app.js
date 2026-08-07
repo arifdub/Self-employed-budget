@@ -1,7 +1,7 @@
 /* Self Employed Budget — app.js — v0.1
    Entries live in memory only. Device storage arrives in v0.2. */
 
-const APP_VERSION = '0.2.0';
+const APP_VERSION = '0.2.1';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -294,8 +294,16 @@ $('save').onclick = () => {
 };
 
 /* ---------- sheets & nav ---------- */
-function openSheet(id) { const s = $(id); s.classList.add('up'); s.setAttribute('aria-hidden', 'false'); }
-function closeSheet(id) { const s = $(id); s.classList.remove('up'); s.setAttribute('aria-hidden', 'true'); }
+function openSheet(id) {
+  const s = $(id);
+  s.classList.add('up'); s.setAttribute('aria-hidden', 'false');
+  document.documentElement.classList.add('locked');
+}
+function closeSheet(id) {
+  const s = $(id);
+  s.classList.remove('up'); s.setAttribute('aria-hidden', 'true');
+  if (!document.querySelector('.sheet.up')) document.documentElement.classList.remove('locked');
+}
 
 $('openAdd').onclick = () => {
   state.draft = { type: 'income', cat: 'Fare', pay: 'Cash', val: '' };
@@ -396,25 +404,6 @@ function toast(msg) {
   toastTimer = setTimeout(() => e.classList.remove('on'), 2600);
 }
 
-/* ---------- app height ----------
-   window.innerHeight is the one height iOS reports correctly in standalone mode
-   with viewport-fit=cover: it includes the safe areas and the space where the
-   browser toolbar used to be. visualViewport.height does NOT — it under-reports,
-   which is what left a band under the nav in v0.1.6. Do not swap this back. */
-function setAppHeight() {
-  document.documentElement.style.setProperty('--app-h', window.innerHeight + 'px');
-}
-setAppHeight();
-window.addEventListener('resize', setAppHeight);
-window.addEventListener('orientationchange', () => setTimeout(setAppHeight, 300));
-window.addEventListener('pageshow', setAppHeight);
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') setAppHeight();
-});
-// iOS settles its viewport a beat after launch, so measure again shortly after
-setTimeout(setAppHeight, 120);
-setTimeout(setAppHeight, 600);
-
 /* ---------- display diagnostics ----------
    iOS reports several different heights and they disagree in standalone mode.
    This panel shows the actual numbers so the next fix is aimed, not guessed. */
@@ -435,7 +424,7 @@ function renderDiagnostics() {
     ['documentElement', Math.round(document.documentElement.clientHeight)],
     ['safe-area-bottom', safeB || '0px'],
     ['nav bottom edge', Math.round(navRect.bottom)],
-    ['--app-h', getComputedStyle(document.documentElement).getPropertyValue('--app-h').trim() || 'unset'],
+    ['app height', Math.round(document.querySelector('.app').getBoundingClientRect().height)],
     ['deficit', Math.round(window.screen.height - window.innerHeight)]
   ];
 

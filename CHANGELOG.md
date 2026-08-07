@@ -6,6 +6,34 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [0.2.1] — 2026-08-08
+
+Empty bands at **both** the top and the bottom in standalone mode, each roughly the
+height of the Safari chrome that is no longer there. That symmetry is the clue that
+made this diagnosable: the app was being letterboxed, not merely mis-sized.
+
+### Changed
+- **The app is a normal in-flow document now.** `position: fixed` on the shell was
+  the root cause. In iOS standalone a fixed element is sized against the
+  browser-with-chrome viewport and centred in the screen, which produces a band above
+  and below. Ordinary flow has no container to mis-measure — the page fills the
+  screen and grows when it needs to. Every height fix since v0.1.4 was treating a
+  symptom of this.
+- The bottom bar is `position: sticky; bottom: 0`, so it still stays on screen while
+  the page scrolls behind it.
+- Sheets and the targets modal stay `position: fixed` — as short-lived overlays they
+  are unaffected — and now lock the page behind them so it cannot scroll underneath.
+- **Status bar style changed from `black-translucent` to `black`.** With
+  `black-translucent` the content runs underneath the status bar and the layout then
+  adds `safe-area-inset-top` on top of that, so the top spacing was applied twice.
+  With `black`, iOS reserves the status bar itself and the inset resolves to zero.
+
+### Removed
+- The `--app-h` JavaScript height measurement from v0.2.0. With flow layout there is
+  no height to measure. The value is still shown in Display info for reference.
+
+---
+
 ## [0.2.0] — 2026-08-08
 
 Two separate iOS bugs, both found from side-by-side Android and iPhone screenshots
