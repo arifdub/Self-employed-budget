@@ -6,7 +6,7 @@
   --acc:#FFB020; --on-acc:#0B1018; --good:#7DD3C0; --bad:#FF7A66;
   --dspl:'Barlow Condensed',sans-serif; --body:'Barlow',sans-serif; --mono:'IBM Plex Mono',monospace;
   --r:14px;
-  --css-version:'0.1.8';
+  --css-version:'0.1.9';
   --safe-t:env(safe-area-inset-top,0px);
   --safe-b:env(safe-area-inset-bottom,0px);
 }

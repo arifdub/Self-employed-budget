@@ -6,6 +6,30 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [0.1.9] — 2026-08-08
+
+Diagnostics, not another guess.
+
+### Context
+Chrome on iOS renders the layout correctly — the nav sits flush above the browser
+toolbar with no gap. Chrome on Android is correct too. The band only appears once
+the app is installed to the iOS home screen, and it is roughly the height of the
+browser toolbar that is no longer there. That points at iOS reporting a viewport in
+standalone mode as though the toolbar were still present.
+
+### Added
+- **Display info panel** under More. Shows `screen.height`, `innerHeight`,
+  `visualViewport.height`, `documentElement.clientHeight`, the resolved
+  `safe-area-inset-bottom`, the nav's measured bottom edge, and the deficit between
+  screen and viewport. Four attempts have now been made at this bug without knowing
+  which of those numbers disagree. This ends that.
+
+### Not changed
+The layout itself is untouched from v0.1.8. Nothing should be altered again until
+the measurements say what to alter.
+
+---
+
 ## [0.1.8] — 2026-08-08
 
 Different approach to the bottom band, after v0.1.7 did not fix it on device.

@@ -1,7 +1,7 @@
 /* Self Employed Budget — app.js — v0.1
    Entries live in memory only. Device storage arrives in v0.2. */
 
-const APP_VERSION = '0.1.8';
+const APP_VERSION = '0.1.9';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -309,7 +309,17 @@ document.querySelectorAll('.nb').forEach(b => b.onclick = () => {
   const go = b.dataset.go;
   document.querySelectorAll('.nb').forEach(x => x.classList.toggle('on', x === b));
   if (go === 'reports') { renderReport(); openSheet('rep'); }
-  else if (go === 'more') openSheet('more');
+  else if (go === 'more') {
+    if (!$('diag')) {
+      const wrap = document.createElement('div');
+      wrap.innerHTML = '<div class="sec">Display info</div><div class="card" id="diag"></div>' +
+        '<div class="crange" style="margin:-4px 0 8px">Screenshot this and send it over if the layout ' +
+        'looks wrong — these are the numbers iOS is reporting.</div>';
+      $('more').querySelector('.body').appendChild(wrap);
+    }
+    renderDiagnostics();
+    openSheet('more');
+  }
   else { closeSheet('rep'); closeSheet('more'); if (go === 'entries') toast('Full entry history arrives in v0.2'); }
 });
 
@@ -384,6 +394,34 @@ function toast(msg) {
   e.textContent = msg; e.classList.add('on');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => e.classList.remove('on'), 2600);
+}
+
+/* ---------- display diagnostics ----------
+   iOS reports several different heights and they disagree in standalone mode.
+   This panel shows the actual numbers so the next fix is aimed, not guessed. */
+function renderDiagnostics() {
+  const el = $('diag');
+  if (!el) return;
+  const standalone = window.matchMedia('(display-mode: standalone)').matches || !!navigator.standalone;
+  const vv = window.visualViewport;
+  const probe = getComputedStyle(document.createElement('div'));
+  const safeB = getComputedStyle(document.documentElement).getPropertyValue('--safe-b').trim();
+  const navRect = document.querySelector('.nav').getBoundingClientRect();
+
+  const rows = [
+    ['Standalone', standalone ? 'yes' : 'no (in browser)'],
+    ['screen.height', Math.round(window.screen.height)],
+    ['innerHeight', Math.round(window.innerHeight)],
+    ['visualViewport', vv ? Math.round(vv.height) : 'n/a'],
+    ['documentElement', Math.round(document.documentElement.clientHeight)],
+    ['safe-area-bottom', safeB || '0px'],
+    ['nav bottom edge', Math.round(navRect.bottom)],
+    ['deficit', Math.round(window.screen.height - window.innerHeight)]
+  ];
+
+  el.innerHTML = rows.map(([k, v]) =>
+    '<div class="crow" style="padding:5px 0"><span class="clab">' + k + '</span>' +
+    '<span class="cval" style="font-size:14px">' + v + '</span></div>').join('');
 }
 
 /* ---------- service worker + auto update ----------
