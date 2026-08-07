@@ -1,0 +1,20 @@
+# dependencies
+node_modules/
+
+# environment — never commit keys
+.env
+.env.local
+.env.*.local
+
+# vercel
+.vercel
+
+# os junk
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# editors
+.vscode/
+.idea/
+*.swp
