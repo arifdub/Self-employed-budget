@@ -1,7 +1,7 @@
 /* Self Employed Budget — app.js — v0.1
    Entries live in memory only. Device storage arrives in v0.2. */
 
-const APP_VERSION = '0.2.1';
+const APP_VERSION = '0.2.2';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';

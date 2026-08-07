@@ -6,6 +6,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [0.2.2] — 2026-08-08
+
+The last strip under the bottom bar in standalone mode.
+
+### Fixed
+- The app now fills `100lvh` — the **large** viewport — where supported. `100dvh`
+  is the dynamic viewport, which on iOS tracks the *small* viewport in standalone
+  mode, leaving a thin band below the nav equal to the difference. The fallback
+  chain is `100vh` → `100dvh` → `100lvh`, so older browsers keep working.
+
+---
+
 ## [0.2.1] — 2026-08-08
 
 Empty bands at **both** the top and the bottom in standalone mode, each roughly the

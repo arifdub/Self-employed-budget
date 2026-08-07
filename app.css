@@ -6,7 +6,7 @@
   --acc:#FFB020; --on-acc:#0B1018; --good:#7DD3C0; --bad:#FF7A66;
   --dspl:'Barlow Condensed',sans-serif; --body:'Barlow',sans-serif; --mono:'IBM Plex Mono',monospace;
   --r:14px;
-  --css-version:'0.2.1';
+  --css-version:'0.2.2';
   --safe-t:env(safe-area-inset-top,0px);
   --safe-b:env(safe-area-inset-bottom,0px);
 }
@@ -35,6 +35,9 @@ body{background:var(--bg);color:var(--txt);font-family:var(--body);
 .app{max-width:520px;margin:0 auto;min-height:100vh;
   display:flex;flex-direction:column;background:var(--bg)}
 @supports (min-height:100dvh){ .app{min-height:100dvh} }
+/* Standalone iOS: the screen is the LARGE viewport. 100dvh tracks the small one,
+   which left a thin strip below the nav. lvh is the full screen, always. */
+@supports (min-height:100lvh){ .app{min-height:100lvh} }
 @media (min-width:560px){
   .app{border-left:1px solid var(--line);border-right:1px solid var(--line)}
 }
