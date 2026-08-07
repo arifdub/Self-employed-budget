@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en" data-skin="night">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<title>Self Employed Budget — income & expenses</title>
+<meta name="description" content="Track your income, business expenses and home expenses. See what you really take home each day, week, month and year.">
+<meta name="theme-color" content="#0B1018" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#FAF8FF" media="(prefers-color-scheme: light)">
+
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SE Budget">
+<meta name="mobile-web-app-capable" content="yes">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Public+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<main class="app" id="app">
+
+  <!-- ============ HOME ============ -->
+  <header class="top">
+    <div>
+      <div class="eyebrow" id="hDate">Today</div>
+      <h1 class="who" id="hGreet">Hello</h1>
+    </div>
+    <div class="tools">
+      <button class="icobtn" id="themeBtn" aria-label="Switch between dark and light">◐</button>
+      <div class="avatar" id="avatar">ME</div>
+    </div>
+  </header>
+
+  <div class="body" id="homeBody">
+    <div class="tabs" id="tabs" role="tablist">
+      <button data-p="day" aria-pressed="true">Day</button>
+      <button data-p="week" aria-pressed="false">Week</button>
+      <button data-p="month" aria-pressed="false">Month</button>
+    </div>
+
+    <div class="gauge">
+      <svg viewBox="0 0 222 206" aria-hidden="true">
+        <g id="ticks"></g>
+        <circle class="track" cx="111" cy="104" r="84" transform="rotate(135 111 104)" stroke-dasharray="395.8 528"/>
+        <circle class="fill" id="fill" cx="111" cy="104" r="84" transform="rotate(135 111 104)" stroke-dasharray="0 528"/>
+      </svg>
+      <div class="readout">
+        <div class="amount" id="gAmt">€0</div>
+        <div class="of" id="gOf">of €200 today</div>
+        <div class="pct" id="gPct">0%</div>
+      </div>
+    </div>
+
+    <div class="strip">
+      <div class="cell"><div class="k">Jobs</div><div class="v" id="sJobs">0</div></div>
+      <div class="cell"><div class="k">Per job</div><div class="v" id="sAvg">€0</div></div>
+      <div class="cell"><div class="k" id="kLeft">To go</div><div class="v" id="sLeft">€0</div></div>
+    </div>
+
+    <div class="sec">Targets<button class="edit" id="editT">Edit targets</button></div>
+
+    <div class="card" id="cWeek">
+      <div class="crow"><span class="clab">Week to date</span>
+        <span class="cval"><span id="wVal">€0</span> <span class="t" id="wTgt"></span></span></div>
+      <div class="crange" id="wRange"></div>
+      <div class="bar"><i id="wBar"></i><span class="pace" id="wPace"></span></div>
+      <div class="foot"><span class="p" id="wPaceTxt"></span><span class="r" id="wLeft"></span></div>
+    </div>
+
+    <div class="card" id="cMonth">
+      <div class="crow"><span class="clab">Month to date</span>
+        <span class="cval"><span id="mVal">€0</span> <span class="t" id="mTgt"></span></span></div>
+      <div class="crange" id="mRange"></div>
+      <div class="bar"><i id="mBar"></i><span class="pace" id="mPace"></span></div>
+      <div class="foot"><span class="p" id="mPaceTxt"></span><span class="r" id="mLeft"></span></div>
+    </div>
+
+    <div class="sec">This week</div>
+    <div class="hist" id="hist"></div>
+
+    <div class="sec">Today's entries</div>
+    <div id="list"></div>
+  </div>
+
+  <!-- ============ NAV ============ -->
+  <nav class="nav">
+    <button class="nb on" data-go="home"><i>◉</i>Today</button>
+    <button class="nb" data-go="entries"><i>▤</i>Entries</button>
+    <button class="fab" id="openAdd" aria-label="Add an entry">+</button>
+    <button class="nb" data-go="reports"><i>◧</i>Reports</button>
+    <button class="nb" data-go="more"><i>☰</i>More</button>
+  </nav>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <!-- ============ ADD ============ -->
+  <section class="sheet" id="sheet" aria-hidden="true">
+    <div class="shead"><span class="eyebrow">New entry</span><button class="x" id="closeAdd" aria-label="Close">✕</button></div>
+    <div class="seg" id="seg">
+      <button data-t="income" aria-pressed="true">Income</button>
+      <button data-t="business" aria-pressed="false">Business cost</button>
+      <button data-t="personal" aria-pressed="false">Home cost</button>
+    </div>
+    <div class="quick" id="quick"></div>
+    <div class="disp"><div class="big" id="disp">€0</div><div class="hint" id="hint"></div></div>
+    <div class="bump" id="bump"></div>
+    <div class="mid">
+      <div class="mlab" id="tileLab"></div>
+      <div class="tiles" id="tiles"></div>
+      <div class="mlab" id="payLab"></div>
+      <div class="pills" id="pays"></div>
+    </div>
+    <div class="pad" id="pad"></div>
+    <button class="save" id="save">Save entry</button>
+  </section>
+
+  <!-- ============ REPORTS ============ -->
+  <section class="sheet" id="rep" aria-hidden="true">
+    <div class="rhead"><h2>Reports</h2><button class="x" id="closeRep" aria-label="Close">✕</button></div>
+    <div class="body">
+      <div class="tabs" id="rtabs">
+        <button data-p="day" aria-pressed="true">Day</button>
+        <button data-p="week" aria-pressed="false">Week</button>
+        <button data-p="month" aria-pressed="false">Month</button>
+        <button data-p="year" aria-pressed="false">Year</button>
+      </div>
+      <div class="rnav">
+        <button id="rPrev" aria-label="Previous period">‹</button>
+        <span class="when" id="rWhen"></span>
+        <button id="rNext" disabled aria-label="Next period">›</button>
+      </div>
+
+      <div class="flow">
+        <div class="fl">
+          <div class="flt"><span class="l">Total income</span><span class="n" id="fIncome">€0</span></div>
+          <div class="flb" id="bIncome" style="width:100%"></div>
+        </div>
+        <div class="fl">
+          <div class="flt"><span class="l">Business expenses</span><span class="n" id="fBiz">−€0</span></div>
+          <div class="flb cost" id="bBiz"></div>
+          <div class="pctag" id="pBiz"></div>
+        </div>
+        <div class="fl key">
+          <div class="flt"><span class="l">Net income</span><span class="n" id="fNet">€0</span></div>
+          <div class="flb mid2" id="bNet"></div>
+          <div class="pctag">What the business made — this is your taxable figure</div>
+        </div>
+        <div class="fl">
+          <div class="flt"><span class="l">Home &amp; personal</span><span class="n" id="fHome">−€0</span></div>
+          <div class="flb cost" id="bHome"></div>
+          <div class="pctag" id="pHome"></div>
+        </div>
+        <div class="fl key final">
+          <div class="flt"><span class="l">Take-home</span><span class="n" id="fTake">€0</span></div>
+          <div class="flb take" id="bTake"></div>
+          <div class="pctag" id="pTake"></div>
+        </div>
+      </div>
+
+      <div class="sec">Where the income came from</div>
+      <div class="brk" id="srcBrk"></div>
+      <div class="sec">Business expenses</div>
+      <div class="brk" id="bizBrk"></div>
+      <div class="sec">Home &amp; personal</div>
+      <div class="brk" id="homeBrk"></div>
+
+      <div class="exp">
+        <button data-x="csv">Export CSV</button>
+        <button data-x="pdf">PDF summary</button>
+        <button data-x="acc">Send to accountant</button>
+      </div>
+      <div style="height:20px"></div>
+    </div>
+  </section>
+
+  <!-- ============ MORE ============ -->
+  <section class="sheet" id="more" aria-hidden="true">
+    <div class="rhead"><h2>More</h2><button class="x" id="closeMore" aria-label="Close">✕</button></div>
+    <div class="body">
+      <div class="card"><div class="crow"><span class="clab">Version</span>
+        <span class="cval" id="verOut">v0.1</span></div>
+        <div class="crange">Local preview build — entries reset when you close the app. Saving to your device arrives in v0.2.</div></div>
+
+      <div class="sec">Install</div>
+      <div class="card" id="installCard">
+        <div class="crow"><span class="clab">Add to home screen</span></div>
+        <div class="crange" id="installHelp">Put Self Employed Budget on your phone so it opens like a normal app, full screen, no browser bar.</div>
+        <button class="save" style="margin:12px 0 0;width:100%" id="installBtn">Add to home screen</button>
+      </div>
+
+      <div class="sec">Settings</div>
+      <div class="card"><div class="crow"><span class="clab">Targets</span><span class="cval" id="tSummary"></span></div>
+        <button class="save ghost" style="margin:12px 0 0;width:100%" id="editT2">Edit targets</button></div>
+      <div class="card"><div class="crow"><span class="clab">Appearance</span>
+        <span class="cval" id="themeName">Night</span></div>
+        <button class="save ghost" style="margin:12px 0 0;width:100%" id="themeBtn2">Switch theme</button></div>
+      <div style="height:20px"></div>
+    </div>
+  </section>
+
+  <!-- targets modal -->
+  <div class="modal" id="modal" aria-hidden="true">
+    <div class="mbox">
+      <h4>Your targets</h4>
+      <p>The week runs Monday to Sunday night. The month runs from the 1st.</p>
+      <div class="trow"><label for="tD">Daily</label><input id="tD" type="number" inputmode="numeric"></div>
+      <div class="trow"><label for="tW">Weekly</label><input id="tW" type="number" inputmode="numeric"></div>
+      <div class="trow last"><label for="tM">Monthly</label><input id="tM" type="number" inputmode="numeric"></div>
+      <button class="save" style="margin:14px 0 0;width:100%" id="saveT">Save targets</button>
+    </div>
+  </div>
+
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>

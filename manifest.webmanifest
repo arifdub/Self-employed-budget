@@ -1,0 +1,48 @@
+{
+  "name": "Self Employed Budget",
+  "short_name": "SE Budget",
+  "description": "Track your income, business expenses and home expenses. See what you really take home each day, week, month and year.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0B1018",
+  "theme_color": "#0B1018",
+  "categories": [
+    "finance",
+    "productivity",
+    "business"
+  ],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Add income",
+      "short_name": "Add",
+      "url": "./?action=add"
+    },
+    {
+      "name": "Reports",
+      "short_name": "Reports",
+      "url": "./?view=reports"
+    }
+  ]
+}
