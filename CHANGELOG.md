@@ -6,6 +6,37 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [0.2.0] — 2026-08-08
+
+Two separate iOS bugs, both found from side-by-side Android and iPhone screenshots
+of the add-entry screen.
+
+### Fixed
+- **Rows sliced in half on the add screen.** The repeat chips and the source tiles
+  were being rendered at half height with their contents cut off. The sheet is a
+  flex column, and flex items shrink by default when the content is taller than the
+  container — so iOS compressed every row proportionally instead of scrolling.
+  Android had enough room that it never triggered. Every row in a sheet is now
+  `flex-shrink: 0`, and the middle of the add screen is a single scrollable region
+  between the fixed tabs at the top and the fixed Save button at the bottom.
+  Nothing can be clipped now regardless of screen height.
+- **Band under the bottom bar in standalone mode.** The app height now comes from
+  `window.innerHeight`, measured in JavaScript and written to `--app-h`. In iOS
+  standalone with `viewport-fit=cover` that is the one height reported correctly —
+  it includes the safe areas and the space the browser toolbar used to occupy.
+  `visualViewport.height`, used in v0.1.6, under-reports and caused the band.
+  The height is re-measured on resize, rotation, `pageshow`, on returning to the
+  foreground, and twice shortly after launch, because iOS settles its viewport a
+  beat after the app opens.
+- The bottom bar returns to being the last item in the flex column. Pinning it with
+  `position:fixed` in v0.1.8 was working around the height problem rather than
+  fixing it.
+
+### Added
+- `--app-h` shown in the Display info panel under More.
+
+---
+
 ## [0.1.9] — 2026-08-08
 
 Diagnostics, not another guess.
