@@ -6,6 +6,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [0.2.3] — 2026-08-08
+
+The "gap" under the bottom bar turned out to be the bar's own padding.
+
+### Context
+After v0.2.2 the layout genuinely reaches the bottom of the screen — what remained
+was the nav reserving the full 34px home-indicator inset *plus* its own spacing,
+which reads as empty space beneath the icons. Native iOS tab bars tuck their labels
+much closer to the indicator. The add sheet had the same double-count on the Save
+button, which is what pushed the keypad's bottom row off screen.
+
+### Changed
+- Nav bottom padding: `max(safe-area − 16px, 6px)` instead of the full inset —
+  labels now sit close above the home indicator, like a native tab bar
+- Save button bottom margin: `max(safe-area − 6px, 10px)` instead of
+  `20px + safe-area`
+- Add sheet compacted (amount display, keypad, tiles, section labels) so the whole
+  entry form fits a Pro Max screen without scrolling
+
+---
+
 ## [0.2.2] — 2026-08-08
 
 The last strip under the bottom bar in standalone mode.

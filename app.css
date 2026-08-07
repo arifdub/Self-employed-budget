@@ -6,7 +6,7 @@
   --acc:#FFB020; --on-acc:#0B1018; --good:#7DD3C0; --bad:#FF7A66;
   --dspl:'Barlow Condensed',sans-serif; --body:'Barlow',sans-serif; --mono:'IBM Plex Mono',monospace;
   --r:14px;
-  --css-version:'0.2.2';
+  --css-version:'0.2.3';
   --safe-t:env(safe-area-inset-top,0px);
   --safe-b:env(safe-area-inset-bottom,0px);
 }
@@ -141,7 +141,7 @@ html[data-skin="day"] .rs{font-family:var(--body);letter-spacing:.01em;text-tran
 
 /* nav */
 .nav{position:sticky;bottom:0;z-index:20;
-  flex:0 0 auto;height:auto;padding:6px 6px max(var(--safe-b),10px);display:flex;
+  flex:0 0 auto;height:auto;padding:5px 6px max(calc(var(--safe-b) - 16px),6px);display:flex;
   align-items:center;justify-content:space-around;border-top:1px solid var(--line);background:var(--bg);flex:0 0 auto}
 .nb{background:none;border:0;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;
   font-family:var(--dspl);font-size:10px;letter-spacing:.09em;text-transform:uppercase;font-weight:700;color:var(--dim);padding:6px}
@@ -180,12 +180,12 @@ html[data-skin="day"] .seg button[aria-pressed="true"]{background:var(--txt);col
   padding:8px 13px;font-size:12px;cursor:pointer;white-space:nowrap;font-family:var(--body);font-weight:600}
 .qc span{color:var(--mut);font-weight:400}
 
-.disp{text-align:center;padding:14px 18px 4px}
-.disp .big{font-family:var(--mono);font-size:44px;letter-spacing:-.03em}
+.disp{text-align:center;padding:8px 18px 2px}
+.disp .big{font-family:var(--mono);font-size:38px;letter-spacing:-.03em}
 html[data-skin="day"] .disp .big{font-family:var(--dspl);font-weight:800;font-size:46px;letter-spacing:-.05em}
 .disp .hint{font-size:11.5px;color:var(--mut);margin-top:2px}
 
-.bump{display:flex;gap:6px;padding:9px 18px 0}
+.bump{display:flex;gap:6px;padding:6px 18px 0}
 .bump button{flex:1;background:var(--surf);border:1px solid var(--line);color:var(--txt);border-radius:10px;
   padding:9px 0;font-family:var(--mono);font-size:12.5px;cursor:pointer}
 
@@ -201,11 +201,11 @@ html.locked,html.locked body{overflow:hidden}
 .quick,.disp,.bump,.mid,.pad,.tiles,.pills,.mlab{flex:0 0 auto}
 .mid{overflow:visible;scrollbar-width:none}
 .mid::-webkit-scrollbar{width:0}
-.mlab{font-family:var(--dspl);font-size:10.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--mut);font-weight:700;padding:13px 18px 7px}
+.mlab{font-family:var(--dspl);font-size:10.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--mut);font-weight:700;padding:9px 18px 5px}
 html[data-skin="day"] .mlab{font-family:var(--body);letter-spacing:.04em}
 .tiles{display:flex;gap:7px;overflow-x:auto;padding:0 18px 2px;scrollbar-width:none}
 .tiles::-webkit-scrollbar{height:0}
-.tile{flex:0 0 80px;background:var(--surf);border:1px solid var(--line);border-radius:14px;padding:11px 4px;
+.tile{flex:0 0 76px;background:var(--surf);border:1px solid var(--line);border-radius:13px;padding:9px 4px;
   cursor:pointer;text-align:center;color:var(--txt);font-family:var(--body)}
 .tile .ic{font-size:17px;display:block;margin-bottom:4px;font-weight:800;font-family:var(--dspl)}
 .tile .tl{font-size:10.5px;line-height:1.2;color:var(--mut);font-weight:600}
@@ -218,15 +218,15 @@ html[data-skin="day"] .mlab{font-family:var(--body);letter-spacing:.04em}
   padding:8px 13px;font-size:12px;cursor:pointer;font-family:var(--body);font-weight:600;white-space:nowrap}
 .pill[aria-pressed="true"]{background:var(--acc);border-color:var(--acc);color:var(--on-acc)}
 
-.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:11px 18px 0}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;padding:8px 18px 0}
 .key{background:var(--surf);border:1px solid var(--line);color:var(--txt);font-family:var(--mono);
-  font-size:19px;padding:13px 0;border-radius:12px;cursor:pointer}
+  font-size:18px;padding:10px 0;border-radius:11px;cursor:pointer}
 .key:active{background:var(--surf2)}
 
 .save{padding:15px;border:0;border-radius:14px;background:var(--acc);color:var(--on-acc);
   font-family:var(--dspl);font-size:15px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;cursor:pointer}
 html[data-skin="day"] .save{font-family:var(--body);letter-spacing:.01em;font-size:14.5px;border-radius:16px}
-#save{margin:9px 18px calc(20px + var(--safe-b))}
+#save{margin:8px 18px max(calc(var(--safe-b) - 6px),10px)}
 .save.ghost{background:var(--surf2);color:var(--acc)}
 
 /* reports */
