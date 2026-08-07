@@ -1,7 +1,7 @@
 /* Self Employed Budget — app.js — v0.1
    Entries live in memory only. Device storage arrives in v0.2. */
 
-const APP_VERSION = '0.1.6';
+const APP_VERSION = '0.1.7';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -381,21 +381,6 @@ function toast(msg) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => e.classList.remove('on'), 2600);
 }
-
-/* ---------- viewport height ----------
-   iOS reports several different "viewport heights" depending on toolbars and
-   safe areas. Measuring the real one and writing it to --vh removes the guesswork. */
-function setViewportHeight() {
-  const h = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
-  document.documentElement.style.setProperty('--vh', Math.round(h) + 'px');
-}
-setViewportHeight();
-window.addEventListener('resize', setViewportHeight);
-window.addEventListener('orientationchange', () => setTimeout(setViewportHeight, 250));
-if (window.visualViewport) window.visualViewport.addEventListener('resize', setViewportHeight);
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') setViewportHeight();
-});
 
 /* ---------- service worker + auto update ----------
    Without this, a phone that has already cached the app keeps showing the old

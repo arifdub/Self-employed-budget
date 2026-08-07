@@ -6,6 +6,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [0.1.7] — 2026-08-07
+
+The actual fix for the band under the bottom bar. Confirmed on device at v0.1.6,
+so this is the third and correct attempt.
+
+### Fixed
+- **Removed every height declaration from the app container.** A `position:fixed`
+  element with `top:0` and `bottom:0` already stretches to the full viewport in
+  every browser. Each height I tried instead — `100%`, `100dvh`, and finally a
+  JavaScript measurement — resolves against a viewport that excludes the bottom
+  safe area on iOS, so all three made the app shorter than the screen. The gap was
+  the difference.
+- Deleted the `visualViewport` measurement added in v0.1.6. `visualViewport.height`
+  under-reports in standalone mode, which is what produced the remaining band.
+
+### Lesson for later
+If a fixed full-screen element ever needs a height, it does not. Anchor it with
+`top` and `bottom` and let the browser do the arithmetic.
+
+---
+
 ## [0.1.6] — 2026-08-07
 
 The real cause of the band under the bottom bar on iPhone.
