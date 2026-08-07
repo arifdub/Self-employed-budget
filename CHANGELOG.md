@@ -6,6 +6,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [0.1.6] — 2026-08-07
+
+The real cause of the band under the bottom bar on iPhone.
+
+### Fixed
+- **App container height.** It was set with `height:100%` on a `position:fixed`
+  element. On iOS that percentage resolves against the *small* viewport — the one
+  measured as if the browser toolbars were showing — so the app was always shorter
+  than the screen, and the difference showed as dead space at the bottom. The height
+  declaration is gone; the element now stretches between `top:0` and `bottom:0`,
+  which is correct in every browser. The earlier `100dvh` rule was overriding that
+  stretch and made it worse rather than better.
+- **Belt and braces:** the real viewport height is now measured in JavaScript and
+  written to a `--vh` custom property, updated on resize, orientation change and
+  when the app returns to the foreground. If a browser ever mis-reports its insets,
+  the measured value wins.
+
+---
+
 ## [0.1.5] — 2026-08-07
 
 Two fixes that make every future update easier to verify.

@@ -23,9 +23,13 @@ html,body{margin:0;padding:0;height:100%;overscroll-behavior:none}
 body{background:var(--bg);color:var(--txt);font-family:var(--body);
   -webkit-font-smoothing:antialiased;text-size-adjust:100%}
 
-.app{position:fixed;top:0;left:0;right:0;bottom:0;height:100%;max-width:520px;margin:0 auto;
+/* Stretch between top and bottom rather than declaring a height.
+   height:100% on a fixed element resolves against the small viewport on iOS,
+   which is exactly the bug that left a band under the nav. --vh is measured in
+   JS as a belt-and-braces fallback for browsers that mis-report the inset. */
+.app{position:fixed;top:0;left:0;right:0;bottom:0;height:var(--vh,auto);
+  max-width:520px;margin:0 auto;
   display:flex;flex-direction:column;background:var(--bg);overflow:hidden}
-@supports (height:100dvh){ .app{height:100dvh} }
 @media (min-width:560px){
   .app{border-left:1px solid var(--line);border-right:1px solid var(--line)}
 }
