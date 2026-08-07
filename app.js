@@ -1,7 +1,7 @@
 /* Self Employed Budget — app.js — v0.1
    Entries live in memory only. Device storage arrives in v0.2. */
 
-const APP_VERSION = '0.1.7';
+const APP_VERSION = '0.1.8';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -90,8 +90,12 @@ const countOf = (type, p) => state.entries.filter(e => e.type === type && inRang
 /* ---------- render: home ---------- */
 function render(flash) {
   const now = new Date();
+  const cssV = (getComputedStyle(document.documentElement)
+    .getPropertyValue('--css-version') || '').trim().replace(/['"]/g, '');
+  const stamp = (cssV && cssV !== APP_VERSION) ? ' · v' + APP_VERSION + ' css' + cssV
+                                               : ' · v' + APP_VERSION;
   $('hDate').textContent = now.toLocaleDateString(LOCALE, { weekday: 'short', day: 'numeric', month: 'short' })
-    + ' · v' + APP_VERSION;
+    + stamp;
   const h = now.getHours();
   $('hGreet').textContent = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
 

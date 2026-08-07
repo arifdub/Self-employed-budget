@@ -6,6 +6,32 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [0.1.8] — 2026-08-08
+
+Different approach to the bottom band, after v0.1.7 did not fix it on device.
+
+### Changed
+- **The bottom bar is now pinned to the viewport, not to the end of a flex column.**
+  It uses `position:fixed; bottom:0`, which is the physical bottom of the screen.
+  Previously it was the last item in a flex column, so its position depended on the
+  container resolving its height correctly — which is exactly what iOS was getting
+  wrong. There is now no height for anything to get wrong.
+- Sheets, the targets modal and the toast switched from `absolute` to `fixed` for
+  the same reason, each capped at the 520px app width.
+- Content padding increased to clear the pinned bar.
+
+### Added
+- **CSS version stamp.** `app.css` now declares `--css-version`, which the header
+  reads and displays. If the stylesheet is stale, the header shows something like
+  `v0.1.8 css0.1.7` instead of just `v0.1.8`. This makes a cached stylesheet
+  visible rather than something to guess at — the previous three attempts could not
+  distinguish "the fix is wrong" from "the fix never arrived".
+- `Cache-Control: must-revalidate` on `app.css` and `app.js` in `vercel.json`.
+  Only `sw.js`, `index.html` and the manifest had it, so the CDN was free to serve
+  a stale stylesheet alongside a fresh script.
+
+---
+
 ## [0.1.7] — 2026-08-07
 
 The actual fix for the band under the bottom bar. Confirmed on device at v0.1.6,
