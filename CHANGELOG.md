@@ -6,6 +6,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [0.5.3] — 2026-08-09
+
+### Fixed
+- **The crash guard was reporting failed resource loads as app errors.** A missing
+  icon or a blocked font request fires an error event just like a script crash, so
+  the red bar appeared even though the app was working normally. The guard now
+  ignores resource failures (logging them to the console instead) and skips the
+  bare "Script error." that browsers emit for cross-origin files with no detail.
+- The bar is dismissible by tapping it, and now reports the column number as well
+  as the line.
+
+---
+
 ## [0.5.2] — 2026-08-09
 
 ### Changed

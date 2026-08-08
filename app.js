@@ -1,22 +1,33 @@
-/* Self Employed Budget — app.js — v0.1
-   Entries live in memory only. Device storage arrives in v0.2. */
+/* Self Employed Budget — app.js */
 
 /* ---------- crash guard ----------
-   If anything throws while the app is starting, every button stops responding and
-   the screen looks frozen with no clue why. This surfaces the error instead. */
+   Reports genuine script errors so a frozen app is never a mystery. Two things
+   it deliberately does NOT report:
+   - failed resource loads (a missing icon or a blocked font) fire an error event
+     too, but the app still works and a red bar there is just noise
+   - "Script error." with no detail, which is what browsers give for errors inside
+     cross-origin files and carries no useful information
+   Tap the bar to dismiss it. */
 window.addEventListener('error', ev => {
-  const bar = document.createElement('div');
-  bar.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:9999;background:#FF7A66;' +
-    'color:#20060a;font:600 12px/1.4 system-ui,sans-serif;padding:10px 14px;text-align:left';
-  bar.textContent = 'App error: ' + (ev.message || 'unknown') +
-    (ev.lineno ? ' (line ' + ev.lineno + ')' : '');
-  if (document.body && !document.querySelector('[data-errbar]')) {
-    bar.setAttribute('data-errbar', '1');
-    document.body.appendChild(bar);
+  const isResource = ev.target && ev.target !== window && ev.target.tagName;
+  if (isResource) {
+    console.warn('Failed to load:', ev.target.tagName, ev.target.src || ev.target.href);
+    return;
   }
-});
+  if (!ev.message || ev.message === 'Script error.') return;
 
-const APP_VERSION = '0.5.2';
+  if (document.querySelector('[data-errbar]')) return;
+  const bar = document.createElement('div');
+  bar.setAttribute('data-errbar', '1');
+  bar.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:9999;background:#FB7185;' +
+    'color:#2A0710;font:600 12px/1.45 system-ui,sans-serif;padding:10px 14px;text-align:left;cursor:pointer';
+  bar.textContent = ev.message +
+    (ev.lineno ? '  (line ' + ev.lineno + (ev.colno ? ':' + ev.colno : '') + ')' : '') + '   — tap to dismiss';
+  bar.onclick = () => bar.remove();
+  if (document.body) document.body.appendChild(bar);
+}, true);
+
+const APP_VERSION = '0.5.3';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
