@@ -6,6 +6,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [0.6.1] — 2026-08-09
+
+### Changed
+- **"More" is now "Settings"**, in the bottom bar and as the screen title. That is
+  what the screen actually contains, and "More" told the user nothing.
+- Screen reordered to put the useful things first: **Install** at the top, then
+  **Preferences** (targets, appearance), then **Danger zone**, then **About** with
+  the app version at the very bottom — the conventional place for it.
+- The version card that sat at the top has gone; it was the first thing a new user
+  saw and the least useful.
+
+### Removed
+- **Display info panel.** It existed to diagnose the iOS viewport problem, listing
+  raw values like `innerHeight` and `visualViewport`. That bug is fixed and the panel
+  meant nothing to an ordinary user. The app version — the only part anyone might
+  need, for reporting a problem — now lives under About.
+
+---
+
 ## [0.6.0] — 2026-08-09
 
 ### Added
