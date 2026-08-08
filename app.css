@@ -6,7 +6,7 @@
   --acc:#FFB020; --on-acc:#0B1018; --good:#7DD3C0; --bad:#FF7A66;
   --dspl:'Barlow Condensed',sans-serif; --body:'Barlow',sans-serif; --mono:'IBM Plex Mono',monospace;
   --r:14px;
-  --css-version:'0.4.1';
+  --css-version:'0.4.2';
   --safe-t:env(safe-area-inset-top,0px);
   --safe-b:env(safe-area-inset-bottom,0px);
 }
@@ -186,8 +186,14 @@ html[data-skin="day"] .rhead h2{font-weight:800;letter-spacing:-.03em}
 .seg button{flex:1;background:none;border:0;color:var(--mut);font-family:var(--dspl);font-size:11.5px;
   letter-spacing:.09em;text-transform:uppercase;font-weight:700;padding:10px 2px;border-radius:9px;cursor:pointer;line-height:1.2}
 html[data-skin="day"] .seg button{font-family:var(--body);letter-spacing:.02em}
-.seg button[aria-pressed="true"]{background:var(--surf2);color:var(--txt)}
-html[data-skin="day"] .seg button[aria-pressed="true"]{background:var(--txt);color:#fff}
+.seg button[aria-pressed="true"]{background:var(--acc);color:var(--on-acc)}
+/* "expense" in full where it fits, "exp" on narrow screens */
+.seg .sw{display:none}
+@media (max-width:390px){
+  .seg .lw{display:none}
+  .seg .sw{display:inline}
+  .seg button{letter-spacing:.04em;padding:10px 1px}
+}
 
 /* date row */
 .daterow{display:flex;gap:7px;padding:12px 18px 0;align-items:stretch}

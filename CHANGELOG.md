@@ -6,6 +6,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [0.4.2] — 2026-08-08
+
+### Changed
+- Entry type tabs relabelled: **Add income**, **Business expense**, **Home expense**.
+  On screens under 390px the word shortens to **exp** so all three fit on one line
+  without wrapping.
+- The selected tab is now highlighted amber, matching the source tiles and payment
+  pills below it. It previously used a muted grey fill, so the three selectable rows
+  on the same screen indicated selection three different ways.
+
+---
+
 ## [0.4.1] — 2026-08-08
 
 ### Fixed
