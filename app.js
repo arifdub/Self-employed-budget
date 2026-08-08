@@ -27,7 +27,7 @@ window.addEventListener('error', ev => {
   if (document.body) document.body.appendChild(bar);
 }, true);
 
-const APP_VERSION = '0.7.0';
+const APP_VERSION = '0.7.2';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -257,8 +257,7 @@ function render(flash) {
                                                : ' · v' + APP_VERSION;
   $('hDate').textContent = now.toLocaleDateString(LOCALE, { weekday: 'short', day: 'numeric', month: 'short' })
     + stamp;
-  const h = now.getHours();
-  $('hGreet').textContent = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+  greet();
 
   const P = state.period;
   const val = total(bucket('income', P));
@@ -1027,6 +1026,7 @@ function refreshAccountCard() {
     $('acctBtn').style.display = 'none';
     return;
   }
+  refreshIdentity();
   if (signedIn) {
     setAcctState('Signed in');
     $('acctHelp').textContent = session.user.email +
@@ -1153,6 +1153,145 @@ async function initAuth() {
   if (session) { await pullSettings(); await syncNow(true); }
   sb.auth.onAuthStateChange((_evt, s) => { session = s; refreshAccountCard(); });
 }
+
+
+
+/* ---------- identity in the header ----------
+   The avatar was a hardcoded "ME" placeholder from the first prototype.
+   It now shows the signed-in user's initials and opens Settings, or becomes a
+   Sign in button when there is no account — which is more use than a dead badge. */
+function initials(name) {
+  const parts = (name || '').trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return '';
+  if (parts.length === 1) return parts[0][0].toUpperCase();          // one name, one letter
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();   // first and last
+}
+
+function currentName() {
+  if (!session || !session.user) return '';
+  const m = session.user.user_metadata || {};
+  return m.name || m.full_name || (session.user.email || '').split('@')[0];
+}
+
+function refreshIdentity() {
+  const av = $('avatar');
+  if (!av) return;
+  const name = currentName();
+
+  if (session && name) {
+    av.textContent = initials(name);
+    av.classList.remove('signin');
+    av.setAttribute('aria-label', name + ' — open settings');
+    av.title = name;
+  } else if (sb) {
+    av.textContent = 'Sign in';
+    av.classList.add('signin');
+    av.setAttribute('aria-label', 'Sign in or create an account');
+    av.title = '';
+  } else {
+    av.textContent = '';
+    av.classList.remove('signin');
+  }
+  greet();
+}
+
+function greet() {
+  const h = new Date().getHours();
+  const base = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+  const first = (currentName() || '').trim().split(/\s+/)[0] || '';
+  $('hGreet').textContent = first ? base + ', ' + first : base;
+}
+
+$('avatar').onclick = () => {
+  if (session) {
+    document.querySelectorAll('.nb').forEach(x => x.classList.toggle('on', x.dataset.go === 'more'));
+    const n = state.entries.length;
+    $('resetCount').textContent = n + ' entr' + (n === 1 ? 'y' : 'ies');
+    openSheet('more');
+  } else if (sb) {
+    openAuth('signin');
+  }
+};
+
+/* ---------- pull to refresh ----------
+   Drag the home screen down to pull fresh data from the database. Armed only
+   when the page is already at the very top, so it never interferes with normal
+   scrolling, and stood down if a sheet is open or a row is being swiped. */
+(function () {
+  const ind = $('ptr'), text = $('ptrText'), spin = $('ptrSpin'), content = $('homeBody');
+  const THRESHOLD = 72, MAX = 110;
+  let startY = 0, startX = 0, dy = 0, active = false, axis = null, busy = false;
+
+  const scrollTop = () => window.scrollY || document.documentElement.scrollTop || 0;
+  const sheetOpen = () => !!document.querySelector('.sheet.up') || !!document.querySelector('.modal.on');
+
+  function show(msg, spinning) {
+    text.textContent = msg;
+    spin.classList.toggle('go', !!spinning);
+    ind.classList.add('on');
+  }
+  function hide() {
+    ind.classList.remove('on');
+    spin.classList.remove('go');
+  }
+  function reset() {
+    content.classList.remove('pulling');
+    content.style.transform = '';
+    dy = 0;
+  }
+
+  document.addEventListener('touchstart', ev => {
+    if (busy || sheetOpen() || ev.touches.length !== 1 || scrollTop() > 0) { active = false; return; }
+    startY = ev.touches[0].clientY;
+    startX = ev.touches[0].clientX;
+    dy = 0; axis = null; active = true;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', ev => {
+    if (!active) return;
+    const my = ev.touches[0].clientY - startY;
+    const mx = ev.touches[0].clientX - startX;
+
+    if (axis === null && (Math.abs(my) > 6 || Math.abs(mx) > 6))
+      axis = Math.abs(my) > Math.abs(mx) ? 'y' : 'x';
+    if (axis !== 'y') return;                      // sideways: leave row swipes alone
+
+    if (my <= 0 || scrollTop() > 0) { reset(); hide(); return; }
+
+    ev.preventDefault();
+    content.classList.add('pulling');
+    dy = Math.min(my * 0.5, MAX);                  // heavy resistance, like a real pull
+    content.style.transform = 'translateY(' + dy + 'px)';
+    show(dy >= THRESHOLD ? 'Release to refresh' : 'Pull to refresh', false);
+  }, { passive: false });
+
+  async function refresh() {
+    busy = true;
+    reset();
+    show(session ? 'Syncing…' : 'Refreshing…', true);
+    try {
+      if (session) {
+        await syncNow(true);
+        show(dirty.size ? 'Some changes still to upload' : 'Up to date', false);
+      } else {
+        render();
+        show('Sign in to back up your entries', false);
+      }
+    } catch (e) {
+      show('Could not sync — try again', false);
+    }
+    setTimeout(() => { hide(); busy = false; }, 1100);
+  }
+
+  const release = () => {
+    if (!active) return;
+    active = false;
+    if (axis === 'y' && dy >= THRESHOLD) refresh();
+    else { reset(); hide(); }
+  };
+  document.addEventListener('touchend', release);
+  document.addEventListener('touchcancel', release);
+})();
 
 /* ---------- go ---------- */
 loadSettings();

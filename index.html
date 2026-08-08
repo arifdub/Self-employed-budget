@@ -26,6 +26,10 @@
 <main class="app" id="app">
 
   <!-- ============ HOME ============ -->
+  <div class="ptr" id="ptr" aria-hidden="true">
+    <div class="ptrpill"><span class="spin" id="ptrSpin"></span><span id="ptrText">Pull to refresh</span></div>
+  </div>
+
   <header class="top">
     <div>
       <div class="eyebrow" id="hDate">Today</div>
@@ -33,7 +37,7 @@
     </div>
     <div class="tools">
       <button class="icobtn" id="themeBtn" aria-label="Switch between dark and light">◐</button>
-      <div class="avatar" id="avatar">ME</div>
+      <button class="avatar" id="avatar" aria-label="Account"></button>
     </div>
   </header>
 

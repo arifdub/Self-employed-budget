@@ -6,6 +6,42 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [0.7.2] — 2026-08-09
+
+### Changed
+- **The header badge showed a hardcoded "ME"** — a placeholder left over from the
+  first prototype that did nothing at all. It now shows the signed-in user's
+  initials: one letter for a single name, first and last for two or more. Tapping it
+  opens Settings.
+- **Signed out it becomes a "Sign in" button**, which is considerably more useful
+  than a dead badge, and gives the account a route in from the main screen rather
+  than only from Settings.
+- **The greeting uses the first name** — "Good morning, Ahmed" — falling back to the
+  plain greeting when signed out.
+
+---
+
+## [0.7.1] — 2026-08-09
+
+### Added
+- **Pull down on the home screen to sync.** The content follows your finger, the
+  label changes from "Pull to refresh" to "Release to refresh" once past the
+  threshold, and releasing pulls the latest entries from the database. The result is
+  reported honestly: "Up to date", "Some changes still to upload", or "Could not
+  sync — try again".
+- Signed out, the same gesture re-renders and prompts to sign in rather than
+  pretending to sync.
+
+### Notes
+- Armed only when the page is already scrolled to the very top, and stood down when
+  a sheet or modal is open, so it cannot fire while reading Reports.
+- Horizontal movement is detected first and ignored, so swiping an entry row left for
+  Edit or Delete on the home list still works.
+- Movement is damped to half the finger distance and capped, so the gesture feels
+  weighted rather than slippery.
+
+---
+
 ## [0.7.0] — 2026-08-09
 
 Accounts and cloud sync. Entries now survive deleting the app, changing phone, or
