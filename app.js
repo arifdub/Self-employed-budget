@@ -1,7 +1,7 @@
 /* Self Employed Budget — app.js — v0.1
    Entries live in memory only. Device storage arrives in v0.2. */
 
-const APP_VERSION = '0.3.3';
+const APP_VERSION = '0.4.0';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -29,7 +29,7 @@ const state = {
   period: 'day',
   rperiod: 'day',
   skin: 'night',
-  draft: { type: 'income', cat: 'Fare', pay: 'Cash', val: '' }
+  draft: { type: 'income', cat: 'Fare', pay: 'Cash', val: '', date: startOfDay(new Date()) }
 };
 
 
@@ -343,6 +343,44 @@ function breakdown(id, obj, tot, isCost, emptyMsg) {
   ).join('') : '<div class="br"><div class="brt"><span class="l" style="color:var(--mut);font-weight:400">' + emptyMsg + '</span></div></div>';
 }
 
+
+/* ---------- entry date ----------
+   Entries default to today but can be backdated, for the fares you forgot to log
+   at the time. Future dates are blocked — the date input carries a max of today. */
+const isoDay = d => new Date(d.getTime() - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10);
+
+function setDraftDate(d) {
+  state.draft.date = startOfDay(d);
+  drawDraft();
+}
+
+function drawDateRow() {
+  const d = state.draft.date;
+  const today = startOfDay(new Date());
+  const offset = Math.round((today - d) / 864e5);
+
+  document.querySelectorAll('.dchip').forEach(b =>
+    b.setAttribute('aria-pressed', +b.dataset.off === offset));
+
+  $('eDate').value = isoDay(d);
+  $('eDate').max = isoDay(today);
+  $('dLabel').textContent = offset === 0 ? 'Today'
+    : offset === 1 ? 'Yesterday'
+    : d.toLocaleDateString(LOCALE, { weekday: 'short', day: 'numeric', month: 'short' });
+  $('dLabel').parentElement.setAttribute('aria-pressed', offset > 1);
+}
+
+document.querySelectorAll('.dchip').forEach(b => b.onclick = () => {
+  const d = new Date();
+  d.setDate(d.getDate() - (+b.dataset.off));
+  setDraftDate(d);
+});
+$('eDate').addEventListener('change', () => {
+  if (!$('eDate').value) return;
+  const [y, m, day] = $('eDate').value.split('-').map(Number);
+  setDraftDate(new Date(y, m - 1, day));
+});
+
 /* ---------- add sheet ---------- */
 ['1','2','3','4','5','6','7','8','9','.','0','⌫'].forEach(k => {
   const b = document.createElement('button');
@@ -379,12 +417,7 @@ function drawDraft() {
   const d = state.draft;
   $('disp').textContent = d.val ? CURRENCY + d.val : CURRENCY + '0';
   document.querySelectorAll('#seg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.t === d.type));
-  $('hint').textContent = d.type === 'income' ? 'Counts towards today, this week and this month'
-    : d.type === 'business' ? 'Comes off your net income'
-    : 'Comes off your take-home only';
-  $('tileLab').textContent = d.type === 'income' ? 'Where did it come from?'
-    : d.type === 'business' ? 'What was the cost for?' : 'What was it for?';
-  $('payLab').textContent = d.type === 'income' ? 'How was it paid?' : 'How did you pay?';
+  drawDateRow();
 
   $('tiles').innerHTML = CATS[d.type].map(([n, i]) =>
     '<button type="button" class="tile" data-c="' + n + '" aria-pressed="' + (n === d.cat) + '">' +
@@ -400,10 +433,10 @@ function drawDraft() {
     const k = e.cat + e.amt;
     if (e.type === d.type && !seen.has(k) && q.length < 4) { seen.add(k); q.push(e); }
   });
-  $('quick').innerHTML = q.length
-    ? q.map(e => '<button type="button" class="qc" data-c="' + e.cat + '" data-a="' + e.amt + '" data-p="' + e.pay + '">' +
-      (ICON[e.cat] || '•') + ' ' + e.cat + ' <span>' + money(e.amt) + '</span></button>').join('')
-    : '<span class="qc" style="border-style:dashed;color:var(--mut)">Your repeats will appear here</span>';
+  $('quick').innerHTML = q.map(e =>
+    '<button type="button" class="qc" data-c="' + e.cat + '" data-a="' + e.amt + '" data-p="' + e.pay + '">' +
+    (ICON[e.cat] || '•') + ' ' + e.cat + ' <span>' + money(e.amt) + '</span></button>').join('');
+  $('quick').style.display = q.length ? '' : 'none';
   $('quick').querySelectorAll('.qc[data-c]').forEach(b => b.onclick = () => {
     d.cat = b.dataset.c; d.val = b.dataset.a; d.pay = b.dataset.p; drawDraft();
   });
@@ -412,17 +445,23 @@ function drawDraft() {
 $('save').onclick = () => {
   const d = state.draft, v = parseFloat(d.val);
   if (!v || v <= 0) { toast('Enter an amount first'); return; }
+  const now = new Date();
+  const at = new Date(d.date);
+  at.setHours(now.getHours(), now.getMinutes(), 0, 0);
   state.entries.push({
     id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random())),
-    type: d.type, cat: d.cat, amt: v, pay: d.pay, at: new Date()
+    type: d.type, cat: d.cat, amt: v, pay: d.pay, at
   });
   saveEntries();
   closeSheet('sheet');
   render(true);
+  const backdated = startOfDay(d.date).getTime() !== startOfDay(new Date()).getTime();
+  const when = backdated ? ' on ' + d.date.toLocaleDateString(LOCALE, { weekday: 'short', day: 'numeric', month: 'short' }) : '';
   const dayInc = total(bucket('income', 'day'));
   toast(d.type === 'income'
-    ? money(v) + ' from ' + d.cat + ' · ' + money(dayInc) + ' today'
-    : money(v) + ' ' + (d.type === 'business' ? 'business' : 'home') + ' cost recorded');
+    ? (backdated ? money(v) + ' from ' + d.cat + when
+                 : money(v) + ' from ' + d.cat + ' · ' + money(dayInc) + ' today')
+    : money(v) + ' ' + (d.type === 'business' ? 'business' : 'home') + ' cost recorded' + when);
 };
 
 
@@ -532,7 +571,7 @@ function closeSheet(id) {
 }
 
 $('openAdd').onclick = () => {
-  state.draft = { type: 'income', cat: 'Fare', pay: 'Cash', val: '' };
+  state.draft = { type: 'income', cat: 'Fare', pay: 'Cash', val: '', date: startOfDay(new Date()) };
   drawDraft(); openSheet('sheet');
 };
 $('closeAdd').onclick = () => closeSheet('sheet');

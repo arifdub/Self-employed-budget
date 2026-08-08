@@ -6,6 +6,26 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [0.4.0] — 2026-08-08
+
+### Added
+- **Backdating.** The add screen opens with a date row: Today, Yesterday, and a
+  calendar picker for anything older. Entries land in the right day, week and month,
+  so a forgotten fare logged the next morning still counts where it belongs. Future
+  dates are blocked. The save confirmation names the day when an entry is backdated.
+
+### Changed
+- **Removed the explanatory labels** from the add screen — "Counts towards today…",
+  "Where did it come from?", "How was it paid?" and the "Your repeats will appear
+  here" placeholder. The controls are self-evident and the text was crowding a screen
+  used one-handed at speed. (For the record: these were static interface strings, not
+  stored data — they used no database space.)
+- Spacing between the rows increased to compensate, so the sections stay visually
+  separated now that the headings are gone. The repeats row hides entirely when there
+  is nothing to repeat, rather than showing a placeholder.
+
+---
+
 ## [0.3.3] — 2026-08-08
 
 ### Changed

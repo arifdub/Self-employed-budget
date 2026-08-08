@@ -108,13 +108,17 @@
       <button data-t="personal" aria-pressed="false">Home cost</button>
     </div>
     <div class="sheet-scroll">
+      <div class="daterow">
+        <button class="dchip" data-off="0" aria-pressed="true">Today</button>
+        <button class="dchip" data-off="1" aria-pressed="false">Yesterday</button>
+        <label class="dpick" for="eDate"><span id="dLabel">Pick a date</span>
+          <input type="date" id="eDate" aria-label="Entry date"></label>
+      </div>
       <div class="quick" id="quick"></div>
-      <div class="disp"><div class="big" id="disp">€0</div><div class="hint" id="hint"></div></div>
+      <div class="disp"><div class="big" id="disp">€0</div></div>
       <div class="bump" id="bump"></div>
       <div class="mid">
-        <div class="mlab" id="tileLab"></div>
         <div class="tiles" id="tiles"></div>
-        <div class="mlab" id="payLab"></div>
         <div class="pills" id="pays"></div>
       </div>
       <div class="pad" id="pad"></div>
