@@ -1,7 +1,22 @@
 /* Self Employed Budget — app.js — v0.1
    Entries live in memory only. Device storage arrives in v0.2. */
 
-const APP_VERSION = '0.4.0';
+/* ---------- crash guard ----------
+   If anything throws while the app is starting, every button stops responding and
+   the screen looks frozen with no clue why. This surfaces the error instead. */
+window.addEventListener('error', ev => {
+  const bar = document.createElement('div');
+  bar.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:9999;background:#FF7A66;' +
+    'color:#20060a;font:600 12px/1.4 system-ui,sans-serif;padding:10px 14px;text-align:left';
+  bar.textContent = 'App error: ' + (ev.message || 'unknown') +
+    (ev.lineno ? ' (line ' + ev.lineno + ')' : '');
+  if (document.body && !document.querySelector('[data-errbar]')) {
+    bar.setAttribute('data-errbar', '1');
+    document.body.appendChild(bar);
+  }
+});
+
+const APP_VERSION = '0.4.1';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -29,7 +44,10 @@ const state = {
   period: 'day',
   rperiod: 'day',
   skin: 'night',
-  draft: { type: 'income', cat: 'Fare', pay: 'Cash', val: '', date: startOfDay(new Date()) }
+  draft: { type: 'income', cat: 'Fare', pay: 'Cash', val: '',
+    // Inline rather than calling startOfDay(): that helper is declared further
+    // down the file, and a const is not readable before its own definition runs.
+    date: (() => { const x = new Date(); x.setHours(0, 0, 0, 0); return x; })() }
 };
 
 

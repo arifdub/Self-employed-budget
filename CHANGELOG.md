@@ -6,6 +6,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [0.4.1] — 2026-08-08
+
+### Fixed
+- **v0.4.0 was broken on load — nothing responded to taps.** The draft entry's
+  default date called `startOfDay()` inside the state object on line 32, but that
+  helper is declared on line 87. A `const` cannot be read before its own definition
+  executes, so the script threw immediately and no event handlers were ever attached.
+  The date is now built inline where the state is defined.
+
+### Added
+- **Crash guard.** Any uncaught script error now paints a red bar at the top of the
+  screen with the message and line number. A frozen app with no explanation cost a
+  round trip to diagnose; this makes the next one obvious at a glance.
+
+---
+
 ## [0.4.0] — 2026-08-08
 
 ### Added
