@@ -8,7 +8,7 @@
   --body:'Plus Jakarta Sans',system-ui,sans-serif;
   --mono:'Plus Jakarta Sans',system-ui,sans-serif;
   --r:14px;
-  --css-version:'0.5.4';
+  --css-version:'0.6.0';
   --safe-t:env(safe-area-inset-top,0px);
   --safe-b:env(safe-area-inset-bottom,0px);
 }
@@ -179,6 +179,11 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-of
   background:var(--bg);display:flex;flex-direction:column;
   transform:translateY(100%);transition:transform .38s cubic-bezier(.3,.9,.3,1);z-index:40;visibility:hidden}
 .sheet.up{transform:translateY(0);visibility:visible}
+.sheet.dragging{transition:none}
+/* the handle signals the sheet can be pulled down, the way native sheets do */
+.sheet::before{content:'';position:absolute;top:calc(var(--safe-t) + 7px);left:50%;
+  transform:translateX(-50%);width:38px;height:4px;border-radius:99px;
+  background:var(--line);z-index:5;pointer-events:none}
 .shead{padding:calc(18px + var(--safe-t)) 18px 4px;display:flex;align-items:center;justify-content:space-between}
 .rhead{padding:calc(18px + var(--safe-t)) 18px 0;display:flex;align-items:center;justify-content:space-between}
 .rhead h2{font-family:var(--dspl);font-size:24px;font-weight:700;margin:0;letter-spacing:-.01em}

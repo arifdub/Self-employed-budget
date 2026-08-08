@@ -6,6 +6,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [0.6.0] — 2026-08-09
+
+### Added
+- **Pull down to close a sheet** — Add entry, Entries, Reports and More. The sheet
+  follows your finger and closes on release, matching how native iOS sheets behave.
+  The close button stays for anyone who prefers it.
+- The gesture only arms when the content is **already scrolled to the top**, so it
+  never fights with normal scrolling: scroll up, keep pulling, and the sheet starts
+  to move. Scrolling away from the top mid-gesture stands the drag down again.
+- Closes on either a long pull (past ~120px) or a short fast flick, so it responds
+  to a deliberate drag and a quick swipe alike. Anything less springs back.
+- A small grabber handle at the top of each sheet signals that it can be pulled.
+
+### Notes
+- Horizontal movement is detected first and ignored, so swiping an entry row left
+  for Edit/Delete still works inside a sheet without triggering a dismiss.
+- The drag calls `preventDefault` once it commits to the vertical axis, which stops
+  the page rubber-banding behind the sheet during the pull.
+
+---
+
 ## [0.5.4] — 2026-08-09
 
 ### Fixed

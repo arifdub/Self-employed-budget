@@ -27,7 +27,7 @@ window.addEventListener('error', ev => {
   if (document.body) document.body.appendChild(bar);
 }, true);
 
-const APP_VERSION = '0.5.4';
+const APP_VERSION = '0.6.0';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -642,6 +642,66 @@ $('rtabs').addEventListener('click', e => {
 });
 $('rPrev').onclick = () => toast('Browsing past periods arrives in v0.7');
 document.querySelectorAll('.exp button').forEach(b => b.onclick = () => toast('Exports arrive in v0.8'));
+
+
+/* ---------- pull-to-dismiss ----------
+   Drag a sheet down to close it, the way native iOS sheets behave. The gesture
+   only arms when the content is already scrolled to the top, so it never fights
+   with normal scrolling — you scroll to the top, keep pulling, and the sheet
+   follows your finger and closes. Releasing short of the threshold springs back. */
+function enablePullToDismiss(id) {
+  const sheet = $(id);
+  if (!sheet) return;
+  const scroller = sheet.querySelector('.sheet-scroll') || sheet.querySelector('.body');
+
+  let startY = 0, startX = 0, dy = 0, active = false, axis = null, t0 = 0;
+
+  const atTop = () => !scroller || scroller.scrollTop <= 0;
+
+  sheet.addEventListener('touchstart', ev => {
+    if (ev.touches.length !== 1 || !sheet.classList.contains('up')) { active = false; return; }
+    if (!atTop()) { active = false; return; }
+    const t = ev.touches[0];
+    startY = t.clientY; startX = t.clientX;
+    dy = 0; axis = null; active = true; t0 = Date.now();
+  }, { passive: true });
+
+  sheet.addEventListener('touchmove', ev => {
+    if (!active) return;
+    const t = ev.touches[0];
+    const my = t.clientY - startY, mx = t.clientX - startX;
+
+    if (axis === null && (Math.abs(my) > 6 || Math.abs(mx) > 6))
+      axis = Math.abs(my) > Math.abs(mx) ? 'y' : 'x';
+    if (axis !== 'y') return;
+
+    // pulling up, or the user scrolled away from the top mid-gesture: stand down
+    if (my <= 0 || !atTop()) {
+      dy = 0; sheet.style.transform = ''; sheet.classList.remove('dragging');
+      return;
+    }
+
+    ev.preventDefault();               // stop the page rubber-banding underneath
+    sheet.classList.add('dragging');
+    dy = my * 0.9;                     // slight resistance so it feels weighted
+    sheet.style.transform = 'translateY(' + dy + 'px)';
+  }, { passive: false });
+
+  const release = () => {
+    if (!active) return;
+    active = false;
+    sheet.classList.remove('dragging');
+    const velocity = dy / Math.max(Date.now() - t0, 1);
+    sheet.style.transform = '';
+    // a long pull, or a short fast flick, both mean "close"
+    if (dy > 120 || velocity > 0.5) closeSheet(id);
+    dy = 0;
+  };
+  sheet.addEventListener('touchend', release);
+  sheet.addEventListener('touchcancel', release);
+}
+
+['sheet', 'rep', 'ent', 'more'].forEach(enablePullToDismiss);
 
 /* ---------- targets ---------- */
 function openTargets() {
