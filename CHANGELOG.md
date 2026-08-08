@@ -6,6 +6,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [0.3.3] — 2026-08-08
+
+### Changed
+- **Tapping an entry no longer opens the edit sheet on touch devices.** Entries get
+  touched accidentally constantly in real use; the sheet kept popping up. On a
+  phone, the only way in is now: swipe left → tap Edit or Delete. Desktop mouse
+  click still opens edit, since there is no swipe with a mouse and no accidental
+  taps either.
+- Swiping and choosing **Delete** now opens the sheet with the Delete button
+  highlighted red and focused — one clear tap to confirm, rather than hunting for
+  it inside the edit form.
+
+---
+
 ## [0.3.2] — 2026-08-08
 
 ### Added

@@ -1,7 +1,7 @@
 /* Self Employed Budget — app.js — v0.1
    Entries live in memory only. Device storage arrives in v0.2. */
 
-const APP_VERSION = '0.3.2';
+const APP_VERSION = '0.3.3';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -195,8 +195,9 @@ function wireSwipeRows(container) {
         row.style.transform = '';
         wrap.classList.remove('swiped');
         if (openSwipe === row) openSwipe = null;
-        // a tap (no real movement) opens edit
-        if (Math.abs(dx) < 6) openEdit(id);
+        // A plain tap deliberately does nothing on touch devices — entries are
+        // touched accidentally far too often in a moving car. Edit and Delete
+        // are reachable only through the swipe actions.
       }
       dx = 0;
     });
@@ -210,7 +211,7 @@ function wireSwipeRows(container) {
       ev.stopPropagation();
       closeOpenSwipe();
       if (b.dataset.act === 'edit') openEdit(id);
-      else { openEdit(id); /* Delete lives inside the edit sheet for its confirm */ setTimeout(() => $('eDel').focus(), 50); }
+      else openEdit(id, true);
     }));
   });
 }
@@ -471,7 +472,7 @@ function renderEntries() {
   wireSwipeRows($('entList'));
 }
 
-function openEdit(id) {
+function openEdit(id, deleteFocus) {
   const e = state.entries.find(x => x.id === id);
   if (!e) return;
   editingId = id;
@@ -480,6 +481,8 @@ function openEdit(id) {
   $('eAmt').value = e.amt;
   $('editModal').classList.add('on');
   $('editModal').setAttribute('aria-hidden', 'false');
+  $('eDel').classList.toggle('armed', !!deleteFocus);
+  if (deleteFocus) setTimeout(() => $('eDel').focus(), 60);
 }
 function closeEdit() {
   editingId = null;

@@ -6,7 +6,7 @@
   --acc:#FFB020; --on-acc:#0B1018; --good:#7DD3C0; --bad:#FF7A66;
   --dspl:'Barlow Condensed',sans-serif; --body:'Barlow',sans-serif; --mono:'IBM Plex Mono',monospace;
   --r:14px;
-  --css-version:'0.3.2';
+  --css-version:'0.3.3';
   --safe-t:env(safe-area-inset-top,0px);
   --safe-b:env(safe-area-inset-bottom,0px);
 }
@@ -152,6 +152,7 @@ html[data-skin="day"] .swipe-row{background:var(--surf)}
 .swipe-wrap:not(.swiped) .swipe-actions{pointer-events:none}
 .sec span{font-weight:600;font-size:12px}
 .danger{color:var(--bad)!important;background:transparent!important;border:1px solid var(--bad)!important}
+.danger.armed{background:var(--bad)!important;color:#fff!important}
 
 /* nav */
 .nav{position:sticky;bottom:0;z-index:20;
