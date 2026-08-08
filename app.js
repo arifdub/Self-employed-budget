@@ -1,7 +1,7 @@
 /* Self Employed Budget — app.js — v0.1
    Entries live in memory only. Device storage arrives in v0.2. */
 
-const APP_VERSION = '0.3.1';
+const APP_VERSION = '0.3.2';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -134,6 +134,90 @@ const countOf = (type, p) => state.entries.filter(e => e.type === type && inRang
   }
 })();
 
+
+/* ---------- swipeable entry rows ----------
+   One builder used by both the home Today list and the Entries screen.
+   Swipe left to reveal Edit and Delete; tapping the row also opens Edit.
+   Delete here asks for one confirm via the edit sheet's Delete, so a stray
+   swipe cannot destroy an entry silently. */
+function entryRowHTML(e) {
+  return '<div class="swipe-wrap" data-eid="' + e.id + '">' +
+    '<div class="swipe-actions">' +
+      '<button class="swact edit" data-act="edit" aria-label="Edit entry">Edit</button>' +
+      '<button class="swact del" data-act="del" aria-label="Delete entry">Delete</button>' +
+    '</div>' +
+    '<div class="row swipe-row" tabindex="0">' +
+      '<span class="dot">' + (ICON[e.cat] || '•') + '</span>' +
+      '<span class="rmain"><span class="rn">' + e.cat + '</span>' +
+      '<span class="rs">' + e.at.toLocaleTimeString(LOCALE, { hour: '2-digit', minute: '2-digit' }) + ' · ' + e.pay + '</span></span>' +
+      '<span class="rv ' + (e.type === 'income' ? '' : 'neg') + '">' +
+      (e.type === 'income' ? '+' : '−') + money(e.amt) + '</span>' +
+    '</div></div>';
+}
+
+let openSwipe = null;
+function closeOpenSwipe() {
+  if (openSwipe) { openSwipe.style.transform = ''; openSwipe.parentElement.classList.remove('swiped'); openSwipe = null; }
+}
+
+function wireSwipeRows(container) {
+  container.querySelectorAll('.swipe-wrap').forEach(wrap => {
+    const row = wrap.querySelector('.swipe-row');
+    const id = wrap.dataset.eid;
+    let startX = 0, startY = 0, dx = 0, dragging = false, horizontal = null;
+
+    row.addEventListener('touchstart', ev => {
+      const t = ev.touches[0];
+      startX = t.clientX; startY = t.clientY; dx = 0; dragging = true; horizontal = null;
+      row.style.transition = 'none';
+    }, { passive: true });
+
+    row.addEventListener('touchmove', ev => {
+      if (!dragging) return;
+      const t = ev.touches[0];
+      const mx = t.clientX - startX, my = t.clientY - startY;
+      if (horizontal === null && (Math.abs(mx) > 8 || Math.abs(my) > 8))
+        horizontal = Math.abs(mx) > Math.abs(my);
+      if (!horizontal) return;
+      dx = Math.min(0, Math.max(-140, mx));
+      row.style.transform = 'translateX(' + dx + 'px)';
+    }, { passive: true });
+
+    row.addEventListener('touchend', () => {
+      dragging = false;
+      row.style.transition = '';
+      if (dx < -60) {
+        closeOpenSwipe();
+        row.style.transform = 'translateX(-132px)';
+        wrap.classList.add('swiped');
+        openSwipe = row;
+      } else {
+        row.style.transform = '';
+        wrap.classList.remove('swiped');
+        if (openSwipe === row) openSwipe = null;
+        // a tap (no real movement) opens edit
+        if (Math.abs(dx) < 6) openEdit(id);
+      }
+      dx = 0;
+    });
+
+    // desktop / non-touch: click opens edit
+    row.addEventListener('click', ev => {
+      if (!('ontouchstart' in window)) openEdit(id);
+    });
+
+    wrap.querySelectorAll('.swact').forEach(b => b.addEventListener('click', ev => {
+      ev.stopPropagation();
+      closeOpenSwipe();
+      if (b.dataset.act === 'edit') openEdit(id);
+      else { openEdit(id); /* Delete lives inside the edit sheet for its confirm */ setTimeout(() => $('eDel').focus(), 50); }
+    }));
+  });
+}
+document.addEventListener('touchstart', ev => {
+  if (openSwipe && !ev.target.closest('.swipe-wrap')) closeOpenSwipe();
+}, { passive: true });
+
 /* ---------- render: home ---------- */
 function render(flash) {
   const now = new Date();
@@ -216,11 +300,10 @@ function drawWeekBars(now) {
 function drawList() {
   const r = periodRange('day');
   const rows = state.entries.filter(e => inRange(e, r)).sort((a, b) => b.at - a.at);
-  $('list').innerHTML = rows.length ? rows.map(e =>
-    '<div class="row"><div class="dot">' + (ICON[e.cat] || '•') + '</div><div><div class="rn">' + e.cat + '</div>' +
-    '<div class="rs">' + e.at.toLocaleTimeString(LOCALE, { hour: '2-digit', minute: '2-digit' }) + ' · ' + e.pay + '</div></div>' +
-    '<div class="rv ' + (e.type === 'income' ? '' : 'neg') + '">' + (e.type === 'income' ? '+' : '−') + money(e.amt) + '</div></div>'
-  ).join('') : '<div class="empty">Nothing logged yet today. Tap the + button to add your first job.</div>';
+  $('list').innerHTML = rows.length
+    ? rows.map(entryRowHTML).join('')
+    : '<div class="empty">Nothing logged yet today. Tap the + button to add your first job.</div>';
+  wireSwipeRows($('list'));
 }
 
 /* ---------- render: reports ---------- */
@@ -382,19 +465,10 @@ function renderEntries() {
     return '<div class="sec" style="margin-top:16px">' + label +
       '<span style="font-family:var(--mono);letter-spacing:0;text-transform:none;color:' +
       (net >= 0 ? 'var(--good)' : 'var(--bad)') + '">' + (net >= 0 ? '+' : '−') + money(Math.abs(net)) + '</span></div>' +
-      g.items.map(e =>
-        '<button class="row rowbtn" data-eid="' + e.id + '">' +
-        '<span class="dot">' + (ICON[e.cat] || '•') + '</span>' +
-        '<span style="text-align:left"><span class="rn">' + e.cat + '</span>' +
-        '<span class="rs" style="display:block">' +
-        e.at.toLocaleTimeString(LOCALE, { hour: '2-digit', minute: '2-digit' }) + ' · ' + e.pay + '</span></span>' +
-        '<span class="rv ' + (e.type === 'income' ? '' : 'neg') + '">' +
-        (e.type === 'income' ? '+' : '−') + money(e.amt) + '</span></button>'
-      ).join('');
+      g.items.map(entryRowHTML).join('');
   }).join('');
 
-  $('entList').querySelectorAll('.rowbtn').forEach(b =>
-    b.onclick = () => openEdit(b.dataset.eid));
+  wireSwipeRows($('entList'));
 }
 
 function openEdit(id) {
@@ -419,7 +493,8 @@ $('eSave').onclick = () => {
   const v = parseFloat($('eAmt').value);
   if (!e || !v || v <= 0) { toast('Enter a valid amount'); return; }
   e.amt = v;
-  saveEntries(); closeEdit(); render(); renderEntries();
+  saveEntries(); closeEdit(); render();
+  if ($('ent').classList.contains('up')) renderEntries();
   toast('Entry updated');
 };
 
@@ -428,7 +503,8 @@ $('eDel').onclick = () => {
   if (i < 0) return;
   const gone = state.entries[i];
   state.entries.splice(i, 1);
-  saveEntries(); closeEdit(); render(); renderEntries();
+  saveEntries(); closeEdit(); render();
+  if ($('ent').classList.contains('up')) renderEntries();
   toast(money(gone.amt) + ' ' + gone.cat + ' deleted');
 };
 

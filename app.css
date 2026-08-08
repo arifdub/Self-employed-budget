@@ -6,7 +6,7 @@
   --acc:#FFB020; --on-acc:#0B1018; --good:#7DD3C0; --bad:#FF7A66;
   --dspl:'Barlow Condensed',sans-serif; --body:'Barlow',sans-serif; --mono:'IBM Plex Mono',monospace;
   --r:14px;
-  --css-version:'0.3.1';
+  --css-version:'0.3.2';
   --safe-t:env(safe-area-inset-top,0px);
   --safe-b:env(safe-area-inset-bottom,0px);
 }
@@ -138,9 +138,18 @@ html[data-skin="day"] .rs{font-family:var(--body);letter-spacing:.01em;text-tran
 .rv{margin-left:auto;font-family:var(--mono);font-size:14.5px;color:var(--good)}
 .rv.neg{color:var(--bad)}
 .empty{padding:22px 4px;color:var(--mut);font-size:13.5px;line-height:1.5}
-.rowbtn{width:100%;background:none;border:0;border-bottom:1px solid var(--line);
-  font-family:var(--body);color:var(--txt);cursor:pointer}
-html[data-skin="day"] .rowbtn{border:0}
+/* swipeable rows */
+.swipe-wrap{position:relative;overflow:hidden;border-radius:13px}
+.swipe-row{position:relative;z-index:2;background:var(--bg);transition:transform .22s ease;
+  cursor:pointer;user-select:none;-webkit-user-select:none;width:100%;display:flex;align-items:center;gap:11px}
+html[data-skin="day"] .swipe-row{background:var(--surf)}
+.rmain{flex:1;min-width:0;text-align:left}
+.rmain .rs{display:block}
+.swipe-actions{position:absolute;top:0;right:0;bottom:0;display:flex;z-index:1}
+.swact{width:66px;border:0;font-family:var(--body);font-size:12.5px;font-weight:700;cursor:pointer}
+.swact.edit{background:var(--surf2);color:var(--acc)}
+.swact.del{background:var(--bad);color:#fff}
+.swipe-wrap:not(.swiped) .swipe-actions{pointer-events:none}
 .sec span{font-weight:600;font-size:12px}
 .danger{color:var(--bad)!important;background:transparent!important;border:1px solid var(--bad)!important}
 

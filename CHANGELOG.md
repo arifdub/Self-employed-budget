@@ -6,6 +6,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [0.3.2] — 2026-08-08
+
+### Added
+- **Swipe left on any entry** — on the home Today list or the Entries screen — to
+  reveal Edit and Delete. Tapping a row still opens the edit sheet directly.
+  Both lists share one row component now, so they cannot drift apart.
+- Delete from the swipe action routes through the edit sheet rather than deleting
+  in place, so a stray swipe cannot destroy an entry without one confirming tap.
+
+### Fixed
+- Editing an entry from the home list no longer re-renders the Entries screen
+  unnecessarily when it is closed.
+
+---
+
 ## [0.3.1] — 2026-08-08
 
 ### Added
