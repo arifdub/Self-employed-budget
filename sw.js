@@ -1,18 +1,18 @@
 /* Self Employed Budget service worker — v0.1
    Bump CACHE on every release so users get the new files. */
 
-const CACHE = 'self-employed-budget-v0.5.3';
+const CACHE = 'self-employed-budget-v0.5.4';
 const SHELL = [
   './',
   './index.html',
   './app.css',
   './app.js',
   './manifest.webmanifest',
-  './icons/icon-192.png',
-  './icons/icon-512.png',
-  './icons/icon-maskable-512.png',
-  './icons/apple-touch-icon-180.png',
-  './icons/favicon-32.png'
+  './icons/icon-192-v2.png',
+  './icons/icon-512-v2.png',
+  './icons/icon-maskable-512-v2.png',
+  './icons/apple-touch-icon-180-v2.png',
+  './icons/favicon-32-v2.png'
 ];
 
 self.addEventListener('install', e => {

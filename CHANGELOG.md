@@ -6,6 +6,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [0.5.4] — 2026-08-09
+
+### Fixed
+- **iOS kept showing the old home screen icon** despite the new files being
+  deployed and Safari's website data cleared. iOS stores web-clip icons in a
+  system-level cache keyed by URL, which neither Safari nor Chrome can clear —
+  so the only reliable fix is a new URL. All icons renamed with a `-v2` suffix
+  and every reference updated: `index.html`, the manifest, and the service worker
+  cache list.
+- Added `/apple-touch-icon.png` at the site root. iOS looks there when it cannot
+  find a usable link tag, and an old file sitting at that path can override a
+  correct one.
+- Added the `sizes="180x180"` attribute to the apple-touch-icon link, which iOS
+  uses to pick between candidates.
+
+### Note
+Rename the files again (`-v3`) if this ever recurs. It is the only method that
+reliably defeats the iOS web-clip icon cache.
+
+---
+
 ## [0.5.3] — 2026-08-09
 
 ### Fixed
