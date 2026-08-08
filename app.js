@@ -27,7 +27,7 @@ window.addEventListener('error', ev => {
   if (document.body) document.body.appendChild(bar);
 }, true);
 
-const APP_VERSION = '0.6.1';
+const APP_VERSION = '0.6.2';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -758,28 +758,86 @@ const toggleSkin = () => setSkin(state.skin === 'night' ? 'day' : 'night');
 $('themeBtn').onclick = toggleSkin;
 $('themeBtn2').onclick = toggleSkin;
 
-/* ---------- install prompt ---------- */
+/* ---------- install ----------
+   Android/Chrome fires beforeinstallprompt, which we capture and replay when the
+   button is tapped — that opens the real system install dialog, so the icon really
+   is added in one tap.
+
+   iOS has no equivalent. WebKit does not implement beforeinstallprompt and Apple
+   exposes no install API at all, so no script can add a home screen icon on an
+   iPhone. The only route is Share → Add to Home Screen, by hand. The button
+   therefore opens a step-by-step guide instead of pretending it can do it. */
 let deferredPrompt = null;
+
+const isStandalone = () =>
+  window.matchMedia('(display-mode: standalone)').matches || !!navigator.standalone;
+const isIOS = () =>
+  /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const isIOSSafari = () => isIOS() && !/crios|fxios|edgios|opios/i.test(navigator.userAgent);
+
 window.addEventListener('beforeinstallprompt', e => {
-  e.preventDefault(); deferredPrompt = e;
+  e.preventDefault();
+  deferredPrompt = e;
   $('installBtn').textContent = 'Add to home screen';
+  $('installHelp').textContent =
+    'Install the app so it opens full screen from your home screen, with no browser bar.';
 });
+
+window.addEventListener('appinstalled', () => {
+  deferredPrompt = null;
+  refreshInstallCard();
+  toast('Added to your home screen');
+});
+
+function refreshInstallCard() {
+  if (isStandalone()) {
+    $('installHelp').textContent = 'Installed and running as an app.';
+    $('installBtn').style.display = 'none';
+    return;
+  }
+  $('installBtn').style.display = '';
+  if (isIOS()) {
+    $('installBtn').textContent = isIOSSafari() ? 'Show me how' : 'How to install';
+    $('installHelp').textContent = isIOSSafari()
+      ? 'Opens full screen with no browser bar. Takes three taps.'
+      : 'Open this page in Safari first — only Safari can add apps to the iPhone home screen.';
+  } else {
+    $('installBtn').textContent = 'Add to home screen';
+    $('installHelp').textContent =
+      'Install the app so it opens full screen from your home screen, with no browser bar.';
+  }
+}
+
 $('installBtn').onclick = async () => {
   if (deferredPrompt) {
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
     deferredPrompt = null;
-    toast(outcome === 'accepted' ? 'Added to your home screen' : 'You can add it any time');
-  } else if (window.matchMedia('(display-mode: standalone)').matches || navigator.standalone) {
-    toast('Self Employed Budget is already installed');
-  } else {
-    toast('On iPhone: tap Share, then Add to Home Screen');
+    if (outcome === 'accepted') refreshInstallCard();
+    else toast('You can add it any time from here');
+    return;
   }
+  if (isIOS()) {
+    $('iosNote').textContent = isIOSSafari()
+      ? ''
+      : 'You are not in Safari. Tap the ••• menu, choose "Open in Safari", then follow these steps.';
+    $('iosNote').style.display = isIOSSafari() ? 'none' : '';
+    $('iosModal').classList.add('on');
+    $('iosModal').setAttribute('aria-hidden', 'false');
+    return;
+  }
+  toast(isStandalone() ? 'Already installed' : 'Use your browser menu to install');
 };
-if (window.matchMedia('(display-mode: standalone)').matches || navigator.standalone) {
-  $('installHelp').textContent = 'Self Employed Budget is installed and running as an app.';
-  $('installBtn').style.display = 'none';
+
+function closeIos() {
+  $('iosModal').classList.remove('on');
+  $('iosModal').setAttribute('aria-hidden', 'true');
 }
+$('iosClose').onclick = closeIos;
+$('iosModal').onclick = e => { if (e.target === $('iosModal')) closeIos(); };
+
+refreshInstallCard();
 
 /* ---------- toast ---------- */
 let toastTimer;

@@ -6,6 +6,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [0.6.2] — 2026-08-09
+
+### Changed
+- **Install button now does the real thing on Android.** Chrome's
+  `beforeinstallprompt` is captured and replayed on tap, opening the actual system
+  install dialog — one tap and the icon is added. An `appinstalled` listener updates
+  the card afterwards.
+- **On iPhone the button opens a step-by-step guide** instead of a one-line toast.
+  iOS exposes no install API whatsoever — WebKit does not implement
+  `beforeinstallprompt`, and Apple provides no alternative — so no script can add a
+  home screen icon on an iPhone. The guide makes the three manual taps
+  unmissable rather than pretending the button can do it.
+- **Detects a non-Safari browser on iOS.** Chrome and Firefox on iPhone cannot add
+  home screen icons at all, so the card tells the user to open the page in Safari
+  first, and the guide repeats it.
+- The card hides its button entirely once the app is already installed.
+
+---
+
 ## [0.6.1] — 2026-08-09
 
 ### Changed
