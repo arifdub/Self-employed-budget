@@ -189,6 +189,16 @@
   <section class="sheet" id="more" aria-hidden="true">
     <div class="rhead"><h2>Settings</h2><button class="x" id="closeMore" aria-label="Close">✕</button></div>
     <div class="body">
+      <div class="sec">Account</div>
+      <div class="card" id="acctCard">
+        <div class="crow"><span class="clab">Status</span><span class="cval" id="acctState">Not signed in</span></div>
+        <div class="crange" id="acctHelp">Sign in to back up your entries and use them on any device.
+          Without an account they live only on this phone.</div>
+        <button class="save" style="margin:12px 0 0;width:100%" id="acctBtn">Create account or sign in</button>
+        <button class="save ghost" style="margin:8px 0 0;width:100%;display:none" id="syncNowBtn">Sync now</button>
+        <button class="save ghost" style="margin:8px 0 0;width:100%;display:none" id="signOutBtn">Sign out</button>
+      </div>
+
       <div class="sec">Install</div>
       <div class="card" id="installCard">
         <div class="crow"><span class="clab">Add to home screen</span></div>
@@ -248,6 +258,33 @@
     </div>
   </div>
 
+  <!-- sign in / sign up -->
+  <div class="modal" id="authModal" aria-hidden="true">
+    <div class="mbox">
+      <h4 id="authTitle">Create your account</h4>
+      <p id="authSub">Your entries back up automatically and appear on every device you sign in on.</p>
+
+      <div class="field" id="nameField">
+        <label for="authName">Your name</label>
+        <input id="authName" type="text" autocomplete="name" placeholder="Ahmed">
+      </div>
+      <div class="field">
+        <label for="authEmail">Email</label>
+        <input id="authEmail" type="email" autocomplete="email" autocapitalize="none"
+               spellcheck="false" placeholder="you@example.com">
+      </div>
+      <div class="field">
+        <label for="authPass">Password</label>
+        <input id="authPass" type="password" autocomplete="current-password" placeholder="At least 8 characters">
+      </div>
+
+      <p id="authErr"></p>
+      <button class="save" style="margin:12px 0 0;width:100%" id="authGo">Create account</button>
+      <button class="save ghost" style="margin:8px 0 0;width:100%" id="authSwitch">I already have an account</button>
+      <button class="save ghost" style="margin:8px 0 0;width:100%" id="authClose">Not now</button>
+    </div>
+  </div>
+
   <!-- iOS install guide -->
   <div class="modal" id="iosModal" aria-hidden="true">
     <div class="mbox">
@@ -294,6 +331,8 @@
 
 </main>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

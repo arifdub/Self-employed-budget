@@ -6,6 +6,37 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [0.7.0] — 2026-08-09
+
+Accounts and cloud sync. Entries now survive deleting the app, changing phone, or
+switching between iPhone and Android.
+
+### Added
+- **Sign up and sign in** with name, email and password. Nothing else is asked for.
+- **Local-first sync.** Every change is written to the phone first and the app never
+  waits for the network — a fare logged in a tunnel saves instantly and uploads when
+  signal returns. A queue of unsynced changes persists across restarts.
+- **Existing entries are claimed on first sign-in**, so whatever is already on the
+  phone becomes the first backup rather than being lost.
+- Account card in Settings showing status, with Sync now and Sign out.
+- `schema.sql` — profiles, entries and settings tables with row-level security, so
+  the database itself refuses to return another user's rows.
+- `config.js` — holds the Supabase project URL and anon key.
+
+### Notes
+- **Sign out clears the local entries.** The cloud copy is authoritative by then, and
+  leaving them behind would merge one person's income into the next account signed in
+  on that phone. Sign out refuses to proceed while changes are still unsynced.
+- Deletes are soft: a `deleted_at` timestamp rather than removing the row. A phone
+  that was offline during a delete would otherwise re-upload the entry on its next
+  sync and resurrect it.
+- The service worker deliberately ignores `*.supabase.co` — auth tokens and queries
+  must always reach the network, never a cache.
+- The anon key in `config.js` is public by design. The `service_role` key must never
+  appear in this repository.
+
+---
+
 ## [0.6.2] — 2026-08-09
 
 ### Changed

@@ -8,7 +8,7 @@
   --body:'Plus Jakarta Sans',system-ui,sans-serif;
   --mono:'Plus Jakarta Sans',system-ui,sans-serif;
   --r:14px;
-  --css-version:'0.6.2';
+  --css-version:'0.7.0';
   --safe-t:env(safe-area-inset-top,0px);
   --safe-b:env(safe-area-inset-bottom,0px);
 }
@@ -326,6 +326,15 @@ html[data-skin="day"] .brb{background:var(--surf2)}
 .trow label{font-size:13.5px;font-weight:600}
 .trow input{width:110px;background:var(--surf);border:1px solid var(--line);color:var(--txt);
   font-family:var(--mono);font-size:15px;padding:9px 10px;border-radius:10px;text-align:right}
+/* auth form fields */
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:11px}
+.field label{font-size:11.5px;font-weight:700;color:var(--mut);letter-spacing:.04em}
+.field input{background:var(--surf);border:1px solid var(--line);color:var(--txt);
+  font-family:var(--body);font-size:16px;font-weight:600;padding:13px 14px;border-radius:12px;width:100%}
+.field input::placeholder{color:var(--dim);font-weight:500}
+.field input:focus{outline:2px solid var(--acc);outline-offset:1px}
+#authErr{margin:2px 0 0;font-size:12.5px;color:var(--bad);font-weight:700;min-height:16px}
+
 /* install guide steps */
 .steps{list-style:none;margin:4px 0 0;padding:0}
 .steps li{display:flex;gap:12px;align-items:flex-start;padding:11px 0;

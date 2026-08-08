@@ -27,7 +27,7 @@ window.addEventListener('error', ev => {
   if (document.body) document.body.appendChild(bar);
 }, true);
 
-const APP_VERSION = '0.6.2';
+const APP_VERSION = '0.7.0';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -482,6 +482,7 @@ $('save').onclick = () => {
     type: d.type, cat: d.cat, amt: v, pay: d.pay, at
   });
   saveEntries();
+  markDirty(state.entries[state.entries.length - 1].id);
   closeSheet('sheet');
   render(true);
   const backdated = startOfDay(d.date).getTime() !== startOfDay(new Date()).getTime();
@@ -564,7 +565,7 @@ $('eSave').onclick = () => {
   const v = parseFloat($('eAmt').value);
   if (!e || !v || v <= 0) { toast('Enter a valid amount'); return; }
   e.amt = v;
-  saveEntries(); closeEdit(); render();
+  saveEntries(); markDirty(e.id); closeEdit(); render();
   if ($('ent').classList.contains('up')) renderEntries();
   toast('Entry updated');
 };
@@ -574,7 +575,7 @@ $('eDel').onclick = () => {
   if (i < 0) return;
   const gone = state.entries[i];
   state.entries.splice(i, 1);
-  saveEntries(); closeEdit(); render();
+  saveEntries(); markDeleted(gone.id); closeEdit(); render();
   if ($('ent').classList.contains('up')) renderEntries();
   toast(money(gone.amt) + ' ' + gone.cat + ' deleted');
 };
@@ -708,7 +709,7 @@ $('saveT').onclick = () => {
   state.targets.day = +$('tD').value || state.targets.day;
   state.targets.week = +$('tW').value || state.targets.week;
   state.targets.month = +$('tM').value || state.targets.month;
-  saveSettings();
+  saveSettings(); pushSettings();
   closeTargets(); render(); toast('Targets updated');
 };
 
@@ -739,6 +740,7 @@ $('rConfirm').addEventListener('input', () => {
 $('rGo').onclick = () => {
   if ($('rConfirm').value.trim().toUpperCase() !== 'DELETE') return;
   const n = state.entries.length;
+  state.entries.forEach(e => markDeleted(e.id));
   state.entries = [];
   saveEntries();
   closeReset();
@@ -874,9 +876,288 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+
+/* ============================================================
+   ACCOUNTS AND SYNC
+   ------------------------------------------------------------
+   Local-first. Every change is written to the phone immediately and
+   the app never waits for the network — a driver in a tunnel must be
+   able to log a fare. Syncing happens afterwards, in the background,
+   and retries when the connection returns.
+   ============================================================ */
+
+let sb = null;                 // supabase client, null when offline or unconfigured
+let session = null;            // current auth session
+const DIRTY_KEY = 'seb.dirty.v1';
+const TOMB_KEY  = 'seb.tombstones.v1';
+
+let dirty = new Set();         // ids changed locally and not yet pushed
+let tombstones = {};           // id -> ISO time of deletion
+
+function loadQueue() {
+  try { dirty = new Set(JSON.parse(localStorage.getItem(DIRTY_KEY) || '[]')); } catch (e) { dirty = new Set(); }
+  try { tombstones = JSON.parse(localStorage.getItem(TOMB_KEY) || '{}'); } catch (e) { tombstones = {}; }
+}
+function saveQueue() {
+  try {
+    localStorage.setItem(DIRTY_KEY, JSON.stringify([...dirty]));
+    localStorage.setItem(TOMB_KEY, JSON.stringify(tombstones));
+  } catch (e) { /* storage full; the next sync will still catch up from local state */ }
+}
+function markDirty(id) { dirty.add(id); saveQueue(); scheduleFlush(); }
+function markDeleted(id) { tombstones[id] = new Date().toISOString(); dirty.add(id); saveQueue(); scheduleFlush(); }
+
+function initSupabase() {
+  const cfg = window.SEB_CONFIG || {};
+  if (!cfg.url || !cfg.anonKey || cfg.anonKey.indexOf('PASTE') === 0) return null;
+  if (!window.supabase || !window.supabase.createClient) return null;   // CDN blocked or offline
+  try {
+    return window.supabase.createClient(cfg.url, cfg.anonKey, {
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
+    });
+  } catch (e) { return null; }
+}
+
+/* ---------- shape conversion ---------- */
+const toRow = e => ({
+  id: e.id,
+  user_id: session.user.id,
+  type: e.type,
+  category: e.cat,
+  amount: e.amt,
+  pay_method: e.pay,
+  occurred_at: e.at.toISOString(),
+  deleted_at: tombstones[e.id] || null
+});
+const fromRow = r => ({
+  id: r.id, type: r.type, cat: r.category,
+  amt: Number(r.amount), pay: r.pay_method || 'Cash',
+  at: new Date(r.occurred_at)
+});
+
+/* ---------- push then pull ---------- */
+let flushTimer = null, syncing = false;
+function scheduleFlush() {
+  clearTimeout(flushTimer);
+  flushTimer = setTimeout(() => syncNow(false), 800);
+}
+
+async function syncNow(full) {
+  if (!sb || !session || syncing || !navigator.onLine) return;
+  syncing = true;
+  setAcctState('Syncing…');
+  try {
+    // 1. push everything queued
+    const rows = [], deletes = [];
+    dirty.forEach(id => {
+      const e = state.entries.find(x => x.id === id);
+      if (e) rows.push(toRow(e));
+      else if (tombstones[id]) deletes.push({ id, user_id: session.user.id, deleted_at: tombstones[id] });
+    });
+
+    if (rows.length) {
+      const { error } = await sb.from('entries').upsert(rows, { onConflict: 'id' });
+      if (error) throw error;
+    }
+    for (const d of deletes) {
+      const { error } = await sb.from('entries')
+        .update({ deleted_at: d.deleted_at }).eq('id', d.id);
+      if (error) throw error;
+    }
+    dirty.clear(); saveQueue();
+
+    // 2. pull the authoritative copy
+    if (full) {
+      const { data, error } = await sb.from('entries')
+        .select('*').is('deleted_at', null).order('occurred_at', { ascending: false });
+      if (error) throw error;
+      state.entries = (data || []).map(fromRow);
+      saveEntries();
+      render();
+      if ($('ent').classList.contains('up')) renderEntries();
+    }
+
+    // 3. settings
+    await pushSettings();
+
+    setAcctState('Signed in');
+    if (full) toast('Synced — ' + state.entries.length + ' entries');
+  } catch (err) {
+    setAcctState('Sync pending');
+    console.warn('sync failed:', err.message || err);
+  } finally {
+    syncing = false;
+  }
+}
+
+async function pushSettings() {
+  if (!sb || !session) return;
+  await sb.from('settings').upsert({
+    user_id: session.user.id,
+    target_day: state.targets.day,
+    target_week: state.targets.week,
+    target_month: state.targets.month,
+    skin: state.skin
+  }, { onConflict: 'user_id' });
+}
+
+async function pullSettings() {
+  if (!sb || !session) return;
+  const { data } = await sb.from('settings').select('*').eq('user_id', session.user.id).maybeSingle();
+  if (data) {
+    state.targets = { day: Number(data.target_day), week: Number(data.target_week), month: Number(data.target_month) };
+    saveSettings();
+  }
+}
+
+window.addEventListener('online', () => scheduleFlush());
+
+/* ---------- account card ---------- */
+function setAcctState(text) { const el = $('acctState'); if (el) el.textContent = text; }
+
+function refreshAccountCard() {
+  const signedIn = !!session;
+  $('acctBtn').style.display   = signedIn ? 'none' : '';
+  $('signOutBtn').style.display = signedIn ? '' : 'none';
+  $('syncNowBtn').style.display = signedIn ? '' : 'none';
+
+  if (!sb) {
+    setAcctState('Offline mode');
+    $('acctHelp').textContent = 'Accounts are unavailable right now. Your entries are saved on this phone.';
+    $('acctBtn').style.display = 'none';
+    return;
+  }
+  if (signedIn) {
+    setAcctState('Signed in');
+    $('acctHelp').textContent = session.user.email +
+      ' — your entries are backed up and appear on any device you sign in on.';
+  } else {
+    setAcctState('Not signed in');
+    $('acctHelp').textContent = 'Sign in to back up your entries and use them on any device. ' +
+      'Without an account they live only on this phone, and deleting the app deletes them.';
+  }
+}
+
+/* ---------- auth sheet ---------- */
+let authMode = 'signup';
+
+function openAuth(mode) {
+  authMode = mode || 'signup';
+  paintAuth();
+  $('authErr').textContent = '';
+  $('authModal').classList.add('on');
+  $('authModal').setAttribute('aria-hidden', 'false');
+}
+function closeAuth() {
+  $('authModal').classList.remove('on');
+  $('authModal').setAttribute('aria-hidden', 'true');
+}
+function paintAuth() {
+  const signup = authMode === 'signup';
+  $('authTitle').textContent = signup ? 'Create your account' : 'Welcome back';
+  $('authSub').textContent = signup
+    ? 'Your entries back up automatically and appear on every device you sign in on.'
+    : 'Sign in and your entries come straight back.';
+  $('nameField').style.display = signup ? '' : 'none';
+  $('authGo').textContent = signup ? 'Create account' : 'Sign in';
+  $('authSwitch').textContent = signup ? 'I already have an account' : 'Create a new account instead';
+  $('authPass').setAttribute('autocomplete', signup ? 'new-password' : 'current-password');
+}
+
+$('acctBtn').onclick = () => openAuth('signup');
+$('authClose').onclick = closeAuth;
+$('authModal').onclick = e => { if (e.target === $('authModal')) closeAuth(); };
+$('authSwitch').onclick = () => { authMode = authMode === 'signup' ? 'signin' : 'signup'; paintAuth(); $('authErr').textContent = ''; };
+
+$('authGo').onclick = async () => {
+  if (!sb) { $('authErr').textContent = 'No connection to the account service. Try again when you are online.'; return; }
+  const name = $('authName').value.trim();
+  const email = $('authEmail').value.trim();
+  const pass = $('authPass').value;
+
+  if (!email || email.indexOf('@') < 0) { $('authErr').textContent = 'Enter a valid email address.'; return; }
+  if (pass.length < 8) { $('authErr').textContent = 'Password must be at least 8 characters.'; return; }
+  if (authMode === 'signup' && !name) { $('authErr').textContent = 'Enter your name.'; return; }
+
+  $('authGo').disabled = true;
+  $('authGo').textContent = authMode === 'signup' ? 'Creating…' : 'Signing in…';
+  $('authErr').textContent = '';
+
+  try {
+    let res;
+    if (authMode === 'signup') {
+      res = await sb.auth.signUp({ email, password: pass, options: { data: { name } } });
+    } else {
+      res = await sb.auth.signInWithPassword({ email, password: pass });
+    }
+    if (res.error) throw res.error;
+
+    if (!res.data.session) {
+      $('authErr').textContent = 'Check your email to confirm the account, then sign in.';
+      return;
+    }
+    session = res.data.session;
+    closeAuth();
+    await afterSignIn(authMode === 'signup');
+  } catch (err) {
+    const m = (err.message || '').toLowerCase();
+    $('authErr').textContent =
+      m.includes('already registered') ? 'That email already has an account — try signing in instead.'
+      : m.includes('invalid login') ? 'Email or password is not right.'
+      : (err.message || 'Something went wrong. Try again.');
+  } finally {
+    $('authGo').disabled = false;
+    paintAuth();
+  }
+};
+
+async function afterSignIn(isNew) {
+  refreshAccountCard();
+  // Anything already on this phone belongs to this account now, so queue it all.
+  state.entries.forEach(e => dirty.add(e.id));
+  saveQueue();
+  await pullSettings();
+  await syncNow(true);
+  render();
+  toast(isNew ? 'Account created — your entries are backed up' : 'Signed in');
+}
+
+$('signOutBtn').onclick = async () => {
+  if (dirty.size) { await syncNow(false); }
+  if (dirty.size) {
+    toast('Some entries have not backed up yet — try Sync now first');
+    return;
+  }
+  await sb.auth.signOut();
+  session = null;
+  // The cloud copy is the safe one; leaving entries behind would merge them
+  // into the next person who signs in on this phone.
+  state.entries = [];
+  tombstones = {}; dirty.clear();
+  saveEntries(); saveQueue();
+  refreshAccountCard(); render();
+  toast('Signed out');
+};
+
+$('syncNowBtn').onclick = () => syncNow(true);
+
+/* ---------- start ---------- */
+async function initAuth() {
+  loadQueue();
+  sb = initSupabase();
+  refreshAccountCard();
+  if (!sb) return;
+  const { data } = await sb.auth.getSession();
+  session = data.session || null;
+  refreshAccountCard();
+  if (session) { await pullSettings(); await syncNow(true); }
+  sb.auth.onAuthStateChange((_evt, s) => { session = s; refreshAccountCard(); });
+}
+
 /* ---------- go ---------- */
 loadSettings();
 state.entries = loadEntries();
 setSkin(state.skin);
 drawDraft();
 render();
+initAuth();

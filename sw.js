@@ -1,12 +1,13 @@
 /* Self Employed Budget service worker — v0.1
    Bump CACHE on every release so users get the new files. */
 
-const CACHE = 'self-employed-budget-v0.6.2';
+const CACHE = 'self-employed-budget-v0.7.0';
 const SHELL = [
   './',
   './index.html',
   './app.css',
   './app.js',
+  './config.js',
   './manifest.webmanifest',
   './icons/icon-192-v2.png',
   './icons/icon-512-v2.png',
@@ -48,6 +49,10 @@ self.addEventListener('fetch', e => {
     );
     return;
   }
+
+  // Never intercept Supabase API traffic — auth tokens and queries must always
+  // hit the network, and a cached response here would be both stale and unsafe.
+  if (url.hostname.endsWith('.supabase.co')) return;
 
   // Fonts and other cross-origin: network first, fall back to cache.
   e.respondWith(
