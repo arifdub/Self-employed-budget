@@ -6,6 +6,63 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [0.5.2] — 2026-08-09
+
+### Changed
+- **New app icon** — the SE Budget logo replaces the generated gauge placeholder.
+  Regenerated at every required size:
+  - `icon-192` / `icon-512` — rounded, transparent corners
+  - `icon-maskable-512` — logo held inside the 80% safe zone on a seamless plate,
+    so Android's circular and squircle crops never clip it and no rounded edge
+    shows through
+  - `apple-touch-icon-180` — full-bleed square, since iOS applies its own mask and
+    would otherwise round already-rounded corners twice
+  - `favicon-32`
+- The service worker cache name changed, so installed apps pick up the new icon
+  on their next update.
+
+### Note
+The tiny "SELF-EMPLOYED BUDGET" strapline in the logo is not legible below about
+180px. It reads fine on the home screen; it becomes texture in the browser tab.
+Worth a version of the logo without it if a cleaner small icon is ever wanted.
+
+---
+
+## [0.5.1] — 2026-08-09
+
+### Changed
+- **Background lifted to `#121A2F`** — a lighter, bluer navy than v0.5.0's `#111728`.
+  The reference app's exact value read as dull once amber sat on it rather than green,
+  so the whole ramp moved up: surfaces `#1A2340`, raised surfaces `#232E50`,
+  borders `#2A3559`.
+- **Muted text brightened** from `#8B97B4` to `#9AA6C4`, and secondary text from
+  `#5C6884` to `#6E7A9C`. Labels and dates were receding into the background;
+  they now hold their own against the lighter panels.
+- **Green removed.** Positive figures — income rows, the take-home total, a hit
+  target — now use a lighter amber `#FFC24D` rather than green, so the app runs on
+  one warm accent plus coral for costs. Two colours, no third hue competing.
+
+---
+
+## [0.5.0] — 2026-08-09
+
+Visual overhaul. Colours sampled directly from the PassDrivingTest.ie reference.
+
+### Changed
+- **Background is now `#111728`** — a deep navy, noticeably bluer than the previous
+  near-black `#0B1018`. Surfaces, borders and muted text rebuilt around it.
+  Amber stays as the accent; it reads considerably stronger on navy.
+- **All type is now Plus Jakarta Sans.** Barlow Condensed was a narrow face, which
+  is why labels looked thin and cramped — the wide letter-spacing everywhere was
+  compensating for it. The new face is wider and much heavier, so tracking was
+  pulled back in and weights raised across the board: headings 800, labels 700,
+  body 500. Both themes share one family now instead of two.
+- Figures use tabular numerals, so amounts line up in columns instead of drifting.
+- Positive figures use `#54B685`, the green from the reference. Manifest and
+  browser theme colour updated to match the new background.
+
+---
+
 ## [0.4.2] — 2026-08-08
 
 ### Changed

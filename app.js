@@ -16,7 +16,7 @@ window.addEventListener('error', ev => {
   }
 });
 
-const APP_VERSION = '0.4.2';
+const APP_VERSION = '0.5.2';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';

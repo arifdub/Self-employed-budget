@@ -1,12 +1,14 @@
 /* Self Employed Budget — app.css — v0.1 */
 
 :root{
-  --bg:#0B1018; --surf:#101823; --surf2:#152030; --line:#1A2432;
-  --txt:#E6ECF6; --mut:#6C7A93; --dim:#4F5C72;
-  --acc:#FFB020; --on-acc:#0B1018; --good:#7DD3C0; --bad:#FF7A66;
-  --dspl:'Barlow Condensed',sans-serif; --body:'Barlow',sans-serif; --mono:'IBM Plex Mono',monospace;
+  --bg:#121A2F; --surf:#1A2340; --surf2:#232E50; --line:#2A3559;
+  --txt:#FFFFFF; --mut:#9AA6C4; --dim:#6E7A9C;
+  --acc:#FFB020; --on-acc:#121A2F; --good:#FFC24D; --bad:#FB7185;
+  --dspl:'Plus Jakarta Sans',system-ui,sans-serif;
+  --body:'Plus Jakarta Sans',system-ui,sans-serif;
+  --mono:'Plus Jakarta Sans',system-ui,sans-serif;
   --r:14px;
-  --css-version:'0.4.2';
+  --css-version:'0.5.2';
   --safe-t:env(safe-area-inset-top,0px);
   --safe-b:env(safe-area-inset-bottom,0px);
 }
@@ -14,7 +16,9 @@ html[data-skin="day"]{
   --bg:#FAF8FF; --surf:#FFFFFF; --surf2:#F3EEFF; --line:#EBE4F8;
   --txt:#1C1027; --mut:#8C7FA6; --dim:#A99CC4;
   --acc:#6D28D9; --on-acc:#FFFFFF; --good:#3F7A2E; --bad:#E11D48;
-  --dspl:'Bricolage Grotesque',sans-serif; --body:'Public Sans',sans-serif; --mono:'IBM Plex Mono',monospace;
+  --dspl:'Plus Jakarta Sans',system-ui,sans-serif;
+  --body:'Plus Jakarta Sans',system-ui,sans-serif;
+  --mono:'Plus Jakarta Sans',system-ui,sans-serif;
   --r:16px;
 }
 
@@ -328,3 +332,51 @@ html[data-skin="day"] .brb{background:var(--surf2)}
 .toast.on{opacity:1;transform:translate(-50%,0)}
 
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+
+/* ============================================================
+   Type system — Plus Jakarta Sans throughout.
+   Barlow Condensed was narrow, so labels carried wide letter-spacing to fill
+   the line. This face is wider and much heavier, so the tracking comes back in
+   and the weights go up. Figures use tabular numerals so money columns align.
+   ============================================================ */
+body{font-weight:500}
+.amount,.cval,.cell .v,.rv,.disp .big,.flt .n,.brt .n,.pct,.key,.trow input{
+  font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+
+.eyebrow{letter-spacing:.10em;font-weight:700;font-size:11px}
+.who{font-weight:800;letter-spacing:-.03em;font-size:26px}
+.tabs button{letter-spacing:.02em;font-weight:700;font-size:12.5px}
+.amount{font-weight:800;letter-spacing:-.035em;font-size:42px}
+.of{letter-spacing:.06em;font-weight:700;font-size:11.5px}
+.pct{font-weight:700;font-size:12.5px}
+.cell .k{letter-spacing:.05em;font-weight:700;font-size:10.5px}
+.cell .v{font-weight:700;font-size:16.5px}
+.sec{letter-spacing:.06em;font-weight:800;font-size:12px}
+.clab{letter-spacing:.05em;font-weight:700;font-size:11px}
+.cval{font-weight:700}
+.crange{font-weight:500}
+.foot .p{font-weight:700}
+.dl{letter-spacing:0;font-weight:700}
+.rn{font-weight:700;font-size:14.5px}
+.rs{letter-spacing:.01em;text-transform:none;font-weight:600;font-size:11.5px}
+.rv{font-weight:700}
+.dot{font-weight:800}
+.nb{letter-spacing:.01em;font-weight:700;font-size:10.5px}
+.rhead h2{font-weight:800;letter-spacing:-.03em}
+.seg button{letter-spacing:.01em;font-weight:700;font-size:12px}
+.dchip,.dpick,.pill,.qc,.tile .tl{font-weight:700}
+.disp .big{font-weight:800;letter-spacing:-.04em;font-size:42px}
+.key{font-weight:700}
+.save{letter-spacing:.02em;font-weight:800;font-size:15px}
+.rnav .when{letter-spacing:.02em;font-weight:700}
+.flt .l{font-weight:600}
+.flt .n{font-weight:700}
+.fl.key .l{font-weight:800}
+.fl.final .l{letter-spacing:.05em;font-weight:700;font-size:11.5px}
+.fl.final .n{font-weight:800;letter-spacing:-.035em}
+.brt .l{font-weight:700}
+.brt .n{font-weight:700}
+.mbox h4{font-weight:800;letter-spacing:-.02em;font-size:18px}
+.trow label{font-weight:700}
+.toast{font-weight:700}
