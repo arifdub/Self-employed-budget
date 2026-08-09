@@ -27,7 +27,7 @@ window.addEventListener('error', ev => {
   if (document.body) document.body.appendChild(bar);
 }, true);
 
-const APP_VERSION = '0.9.3';
+const APP_VERSION = '0.9.4';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -371,21 +371,49 @@ function drawTargetCard(k, p, now) {
   $(k + 'Left').textContent = val >= tgt ? money(val - tgt) + ' over target' : money(tgt - val) + ' to go';
 }
 
+/* ---------- week chart ----------
+   Seven days at a glance with the amount printed above each bar. Bars are scaled
+   against whichever is larger, the daily target or the best day of the week, so a
+   big day makes the others look small — which is the point of the comparison. */
+const shortMoney = n =>
+  n >= 1000 ? CURRENCY + (n / 1000).toFixed(n >= 10000 ? 0 : 1).replace('.0', '') + 'k'
+            : CURRENCY + Math.round(n);
+
 function drawWeekBars(now) {
   const from = startOfWeek(now), tgt = state.targets.day;
+  const today = startOfDay(now).getTime();
   const days = [];
+
   for (let i = 0; i < 7; i++) {
     const d = addDays(from, i), r = { from: d, to: addDays(d, 1) };
     days.push({
-      l: d.toLocaleDateString(LOCALE, { weekday: 'narrow' }),
-      v: state.entries.filter(e => e.type === 'income' && inRange(e, r)).reduce((a, e) => a + e.amt, 0),
-      today: startOfDay(d).getTime() === startOfDay(now).getTime()
+      label: d.toLocaleDateString(LOCALE, { weekday: 'short' }).slice(0, 3),
+      value: state.entries
+        .filter(e => e.type === 'income' && inRange(e, r))
+        .reduce((a, e) => a + e.amt, 0),
+      isToday: startOfDay(d).getTime() === today,
+      future: startOfDay(d).getTime() > today
     });
   }
-  const max = Math.max(tgt * 1.3, ...days.map(x => x.v));
-  $('hist').innerHTML = '<div class="goalline" style="top:' + (76 - (tgt / max) * 58 - 12) + 'px"></div>' +
-    days.map(x => '<div class="dayw"><div class="hb ' + (x.today ? 'today' : x.v >= tgt ? 'hit' : '') +
-      '" style="height:' + Math.max((x.v / max) * 58, 2) + 'px"></div><div class="dl">' + x.l + '</div></div>').join('');
+
+  const weekTotal = days.reduce((a, d) => a + d.value, 0);
+  $('weekTotal').textContent = money(weekTotal);
+
+  const AREA = 92;                                   // pixels available to the tallest bar
+  const max = Math.max(tgt, ...days.map(d => d.value)) || 1;
+
+  $('hist').innerHTML =
+    '<div class="goalline" style="bottom:' + (16 + (tgt / max) * AREA).toFixed(1) + 'px">' +
+      '<span>' + shortMoney(tgt) + '</span></div>' +
+    days.map(d => {
+      const h = d.value > 0 ? Math.max((d.value / max) * AREA, 3) : 2;
+      const cls = d.isToday ? 'today' : d.value >= tgt ? 'hit' : d.future ? 'future' : '';
+      return '<div class="dayw">' +
+        '<div class="dval' + (d.value ? '' : ' none') + '">' + (d.value ? shortMoney(d.value) : '') + '</div>' +
+        '<div class="hb ' + cls + '" style="height:' + h.toFixed(1) + 'px"></div>' +
+        '<div class="dl' + (d.isToday ? ' now' : '') + '">' + d.label + '</div>' +
+      '</div>';
+    }).join('');
 }
 
 /* ---------- render: reports ---------- */

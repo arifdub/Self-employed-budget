@@ -6,6 +6,29 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [0.9.4] — 2026-08-09
+
+### Added
+- **Amounts printed above each bar** in the week chart, so a glance gives you the
+  actual figure for every day rather than a shape to interpret. Thousands abbreviate
+  to `€1.2k` so the labels never collide at seven bars across.
+- **Week total** beside the "This week" heading.
+- The daily target line now carries its own value on the right, so it is clear what
+  the dashed line represents.
+
+### Changed
+- Bars scale against whichever is larger — the daily target or the best day of the
+  week — so an exceptional day makes the rest look modest, which is the comparison
+  worth seeing.
+- Colour carries meaning: amber for today with a soft glow, green for days that beat
+  the target, grey for days that missed, and faded grey for days not yet reached.
+- Chart height raised from 70px to 132px to make room for the figures and give the
+  bars enough range to differ visibly.
+- Day labels are three letters (Mon, Tue) rather than a single ambiguous initial —
+  T and S were each doing double duty.
+
+---
+
 ## [0.9.3] — 2026-08-09
 
 ### Changed

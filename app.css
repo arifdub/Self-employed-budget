@@ -9,7 +9,7 @@
   --body:'Plus Jakarta Sans',system-ui,sans-serif;
   --mono:'Plus Jakarta Sans',system-ui,sans-serif;
   --r:14px;
-  --css-version:'0.9.3';
+  --css-version:'0.9.4';
   --safe-t:env(safe-area-inset-top,0px);
   --safe-b:env(safe-area-inset-bottom,0px);
 }
@@ -126,14 +126,26 @@ html[data-skin="day"] .bar{background:var(--surf2)}
 .foot .r{color:var(--dim)}
 
 /* week bars */
-.hist{display:flex;align-items:flex-end;gap:5px;height:70px;position:relative;padding-top:8px}
-.dayw{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;justify-content:flex-end;height:100%}
-.hb{width:100%;border-radius:4px 4px 2px 2px;background:var(--line);transition:height .5s}
-html[data-skin="day"] .hb{background:var(--surf2)}
-.hb.hit{background:var(--acc);opacity:.55}
-.hb.today{background:var(--acc)}
-.dl{font-family:var(--dspl);font-size:10px;color:var(--dim);letter-spacing:.06em}
-.goalline{position:absolute;left:0;right:0;border-top:1px dashed var(--dim);opacity:.55}
+.hist{position:relative;display:flex;align-items:flex-end;gap:5px;height:132px;
+  padding:0 2px;margin-top:2px}
+.dayw{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;
+  justify-content:flex-end;height:100%;gap:4px}
+.dval{font-size:9.5px;font-weight:800;color:var(--txt);opacity:.85;letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums;white-space:nowrap;line-height:1;height:11px}
+.dval.none{opacity:0}
+.hb{width:100%;max-width:34px;border-radius:6px 6px 3px 3px;background:var(--surf2);
+  transition:height .5s cubic-bezier(.2,.8,.2,1)}
+.hb.hit{background:var(--c-inc)}
+.hb.today{background:var(--acc);box-shadow:0 0 14px -2px rgba(255,176,32,.55)}
+.hb.future{background:var(--line);opacity:.5}
+.dl{font-size:10px;font-weight:700;color:var(--dim);line-height:1;height:12px}
+.dl.now{color:var(--acc)}
+.goalline{position:absolute;left:0;right:0;border-top:1px dashed var(--dim);opacity:.55;
+  pointer-events:none}
+.goalline span{position:absolute;right:0;top:-13px;font-size:8.5px;font-weight:700;
+  color:var(--dim);background:var(--bg);padding:0 3px;letter-spacing:.02em}
+.weekTot{font-family:var(--body);font-size:13px;font-weight:800;color:var(--c-inc);
+  letter-spacing:-.02em;text-transform:none;font-variant-numeric:tabular-nums}
 
 /* entry rows */
 .row{display:flex;align-items:center;gap:11px;padding:10px 0;border-bottom:1px solid var(--line)}
