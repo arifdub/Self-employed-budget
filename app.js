@@ -27,7 +27,7 @@ window.addEventListener('error', ev => {
   if (document.body) document.body.appendChild(bar);
 }, true);
 
-const APP_VERSION = '0.8.1';
+const APP_VERSION = '0.8.2';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -267,7 +267,11 @@ function render(flash) {
 
   /* ---- breakdown ---- */
   $('bdTitle').firstChild.textContent = label + ' breakdown';
-  $('donutVal').textContent = money(inc);
+  // The centre shows what is actually left after every cost — the figure that
+  // answers "what did I really make", rather than repeating total income.
+  $('donutVal').textContent = money(pocket);
+  $('donutVal').classList.toggle('neg', pocket < 0);
+  $('donutSub').textContent = pocket < 0 ? 'short this ' + (P === 'day' ? 'day' : P) : 'in your pocket';
   drawDonut(inc, biz, per, pocket);
   $('bdRows').innerHTML = [
     ['Total income', inc, 'c-inc', 100],

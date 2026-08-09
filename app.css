@@ -9,7 +9,7 @@
   --body:'Plus Jakarta Sans',system-ui,sans-serif;
   --mono:'Plus Jakarta Sans',system-ui,sans-serif;
   --r:14px;
-  --css-version:'0.8.1';
+  --css-version:'0.8.2';
   --safe-t:env(safe-area-inset-top,0px);
   --safe-b:env(safe-area-inset-bottom,0px);
 }
@@ -461,8 +461,16 @@ body{font-weight:500}
 
 /* stat cards */
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
-.stat{position:relative;overflow:hidden;border-radius:16px;border:1px solid var(--line);
-  background:var(--surf);padding:11px 10px 0;min-height:104px}
+.stat{position:relative;overflow:hidden;border-radius:16px;padding:11px 10px 0;min-height:104px;
+  border:1px solid transparent}
+.stat.inc{background:rgba(52,211,153,.13);  border-color:rgba(52,211,153,.30)}
+.stat.exp{background:rgba(251,113,133,.13); border-color:rgba(251,113,133,.30)}
+.stat.net{background:rgba(96,165,250,.13);  border-color:rgba(96,165,250,.30)}
+html[data-skin="day"] .stat.inc{background:rgba(5,150,105,.10);  border-color:rgba(5,150,105,.24)}
+html[data-skin="day"] .stat.exp{background:rgba(225,29,72,.10);  border-color:rgba(225,29,72,.24)}
+html[data-skin="day"] .stat.net{background:rgba(37,99,235,.10);  border-color:rgba(37,99,235,.24)}
+.stat .statName{color:var(--txt);opacity:.75}
+.stat .statMeta{color:var(--txt);opacity:.55}
 .statName{font-size:11px;font-weight:700;color:var(--mut);line-height:1.25}
 .statVal{margin-top:5px;font-size:17px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
 .statMeta{margin-top:2px;font-size:10.5px;font-weight:600;color:var(--dim)}
@@ -485,8 +493,9 @@ body{font-weight:500}
 .donutSeg{fill:none;stroke-width:14;transition:stroke-dasharray .5s}
 .donutSeg.c-biz{stroke:var(--c-biz)} .donutSeg.c-per{stroke:var(--c-per)} .donutSeg.c-pkt{stroke:var(--c-pkt)}
 .donutMid{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
-.donutVal{font-size:16px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
-.donutSub{font-size:9.5px;font-weight:700;color:var(--mut)}
+.donutVal{font-size:19px;font-weight:800;letter-spacing:-.035em;font-variant-numeric:tabular-nums;color:var(--c-pkt);line-height:1.05}
+.donutVal.neg{color:var(--c-biz)}
+.donutSub{font-size:9px;font-weight:700;color:var(--mut);margin-top:2px;line-height:1.2;max-width:74px}
 .bdRows{flex:1;min-width:0}
 .bdRow{display:flex;align-items:center;gap:8px;padding:6px 0}
 .bdDot{width:9px;height:9px;border-radius:50%;flex:0 0 auto;background:currentColor}

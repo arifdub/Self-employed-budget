@@ -6,6 +6,23 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [0.8.2] — 2026-08-09
+
+### Changed
+- **Stat cards now carry tinted backgrounds** — soft green for fares, pink-red for
+  expenses, blue for net income. Kept at low opacity washes rather than solid blocks
+  so the figures stay legible on a phone in daylight, with a matching border to give
+  each card an edge.
+- **The middle of the donut now shows money in your pocket** — income minus business
+  costs minus personal costs — for whichever period is selected. It previously
+  repeated total income, which was already on the card beside it. The leftover is the
+  figure that actually answers "what did I make", so it belongs in the largest,
+  most central position.
+- If costs exceed income the centre turns red and reads "short this week" rather than
+  showing a negative amount labelled as being in your pocket.
+
+---
+
 ## [0.8.1] — 2026-08-09
 
 ### Changed

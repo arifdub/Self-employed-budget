@@ -1,7 +1,7 @@
 /* Self Employed Budget service worker — v0.1
    Bump CACHE on every release so users get the new files. */
 
-const CACHE = 'self-employed-budget-v0.8.1';
+const CACHE = 'self-employed-budget-v0.8.2';
 const SHELL = [
   './',
   './index.html',
