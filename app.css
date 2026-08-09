@@ -9,7 +9,7 @@
   --body:'Plus Jakarta Sans',system-ui,sans-serif;
   --mono:'Plus Jakarta Sans',system-ui,sans-serif;
   --r:14px;
-  --css-version:'0.8.3';
+  --css-version:'0.8.5';
   --safe-t:env(safe-area-inset-top,0px);
   --safe-b:env(safe-area-inset-bottom,0px);
 }
@@ -49,7 +49,7 @@ body{background:var(--bg);color:var(--txt);font-family:var(--body);
 }
 
 /* header */
-.top{padding:calc(18px + var(--safe-t)) 18px 6px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.top{padding:calc(14px + var(--safe-t)) 18px 4px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
 .eyebrow{font-family:var(--dspl);font-size:11.5px;letter-spacing:.19em;text-transform:uppercase;color:var(--mut);font-weight:600}
 html[data-skin="day"] .eyebrow{letter-spacing:.12em}
 .who{font-family:var(--dspl);font-size:24px;font-weight:700;line-height:1.12;margin:2px 0 0;letter-spacing:-.01em}
@@ -62,13 +62,13 @@ html[data-skin="day"] .who{font-weight:800;letter-spacing:-.03em}
 .avatar.signin{background:var(--acc);color:var(--on-acc);padding:0 12px;font-size:12px}
 html[data-skin="day"] .avatar{background:var(--acc);color:#fff}
 
-.body{flex:1 1 auto;padding:0 18px 22px}
+.body{flex:1 1 auto;padding:0 18px 14px}
 .sheet .body{padding-bottom:calc(22px + var(--safe-b))}
 .toast{bottom:calc(78px + var(--safe-b))}
 .body::-webkit-scrollbar{width:0}
 
 /* tabs */
-.tabs{display:flex;gap:4px;background:var(--surf);border:1px solid var(--line);border-radius:13px;padding:4px;margin:12px 0 6px}
+.tabs{display:flex;gap:4px;background:var(--surf);border:1px solid var(--line);border-radius:13px;padding:4px;margin:10px 0 4px}
 .tabs button{flex:1;background:none;border:0;cursor:pointer;color:var(--mut);font-family:var(--dspl);
   font-size:12.5px;letter-spacing:.13em;text-transform:uppercase;font-weight:700;padding:10px 2px;border-radius:9px}
 html[data-skin="day"] .tabs button{font-family:var(--body);font-size:11.5px;letter-spacing:.03em}
@@ -102,13 +102,13 @@ html[data-skin="day"] .cell .k{font-family:var(--body);letter-spacing:.05em}
 
 /* section heads */
 .sec{font-family:var(--dspl);font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--mut);
-  font-weight:700;margin:20px 0 9px;display:flex;justify-content:space-between;align-items:center}
+  font-weight:700;margin:15px 0 7px;display:flex;justify-content:space-between;align-items:center}
 html[data-skin="day"] .sec{font-family:var(--dspl);font-size:14px;letter-spacing:-.02em;text-transform:none;color:var(--txt)}
 .sec .edit{font-family:var(--body);font-size:11px;letter-spacing:.02em;text-transform:none;
   color:var(--acc);background:none;border:0;cursor:pointer;font-weight:600}
 
 /* cards */
-.card{background:var(--surf);border:1px solid var(--line);border-radius:var(--r);padding:13px 14px;margin-bottom:8px;transition:box-shadow .4s}
+.card{background:var(--surf);border:1px solid var(--line);border-radius:var(--r);padding:12px 13px;margin-bottom:7px;transition:box-shadow .4s}
 .card.flash{box-shadow:0 0 0 2px var(--acc)}
 .crow{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
 .clab{font-family:var(--dspl);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);font-weight:700}
@@ -126,7 +126,7 @@ html[data-skin="day"] .bar{background:var(--surf2)}
 .foot .r{color:var(--dim)}
 
 /* week bars */
-.hist{display:flex;align-items:flex-end;gap:5px;height:76px;position:relative;padding-top:10px}
+.hist{display:flex;align-items:flex-end;gap:5px;height:70px;position:relative;padding-top:8px}
 .dayw{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;justify-content:flex-end;height:100%}
 .hb{width:100%;border-radius:4px 4px 2px 2px;background:var(--line);transition:height .5s}
 html[data-skin="day"] .hb{background:var(--surf2)}
@@ -181,8 +181,15 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-of
 /* sheets */
 .sheet{position:fixed;top:0;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;
   background:var(--bg);display:flex;flex-direction:column;
-  transform:translateY(100%);transition:transform .38s cubic-bezier(.3,.9,.3,1);z-index:40;visibility:hidden}
-.sheet.up{transform:translateY(0);visibility:visible}
+  transform:translateY(100%) scale(.985);transform-origin:50% 100%;
+  transition:transform .30s cubic-bezier(.4,0,.7,.2), visibility 0s linear .30s;
+  z-index:40;visibility:hidden}
+/* Opening is slower than closing on purpose: an entrance should feel like it
+   settles into place, an exit should get out of the way. The expo-out curve moves
+   quickly at first then eases into the last few pixels, which reads as weight
+   rather than sluggishness. */
+.sheet.up{transform:translateY(0) scale(1);visibility:visible;
+  transition:transform .46s cubic-bezier(.16,1,.3,1), visibility 0s}
 .sheet.dragging{transition:none}
 /* the handle signals the sheet can be pulled down, the way native sheets do */
 .sheet::before{content:'';position:absolute;top:calc(var(--safe-t) + 7px);left:50%;
@@ -319,10 +326,19 @@ html[data-skin="day"] .brb{background:var(--surf2)}
   padding:12px 4px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--body)}
 
 /* modal */
-.modal{position:fixed;top:0;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;background:rgba(0,0,0,.55);z-index:60;display:none;align-items:flex-end}
-.modal.on{display:flex}
+.modal{position:fixed;top:0;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;
+  background:rgba(0,0,0,.55);z-index:60;display:flex;align-items:flex-end;
+  opacity:0;visibility:hidden;pointer-events:none;
+  transition:opacity .26s ease, visibility 0s linear .26s;
+  -webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
+.modal.on{opacity:1;visibility:visible;pointer-events:auto;
+  transition:opacity .26s ease, visibility 0s}
 .mbox{width:100%;background:var(--bg);border-radius:24px 24px 0 0;
-  padding:20px 18px calc(26px + var(--safe-b));border-top:1px solid var(--line)}
+  padding:20px 18px calc(26px + var(--safe-b));border-top:1px solid var(--line);
+  transform:translateY(18px) scale(.98);opacity:.6;
+  transition:transform .34s cubic-bezier(.16,1,.3,1), opacity .24s ease}
+.modal.on .mbox{transform:translateY(0) scale(1);opacity:1;
+  transition:transform .44s cubic-bezier(.16,1,.3,1) .04s, opacity .28s ease .04s}
 .mbox h4{font-family:var(--dspl);font-size:17px;margin:0 0 3px;font-weight:700}
 .mbox p{margin:0 0 14px;font-size:12px;color:var(--mut)}
 .trow{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line)}
@@ -369,10 +385,10 @@ html[data-skin="day"] .brb{background:var(--surf2)}
 .save.danger:disabled{opacity:.35;cursor:default}
 
 /* toast */
-.toast{position:fixed;left:50%;transform:translate(-50%,18px);bottom:calc(78px + var(--safe-b));
+.toast{position:fixed;left:50%;transform:translate(-50%,14px) scale(.96);bottom:calc(78px + var(--safe-b));
   background:var(--txt);color:var(--bg);padding:11px 17px;border-radius:999px;font-size:12.5px;font-weight:600;
-  opacity:0;transition:.28s;z-index:70;pointer-events:none;max-width:88%;text-align:center}
-.toast.on{opacity:1;transform:translate(-50%,0)}
+  opacity:0;transition:opacity .24s ease, transform .34s cubic-bezier(.16,1,.3,1);z-index:70;pointer-events:none;max-width:88%;text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0) scale(1)}
 
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 
@@ -432,7 +448,7 @@ body{font-weight:500}
 .c-per{color:var(--c-per)} .c-pkt{color:var(--c-pkt)}
 
 /* hero */
-.hero{display:flex;gap:14px;align-items:center;margin-top:10px;padding:16px 16px 15px;
+.hero{display:flex;gap:13px;align-items:center;margin-top:8px;padding:13px 14px 12px;
   border-radius:20px;border:1px solid var(--line);
   background:
     radial-gradient(120% 140% at 100% 0%, rgba(255,176,32,.16) 0%, transparent 58%),
@@ -460,13 +476,16 @@ body{font-weight:500}
 .ringSub{font-size:9.5px;font-weight:700;color:var(--mut);margin-top:1px}
 
 /* stat cards */
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;align-items:stretch}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px;align-items:stretch}
 /* Equal by construction: identical padding, one fixed height, centred content.
    The sparklines that used to sit here forced each card to size around its own
    graph, which is why they came out uneven and clipped long amounts. */
-.stat{border-radius:16px;border:1px solid transparent;padding:12px 8px;height:96px;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
-  text-align:center;overflow:hidden}
+.stat{align-self:stretch;min-height:88px;border-radius:16px;border:1px solid transparent;
+  padding:11px 7px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;text-align:center;overflow:hidden;box-sizing:border-box}
+/* Grid rows equalise their items by default. A fixed height fought that on WebKit
+   and left the middle card sitting lower than its neighbours, so the height is set
+   by the row now and min-height only guards against an empty card collapsing. */
 .stat.inc{background:rgba(52,211,153,.13);  border-color:rgba(52,211,153,.30)}
 .stat.exp{background:rgba(251,113,133,.13); border-color:rgba(251,113,133,.30)}
 .stat.net{background:rgba(96,165,250,.13);  border-color:rgba(96,165,250,.30)}
@@ -487,7 +506,7 @@ html[data-skin="day"] .stat.net{background:rgba(37,99,235,.10);  border-color:rg
 .statVal.xlong{font-size:13px;letter-spacing:-.045em}
 
 /* breakdown */
-.bd{padding:15px 14px}
+.bd{padding:12px 12px}
 .bdTop{display:flex;gap:14px;align-items:center}
 .donutWrap{position:relative;width:112px;height:112px;flex:0 0 auto}
 .donutWrap svg{width:100%;height:100%;display:block}
@@ -508,9 +527,9 @@ html[data-skin="day"] .stat.net{background:rgba(37,99,235,.10);  border-color:rg
 
 /* quick add */
 .qacts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.qact{background:var(--surf);border:1px solid var(--line);border-radius:16px;padding:12px 4px 10px;
+.qact{background:var(--surf);border:1px solid var(--line);border-radius:16px;padding:9px 4px 8px;
   cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:7px;font-family:var(--body)}
-.qicon{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-size:17px;
+.qicon{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:17px;
   background:color-mix(in srgb, currentColor 18%, transparent)}
 .qlab{font-size:10.5px;font-weight:700;color:var(--mut);line-height:1.2;text-align:center}
 @supports not (background: color-mix(in srgb, red 10%, blue)){ .qicon{background:var(--surf2)} }

@@ -27,7 +27,7 @@ window.addEventListener('error', ev => {
   if (document.body) document.body.appendChild(bar);
 }, true);
 
-const APP_VERSION = '0.8.3';
+const APP_VERSION = '0.8.5';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';

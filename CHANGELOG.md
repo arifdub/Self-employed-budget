@@ -6,6 +6,45 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [0.8.5] — 2026-08-09
+
+### Changed
+- **Sheet transitions slowed and softened.** Opening went from 380ms to 460ms on an
+  expo-out curve, which travels quickly at first then eases into the last few pixels —
+  that deceleration is what reads as weight rather than sluggishness. A slight scale
+  from 98.5% to full adds the settle. Closing stays quicker at 300ms: an entrance
+  should arrive, an exit should get out of the way.
+- **Modals now animate at all.** They previously flipped between `display:none` and
+  `display:flex`, so they simply appeared. The backdrop fades over 260ms with a light
+  blur while the panel rises and scales into place over 440ms, offset by 40ms so the
+  backdrop leads.
+- Toast matched to the same curve, rising and scaling in rather than sliding flatly.
+
+### Notes
+- `visibility` is delayed until the close transition finishes, so a sheet cannot be
+  tapped through while it is still on its way out.
+- The existing reduced-motion rule still disables all of this for anyone who has that
+  turned on at the system level.
+
+---
+
+## [0.8.4] — 2026-08-09
+
+### Fixed
+- **The middle stat card still sat lower than its neighbours.** The cards carried an
+  explicit `height`, which fought the grid row's own equalising on WebKit and left the
+  middle item misaligned. The fixed height is gone — a grid row already makes its
+  items the same height — and `min-height` now only guards against an empty card
+  collapsing. `align-self: stretch` is stated rather than assumed.
+
+### Changed
+- **Vertical spacing tightened throughout** so more fits on one screen: section
+  headings, hero padding, card padding, the tab strip, quick-add tiles, the week chart
+  and the page's bottom padding all trimmed. Roughly a card and a half of extra room
+  without shrinking any text.
+
+---
+
 ## [0.8.3] — 2026-08-09
 
 ### Fixed
