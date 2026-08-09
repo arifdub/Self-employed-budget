@@ -6,6 +6,28 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [0.9.0] — 2026-08-09
+
+### Added
+- **Sign in with Google**, above the email form, using Google's own mark and the
+  required "Continue with Google" wording.
+- Uses the **redirect flow rather than a popup**: iOS Safari blocks popups
+  aggressively and a home screen web app has no popup surface at all, so a redirect
+  is the only route that works on every device.
+- Returning from Google is handled as a fresh page load — entries already on the
+  phone are claimed for the account, settings are pulled, and a full sync runs.
+- The OAuth fragment is stripped from the address bar afterwards, so refreshing the
+  page does not re-trigger the flow.
+
+### Fixed
+- **The middle stat card was narrower than the other two.** Grid items do not shrink
+  below their content by default, so "Net income" and "Fares" pushed their columns
+  wider than their 1fr share and took the difference from the middle column —
+  which is why only Expenses looked squeezed. `min-width: 0` lets them shrink, and
+  all three are now exactly equal.
+
+---
+
 ## [0.8.5] — 2026-08-09
 
 ### Changed

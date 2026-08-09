@@ -27,7 +27,7 @@ window.addEventListener('error', ev => {
   if (document.body) document.body.appendChild(bar);
 }, true);
 
-const APP_VERSION = '0.8.5';
+const APP_VERSION = '0.9.0';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -938,7 +938,7 @@ function initSupabase() {
   if (!window.supabase || !window.supabase.createClient) return null;   // CDN blocked or offline
   try {
     return window.supabase.createClient(cfg.url, cfg.anonKey, {
-      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' }
     });
   } catch (e) { return null; }
 }
@@ -1167,6 +1167,32 @@ $('signOutBtn').onclick = async () => {
 
 $('syncNowBtn').onclick = () => syncNow(true);
 
+
+/* ---------- Google sign-in ----------
+   Redirect flow rather than a popup: iOS Safari blocks popups aggressively and
+   a home screen web app has no popup surface at all, so the redirect is the only
+   route that works everywhere. The user leaves, approves, and comes back to the
+   same URL with a session already established. */
+$('googleBtn').onclick = async () => {
+  if (!sb) { $('authErr').textContent = 'No connection to the account service.'; return; }
+  $('googleBtn').disabled = true;
+  $('authErr').textContent = '';
+  try {
+    const { error } = await sb.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin + window.location.pathname,
+        queryParams: { prompt: 'select_account' }
+      }
+    });
+    if (error) throw error;
+    // the browser navigates away here
+  } catch (err) {
+    $('googleBtn').disabled = false;
+    $('authErr').textContent = err.message || 'Could not reach Google. Try again.';
+  }
+};
+
 /* ---------- start ---------- */
 async function initAuth() {
   loadQueue();
@@ -1176,8 +1202,35 @@ async function initAuth() {
   const { data } = await sb.auth.getSession();
   session = data.session || null;
   refreshAccountCard();
-  if (session) { await pullSettings(); await syncNow(true); }
-  sb.auth.onAuthStateChange((_evt, s) => { session = s; refreshAccountCard(); });
+
+  if (session) {
+    // Anything logged on this phone before signing in belongs to this account.
+    state.entries.forEach(e => dirty.add(e.id));
+    saveQueue();
+    await pullSettings();
+    await syncNow(true);
+    render();
+  }
+
+  // Clean the OAuth fragment out of the address bar so a refresh does not re-trigger it.
+  if (window.location.hash && window.location.hash.indexOf('access_token') > -1) {
+    history.replaceState(null, '', window.location.pathname);
+  }
+
+  sb.auth.onAuthStateChange(async (evt, s) => {
+    const wasSignedOut = !session;
+    session = s;
+    refreshAccountCard();
+    if (evt === 'SIGNED_IN' && wasSignedOut) {
+      closeAuth();
+      state.entries.forEach(e => dirty.add(e.id));
+      saveQueue();
+      await pullSettings();
+      await syncNow(true);
+      render();
+      toast('Signed in as ' + (currentName() || s.user.email));
+    }
+  });
 }
 
 
