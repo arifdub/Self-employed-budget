@@ -6,6 +6,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [0.9.3] — 2026-08-09
+
+### Changed
+- Home terminology now uses proper accounting language: **Gross income**,
+  **Business expenses**, **Net income** on the cards; **Gross income**,
+  **Business expenses**, **Personal & home expenses**, **Disposable income** in the
+  breakdown; and the donut centre reads **disposable income**.
+
+### Fixed
+- **The second card was showing business plus personal expenses.** Relabelling it
+  "Business expenses" would have made the figure contradict its own label, so it now
+  shows business costs only. The three cards read as a single sum:
+  gross income − business expenses = net income. Personal costs are accounted for in
+  the breakdown below, where they belong.
+- Breakdown labels wrap instead of being cut off mid-word, now that the names are
+  longer.
+
+---
+
 ## [0.9.2] — 2026-08-09
 
 ### Added

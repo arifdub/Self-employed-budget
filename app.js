@@ -27,7 +27,7 @@ window.addEventListener('error', ev => {
   if (document.body) document.body.appendChild(bar);
 }, true);
 
-const APP_VERSION = '0.9.2';
+const APP_VERSION = '0.9.3';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -287,7 +287,7 @@ function render(flash) {
 
   /* ---- stat cards ---- */
   setStat('stInc', inc);
-  setStat('stExp', expenses);
+  setStat('stExp', biz);        // business only — the label says so, so the figure must match
   setStat('stNet', net);
   ['Inc', 'Exp', 'Net'].forEach(k => { $('st' + k + 'When').textContent = label; });
 
@@ -297,13 +297,13 @@ function render(flash) {
   // answers "what did I really make", rather than repeating total income.
   $('donutVal').textContent = money(pocket);
   $('donutVal').classList.toggle('neg', pocket < 0);
-  $('donutSub').textContent = pocket < 0 ? 'short this ' + (P === 'day' ? 'day' : P) : 'in your pocket';
+  $('donutSub').textContent = pocket < 0 ? 'short this ' + (P === 'day' ? 'day' : P) : 'disposable income';
   drawDonut(inc, biz, per, pocket);
   $('bdRows').innerHTML = [
-    ['Total income', inc, 'c-inc', 100],
+    ['Gross income', inc, 'c-inc', 100],
     ['Business expenses', biz, 'c-biz', inc ? biz / inc * 100 : 0],
-    ['Personal expenses', per, 'c-per', inc ? per / inc * 100 : 0],
-    ['Money in pocket', pocket, 'c-pkt', inc ? pocket / inc * 100 : 0]
+    ['Personal &amp; home expenses', per, 'c-per', inc ? per / inc * 100 : 0],
+    ['Disposable income', pocket, 'c-pkt', inc ? pocket / inc * 100 : 0]
   ].map(([name, val, cls, share]) =>
     '<div class="bdRow"><span class="bdDot ' + cls + '"></span>' +
     '<span class="bdName">' + name + '</span>' +
