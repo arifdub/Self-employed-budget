@@ -6,6 +6,41 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [0.9.5] — 2026-08-09
+
+Reports are complete: history browsing and working exports.
+
+### Added
+- **Browse past periods.** The arrows step back and forward, and tapping the period
+  name opens the phone's date picker to jump anywhere — three weeks back or last
+  March, in one tap. Works the same on Day, Week, Month and Year, since choosing any
+  date selects the period containing it. A "Back to now" button appears once you have
+  moved away, and the exact dates covered are printed underneath.
+- **CSV export** of every entry in the selected period — date, time, type, category,
+  payment method and amount — with the five summary figures at the foot. Opens with a
+  byte-order mark so Excel reads the € signs correctly.
+- **PDF summary** containing the selected period's figures and a month-by-month table
+  for the year: gross, business, net, personal and disposable, with a year-to-date
+  total row. Footnotes explain what net and disposable mean.
+- **Send to accountant** produces the same PDF and opens the share sheet, so it can
+  go straight into Mail as a real attachment.
+
+### Notes
+- Exports share a file rather than downloading it. A home screen app on iOS has no
+  visible downloads folder, so a download would vanish; the share sheet reaches Mail,
+  Files and WhatsApp directly. Desktop still falls back to a normal download.
+- Switching period tab resets to the current period — "three weeks back" has no
+  meaning once you switch to months.
+- Navigation is driven by a single offset number, so every figure on the screen comes
+  from one reference date rather than state scattered across the report.
+
+### Fixed
+- Removed a duplicated copy of the home render and week chart that an earlier edit
+  had left in the file. It parsed, but two definitions of the same functions were
+  live and the second was silently winning.
+
+---
+
 ## [0.9.4] — 2026-08-09
 
 ### Added

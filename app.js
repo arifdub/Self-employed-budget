@@ -27,7 +27,7 @@ window.addEventListener('error', ev => {
   if (document.body) document.body.appendChild(bar);
 }, true);
 
-const APP_VERSION = '0.9.4';
+const APP_VERSION = '0.9.5';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -78,6 +78,7 @@ const state = {
   entries: [],
   period: 'day',
   rperiod: 'day',
+  rOffset: 0,
   skin: 'night',
   draft: { type: 'income', cat: 'Income', pay: 'Cash', val: '',
     // Inline rather than calling startOfDay(): that helper is declared further
@@ -170,8 +171,8 @@ function elapsed(p, now = new Date()) {
   return { done, total };
 }
 const inRange = (e, r) => e.at >= r.from && e.at < r.to;
-function bucket(type, p) {
-  const r = periodRange(p), out = {};
+function bucket(type, p, ref) {
+  const r = periodRange(p, ref || new Date()), out = {};
   state.entries.filter(e => e.type === type && inRange(e, r)).forEach(e => { out[e.cat] = (out[e.cat] || 0) + e.amt; });
   return out;
 }
@@ -416,13 +417,45 @@ function drawWeekBars(now) {
     }).join('');
 }
 
-/* ---------- render: reports ---------- */
+/* ---------- reports ----------
+   rOffset counts periods back from now: 0 is the current one, 1 the previous.
+   Every figure on the screen is derived from the reference date it produces, so
+   navigation is a single number rather than state scattered across the report. */
+function refDate() {
+  const o = state.rOffset || 0, now = new Date();
+  if (state.rperiod === 'day')   return addDays(startOfDay(now), -o);
+  if (state.rperiod === 'week')  return addDays(startOfWeek(now), -7 * o);
+  if (state.rperiod === 'month') return new Date(now.getFullYear(), now.getMonth() - o, 1);
+  return new Date(now.getFullYear() - o, 0, 1);
+}
+
+function offsetForDate(p, d) {
+  const now = new Date();
+  if (p === 'day')   return Math.round((startOfDay(now) - startOfDay(d)) / 864e5);
+  if (p === 'week')  return Math.round((startOfWeek(now) - startOfWeek(d)) / (7 * 864e5));
+  if (p === 'month') return (now.getFullYear() - d.getFullYear()) * 12 + (now.getMonth() - d.getMonth());
+  return now.getFullYear() - d.getFullYear();
+}
+
+function periodTitle(p, ref) {
+  const o = state.rOffset || 0;
+  if (o === 0) return p === 'day' ? 'Today' : p === 'week' ? 'This week' : p === 'month' ? 'This month' : 'This year';
+  if (o === 1) return p === 'day' ? 'Yesterday' : 'Last ' + p;
+  return rangeLabel(p, ref);
+}
+
 function renderReport() {
-  const p = state.rperiod;
-  const inc = bucket('income', p), biz = bucket('business', p), home = bucket('personal', p);
+  const p = state.rperiod, ref = refDate();
+  const inc = bucket('income', p, ref), biz = bucket('business', p, ref), home = bucket('personal', p, ref);
   const I = total(inc), B = total(biz), H = total(home), net = I - B, take = net - H;
 
-  $('rWhen').textContent = rangeLabel(p);
+  $('rWhen').textContent = periodTitle(p, ref);
+  $('rDate').value = isoDay(ref);
+  $('rDate').max = isoDay(new Date());
+  $('rNext').disabled = (state.rOffset || 0) <= 0;
+  $('rToday').hidden = (state.rOffset || 0) === 0;
+  $('rSub').textContent = rangeLabel(p, ref);
+
   $('fIncome').textContent = money(I);
   $('fBiz').textContent = '−' + money(B);
   $('fNet').textContent = money(net);
@@ -434,14 +467,31 @@ function renderReport() {
   $('bNet').style.width = w(Math.max(net, 0));
   $('bHome').style.width = w(H);
   $('bTake').style.width = w(Math.max(take, 0));
-  $('pBiz').textContent = I ? Math.round(B / I * 100) + '% of income — fuel, repairs, insurance, licence' : '';
-  $('pHome').textContent = I ? Math.round(H / I * 100) + '% of income — rent, food, bills, family' : '';
-  $('pTake').textContent = I ? 'What you actually kept this ' + p : 'Log some income to see this';
+  $('pBiz').textContent = I ? Math.round(B / I * 100) + '% of gross income' : '';
+  $('pHome').textContent = I ? Math.round(H / I * 100) + '% of gross income' : '';
+  $('pTake').textContent = I ? 'What you kept after everything' : 'Nothing recorded for this period';
 
-  breakdown('srcBrk', inc, I, false, 'No income recorded in this period yet');
-  breakdown('bizBrk', biz, B, true, 'No business costs recorded yet');
-  breakdown('homeBrk', home, H, true, 'No home costs recorded yet');
+  breakdown('srcBrk', inc, I, false, 'No income recorded in this period');
+  breakdown('bizBrk', biz, B, true, 'No business costs in this period');
+  breakdown('homeBrk', home, H, true, 'No home costs in this period');
 }
+
+function stepReport(delta) {
+  const next = (state.rOffset || 0) + delta;
+  if (next < 0) return;
+  state.rOffset = next;
+  renderReport();
+}
+
+$('rPrev').onclick = () => stepReport(1);
+$('rNext').onclick = () => stepReport(-1);
+$('rToday').onclick = () => { state.rOffset = 0; renderReport(); };
+$('rDate').addEventListener('change', () => {
+  if (!$('rDate').value) return;
+  const [y, m, d] = $('rDate').value.split('-').map(Number);
+  state.rOffset = Math.max(0, offsetForDate(state.rperiod, new Date(y, m - 1, d)));
+  renderReport();
+});
 
 function breakdown(id, obj, tot, isCost, emptyMsg) {
   const rows = Object.entries(obj).sort((a, b) => b[1] - a[1]);
@@ -452,6 +502,192 @@ function breakdown(id, obj, tot, isCost, emptyMsg) {
   ).join('') : '<div class="br"><div class="brt"><span class="l" style="color:var(--mut);font-weight:400">' + emptyMsg + '</span></div></div>';
 }
 
+
+/* ============================================================
+   EXPORTS — CSV, PDF summary, send to accountant
+   ============================================================ */
+
+/* Sharing a real file beats a download on mobile: iOS has no visible downloads
+   folder in a home screen app, and the share sheet reaches Mail, Files and
+   WhatsApp directly. Falls back to a download link on desktop. */
+async function shareOrDownload(blob, filename, title) {
+  const file = new File([blob], filename, { type: blob.type });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title });
+      return 'shared';
+    } catch (err) {
+      if (err && err.name === 'AbortError') return 'cancelled';
+    }
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+  return 'downloaded';
+}
+
+/* ---------- CSV ---------- */
+function periodEntries(p, ref) {
+  const r = periodRange(p, ref);
+  return state.entries.filter(e => inRange(e, r)).sort((a, b) => a.at - b.at);
+}
+
+const csvCell = v => {
+  const s = String(v == null ? '' : v);
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+};
+
+function buildCSV(p, ref) {
+  const rows = periodEntries(p, ref);
+  const head = ['Date', 'Time', 'Type', 'Category', 'Payment method', 'Amount'];
+  const typeName = { income: 'Income', business: 'Business expense', personal: 'Personal expense' };
+  const body = rows.map(e => [
+    e.at.toISOString().slice(0, 10),
+    e.at.toTimeString().slice(0, 5),
+    typeName[e.type] || e.type,
+    e.cat,
+    e.pay || '',
+    e.amt.toFixed(2)
+  ]);
+  const inc = rows.filter(e => e.type === 'income').reduce((a, e) => a + e.amt, 0);
+  const biz = rows.filter(e => e.type === 'business').reduce((a, e) => a + e.amt, 0);
+  const per = rows.filter(e => e.type === 'personal').reduce((a, e) => a + e.amt, 0);
+
+  return [head, ...body, [],
+    ['', '', '', '', 'Gross income', inc.toFixed(2)],
+    ['', '', '', '', 'Business expenses', biz.toFixed(2)],
+    ['', '', '', '', 'Net income', (inc - biz).toFixed(2)],
+    ['', '', '', '', 'Personal & home', per.toFixed(2)],
+    ['', '', '', '', 'Disposable income', (inc - biz - per).toFixed(2)]
+  ].map(r => r.map(csvCell).join(',')).join('\r\n');
+}
+
+async function exportCSV() {
+  const p = state.rperiod, ref = refDate();
+  const rows = periodEntries(p, ref);
+  if (!rows.length) { toast('Nothing to export for this period'); return; }
+  const blob = new Blob(['\uFEFF' + buildCSV(p, ref)], { type: 'text/csv;charset=utf-8' });
+  const name = 'SE-Budget-' + p + '-' + isoDay(ref) + '.csv';
+  const how = await shareOrDownload(blob, name, 'SE Budget export');
+  if (how !== 'cancelled') toast(rows.length + ' entries exported');
+}
+
+/* ---------- PDF ---------- */
+function monthlyRows(year) {
+  const out = [];
+  for (let m = 0; m < 12; m++) {
+    const ref = new Date(year, m, 1);
+    if (ref > new Date()) break;
+    const inc = total(bucket('income', 'month', ref));
+    const biz = total(bucket('business', 'month', ref));
+    const per = total(bucket('personal', 'month', ref));
+    if (!inc && !biz && !per) continue;
+    out.push({
+      name: ref.toLocaleDateString(LOCALE, { month: 'long' }),
+      inc, biz, net: inc - biz, per, disp: inc - biz - per
+    });
+  }
+  return out;
+}
+
+function buildPDF() {
+  if (!window.jspdf || !window.jspdf.jsPDF) return null;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+  const W = doc.internal.pageSize.getWidth();
+  const M = 42;
+  const eur = n => '\u20AC' + n.toFixed(2);
+  let y = M;
+
+  const ref = refDate(), p = state.rperiod;
+  const year = ref.getFullYear();
+
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(18);
+  doc.text('SE Budget — income summary', M, y); y += 20;
+
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(110);
+  doc.text((currentName() || 'Self-employed') + '   ·   ' + rangeLabel(p, ref), M, y); y += 13;
+  doc.text('Generated ' + new Date().toLocaleDateString(LOCALE, { day: 'numeric', month: 'long', year: 'numeric' }), M, y);
+  y += 24;
+  doc.setTextColor(0);
+
+  /* selected period */
+  const I = total(bucket('income', p, ref));
+  const B = total(bucket('business', p, ref));
+  const H = total(bucket('personal', p, ref));
+
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
+  doc.text(rangeLabel(p, ref), M, y); y += 6;
+  doc.setDrawColor(210); doc.line(M, y, W - M, y); y += 16;
+
+  doc.setFontSize(10.5);
+  [['Gross income', I, false], ['Business expenses', -B, false], ['Net income', I - B, true],
+   ['Personal & home expenses', -H, false], ['Disposable income', I - B - H, true]
+  ].forEach(([label, val, bold]) => {
+    doc.setFont('helvetica', bold ? 'bold' : 'normal');
+    doc.text(label, M, y);
+    doc.text(eur(val), W - M, y, { align: 'right' });
+    y += 16;
+  });
+  y += 12;
+
+  /* month by month */
+  const months = monthlyRows(year);
+  if (months.length) {
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
+    doc.text('Month by month — ' + year, M, y); y += 6;
+    doc.setDrawColor(210); doc.line(M, y, W - M, y); y += 15;
+
+    const cols = [M, M + 140, M + 240, M + 330, M + 415, W - M];
+    const head = ['Month', 'Gross', 'Business', 'Net', 'Personal', 'Disposable'];
+    doc.setFontSize(9); doc.setTextColor(110);
+    head.forEach((t, i) => doc.text(t, cols[i], y, { align: i === 0 ? 'left' : (i === 5 ? 'right' : 'right') }));
+    doc.setTextColor(0); y += 12;
+
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5);
+    const tot = { inc: 0, biz: 0, net: 0, per: 0, disp: 0 };
+    months.forEach(m => {
+      if (y > doc.internal.pageSize.getHeight() - 90) { doc.addPage(); y = M; }
+      doc.text(m.name, cols[0], y);
+      [m.inc, m.biz, m.net, m.per, m.disp].forEach((v, i) => doc.text(eur(v), cols[i + 1], y, { align: 'right' }));
+      tot.inc += m.inc; tot.biz += m.biz; tot.net += m.net; tot.per += m.per; tot.disp += m.disp;
+      y += 14;
+    });
+
+    y += 2; doc.setDrawColor(180); doc.line(M, y, W - M, y); y += 14;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Year to date', cols[0], y);
+    [tot.inc, tot.biz, tot.net, tot.per, tot.disp].forEach((v, i) =>
+      doc.text(eur(v), cols[i + 1], y, { align: 'right' }));
+    y += 26;
+  }
+
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(130);
+  doc.text('Net income is gross income less business expenses — the figure used for tax.', M, y); y += 11;
+  doc.text('Disposable income is what remains after personal and household costs.', M, y); y += 11;
+  doc.text('Prepared from records kept in SE Budget. Not a substitute for professional advice.', M, y);
+
+  return doc;
+}
+
+async function exportPDF(forAccountant) {
+  const doc = buildPDF();
+  if (!doc) { toast('PDF tool did not load — check your connection'); return; }
+  const ref = refDate();
+  const name = 'SE-Budget-summary-' + isoDay(ref) + '.pdf';
+  const how = await shareOrDownload(doc.output('blob'), name, 'SE Budget summary');
+  if (how === 'cancelled') return;
+  toast(forAccountant
+    ? (how === 'shared' ? 'Choose Mail to send it on' : 'PDF saved — attach it to an email')
+    : 'PDF summary ready');
+}
+
+document.querySelectorAll('.exp button').forEach(b => b.onclick = () => {
+  if (b.dataset.x === 'csv') exportCSV();
+  else exportPDF(b.dataset.x === 'acc');
+});
 
 /* ---------- entry date ----------
    Entries default to today but can be backdated, for the fares you forgot to log
@@ -711,11 +947,11 @@ $('tabs').addEventListener('click', e => {
 $('rtabs').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   state.rperiod = b.dataset.p;
+  state.rOffset = 0;
   document.querySelectorAll('#rtabs button').forEach(x => x.setAttribute('aria-pressed', x === b));
   renderReport();
 });
 $('rPrev').onclick = () => toast('Browsing past periods arrives in v0.7');
-document.querySelectorAll('.exp button').forEach(b => b.onclick = () => toast('Exports arrive in v0.8'));
 
 
 /* ---------- pull-to-dismiss ----------

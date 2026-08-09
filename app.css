@@ -9,7 +9,7 @@
   --body:'Plus Jakarta Sans',system-ui,sans-serif;
   --mono:'Plus Jakarta Sans',system-ui,sans-serif;
   --r:14px;
-  --css-version:'0.9.4';
+  --css-version:'0.9.5';
   --safe-t:env(safe-area-inset-top,0px);
   --safe-b:env(safe-area-inset-bottom,0px);
 }
@@ -590,3 +590,20 @@ html[data-skin="day"] .c-income{background:rgba(5,150,105,.16);color:#059669}
 /* payment pills */
 .pill{display:inline-flex;align-items:center;gap:6px}
 .pico{font-size:13px;line-height:1}
+
+
+/* ============================================================
+   Reports — period navigator
+   ============================================================ */
+.rnav{gap:4px}
+.whenPick{position:relative;flex:1;display:flex;justify-content:center;align-items:center;
+  padding:2px 6px;border-radius:9px;cursor:pointer}
+.whenPick:active{background:var(--surf2)}
+.whenPick input{position:absolute;inset:0;opacity:0;width:100%;height:100%;border:0;cursor:pointer}
+.rnav button{min-width:36px;font-size:19px}
+.rnav button[disabled]{opacity:.35}
+.rSub{text-align:center;font-size:11.5px;font-weight:600;color:var(--dim);margin:6px 0 0}
+.rToday{display:block;margin:8px auto 0;background:var(--surf2);border:1px solid var(--line);
+  color:var(--acc);border-radius:999px;padding:7px 15px;font-family:var(--body);
+  font-size:12px;font-weight:700;cursor:pointer}
+.exp button{padding:13px 4px;font-size:12px}

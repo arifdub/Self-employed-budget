@@ -173,9 +173,14 @@
       </div>
       <div class="rnav">
         <button id="rPrev" aria-label="Previous period">‹</button>
-        <span class="when" id="rWhen"></span>
-        <button id="rNext" disabled aria-label="Next period">›</button>
+        <label class="whenPick" for="rDate">
+          <span class="when" id="rWhen"></span>
+          <input type="date" id="rDate" aria-label="Jump to a date">
+        </label>
+        <button id="rNext" aria-label="Next period">›</button>
       </div>
+      <div class="rSub" id="rSub"></div>
+      <button class="rToday" id="rToday" hidden>Back to now</button>
 
       <div class="flow">
         <div class="fl">
@@ -212,7 +217,7 @@
       <div class="brk" id="homeBrk"></div>
 
       <div class="exp">
-        <button data-x="csv">Export CSV</button>
+        <button data-x="csv">CSV</button>
         <button data-x="pdf">PDF summary</button>
         <button data-x="acc">Send to accountant</button>
       </div>
@@ -379,6 +384,7 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="config.js"></script>
 <script src="app.js"></script>
 </body>
