@@ -48,24 +48,59 @@
       <button data-p="month" aria-pressed="false">Month</button>
     </div>
 
-    <div class="gauge">
-      <svg viewBox="0 0 222 206" aria-hidden="true">
-        <g id="ticks"></g>
-        <circle class="track" cx="111" cy="104" r="84" transform="rotate(135 111 104)" stroke-dasharray="395.8 528"/>
-        <circle class="fill" id="fill" cx="111" cy="104" r="84" transform="rotate(135 111 104)" stroke-dasharray="0 528"/>
-      </svg>
-      <div class="readout">
-        <div class="amount" id="gAmt">€0</div>
-        <div class="of" id="gOf">of €200 today</div>
-        <div class="pct" id="gPct">0%</div>
+    <!-- hero target -->
+    <section class="hero">
+      <div class="heroL">
+        <div class="heroLab" id="heroLab">Today's target</div>
+        <div class="heroAmt"><span id="heroVal">€0</span><span class="heroOf"> / <span id="heroTgt">€200</span></span></div>
+        <div class="heroDone" id="heroDone">0% completed</div>
+        <div class="heroBar"><i id="heroBar"></i></div>
+        <div class="heroFoot"><span><b id="heroEarned">€0</b> earned</span><span id="heroToGo">€200 to go</span></div>
+      </div>
+      <div class="heroR">
+        <svg viewBox="0 0 120 120" aria-hidden="true">
+          <circle class="ringTrack" cx="60" cy="60" r="50"/>
+          <circle class="ringFill" id="ringFill" cx="60" cy="60" r="50"
+                  transform="rotate(-90 60 60)" stroke-dasharray="0 314"/>
+        </svg>
+        <div class="ringMid"><div class="ringPct" id="ringPct">0%</div><div class="ringSub">of target</div></div>
+      </div>
+    </section>
+
+    <div class="stats">
+      <div class="stat inc">
+        <div class="statName">Fares</div>
+        <div class="statVal" id="stInc">€0</div>
+        <div class="statMeta" id="stIncWhen">Today</div>
+        <svg class="spark" id="sparkInc" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true"></svg>
+      </div>
+      <div class="stat exp">
+        <div class="statName">Expenses</div>
+        <div class="statVal" id="stExp">€0</div>
+        <div class="statMeta" id="stExpWhen">Today</div>
+        <svg class="spark" id="sparkExp" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true"></svg>
+      </div>
+      <div class="stat net">
+        <div class="statName">Net income</div>
+        <div class="statVal" id="stNet">€0</div>
+        <div class="statMeta" id="stNetWhen">Today</div>
+        <svg class="spark" id="sparkNet" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true"></svg>
       </div>
     </div>
 
-    <div class="strip">
-      <div class="cell"><div class="k">Jobs</div><div class="v" id="sJobs">0</div></div>
-      <div class="cell"><div class="k">Per job</div><div class="v" id="sAvg">€0</div></div>
-      <div class="cell"><div class="k" id="kLeft">To go</div><div class="v" id="sLeft">€0</div></div>
-    </div>
+    <div class="sec" id="bdTitle">Today's breakdown<button class="edit" id="toReports">View details</button></div>
+    <section class="card bd">
+      <div class="bdTop">
+        <div class="donutWrap">
+          <svg viewBox="0 0 120 120" id="donut" aria-hidden="true"></svg>
+          <div class="donutMid"><div class="donutVal" id="donutVal">€0</div><div class="donutSub">income</div></div>
+        </div>
+        <div class="bdRows" id="bdRows"></div>
+      </div>
+    </section>
+
+    <div class="sec">Quick add</div>
+    <div class="qacts" id="qacts"></div>
 
     <div class="sec">Targets<button class="edit" id="editT">Edit targets</button></div>
 
@@ -88,8 +123,7 @@
     <div class="sec">This week</div>
     <div class="hist" id="hist"></div>
 
-    <div class="sec">Today's entries</div>
-    <div id="list"></div>
+
   </div>
 
   <!-- ============ NAV ============ -->

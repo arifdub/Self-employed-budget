@@ -6,6 +6,49 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [0.8.1] — 2026-08-09
+
+### Changed
+- **Today's entries removed from the home screen.** The list was duplicated: the
+  Entries tab already shows the full history, grouped by day, filterable by income,
+  business or home, with swipe to edit and delete. Home is now the summary — targets,
+  totals, breakdown, quick add — and Entries is the record.
+
+---
+
+## [0.8.0] — 2026-08-09
+
+Home screen redesigned. Everything that used to need three taps to find is now on
+one screen.
+
+### Added
+- **Hero target card** — amount against target, a progress ring, a bar, and earned
+  vs still-to-go, over an amber city glow. Replaces the standalone gauge, which used
+  a third of the screen to show a single number.
+- **Three stat cards** — Fares, Expenses and Net income, each with a **real
+  fourteen-day sparkline** drawn from the actual entries rather than decoration.
+- **Breakdown donut** — income split into business costs, personal costs and money
+  in pocket, with the amounts and their share of income beside it. Answers "where
+  did it all go" without opening Reports.
+- **Quick add** — Add fare, Fuel, Repairs, Home cost. One tap opens the entry sheet
+  already set to that type and category.
+- **View details** on the breakdown opens Reports on the matching period.
+
+### Changed
+- Colour is used to carry meaning now: green for income, red for business costs,
+  blue for personal, purple for what is left. Amber stays as the target and brand
+  colour throughout.
+- The old circular gauge and the Jobs / Per job / To go strip are gone; the hero and
+  stat cards cover both in less space.
+
+### Notes
+- No illustration is bundled. A stock taxi photo would add weight to every page load
+  and date quickly; the amber ring and gradient carry the same visual weight for free.
+- The donut is drawn with `stroke-dasharray` on circles rather than arc paths — less
+  trigonometry to get wrong, and it animates without extra work.
+
+---
+
 ## [0.7.2] — 2026-08-09
 
 ### Changed

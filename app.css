@@ -4,11 +4,12 @@
   --bg:#121A2F; --surf:#1A2340; --surf2:#232E50; --line:#2A3559;
   --txt:#FFFFFF; --mut:#9AA6C4; --dim:#6E7A9C;
   --acc:#FFB020; --on-acc:#121A2F; --good:#FFC24D; --bad:#FB7185;
+  --c-inc:#34D399; --c-biz:#FB7185; --c-per:#60A5FA; --c-pkt:#A78BFA;
   --dspl:'Plus Jakarta Sans',system-ui,sans-serif;
   --body:'Plus Jakarta Sans',system-ui,sans-serif;
   --mono:'Plus Jakarta Sans',system-ui,sans-serif;
   --r:14px;
-  --css-version:'0.7.2';
+  --css-version:'0.8.1';
   --safe-t:env(safe-area-inset-top,0px);
   --safe-b:env(safe-area-inset-bottom,0px);
 }
@@ -16,6 +17,7 @@ html[data-skin="day"]{
   --bg:#FAF8FF; --surf:#FFFFFF; --surf2:#F3EEFF; --line:#EBE4F8;
   --txt:#1C1027; --mut:#8C7FA6; --dim:#A99CC4;
   --acc:#6D28D9; --on-acc:#FFFFFF; --good:#3F7A2E; --bad:#E11D48;
+  --c-inc:#059669; --c-biz:#E11D48; --c-per:#2563EB; --c-pkt:#7C3AED;
   --dspl:'Plus Jakarta Sans',system-ui,sans-serif;
   --body:'Plus Jakarta Sans',system-ui,sans-serif;
   --mono:'Plus Jakarta Sans',system-ui,sans-serif;
@@ -421,3 +423,83 @@ body{font-weight:500}
 .mbox h4{font-weight:800;letter-spacing:-.02em;font-size:18px}
 .trow label{font-weight:700}
 .toast{font-weight:700}
+
+
+/* ============================================================
+   HOME — hero, stat cards, breakdown, quick add
+   ============================================================ */
+.c-inc{color:var(--c-inc)} .c-biz{color:var(--c-biz)}
+.c-per{color:var(--c-per)} .c-pkt{color:var(--c-pkt)}
+
+/* hero */
+.hero{display:flex;gap:14px;align-items:center;margin-top:10px;padding:16px 16px 15px;
+  border-radius:20px;border:1px solid var(--line);
+  background:
+    radial-gradient(120% 140% at 100% 0%, rgba(255,176,32,.16) 0%, transparent 58%),
+    linear-gradient(160deg, var(--surf) 0%, var(--bg) 100%)}
+.heroL{flex:1;min-width:0}
+.heroLab{font-size:12.5px;font-weight:700;color:var(--mut)}
+.heroAmt{margin-top:4px;font-size:32px;font-weight:800;letter-spacing:-.04em;color:var(--acc);
+  font-variant-numeric:tabular-nums;line-height:1.05}
+.heroOf{font-size:17px;color:var(--mut);font-weight:700;letter-spacing:-.02em}
+.heroDone{margin-top:5px;font-size:12.5px;font-weight:700;color:var(--c-inc)}
+.heroDone.hit{color:var(--acc)}
+.heroBar{height:8px;border-radius:99px;background:var(--surf2);margin-top:11px;overflow:hidden}
+.heroBar i{display:block;height:100%;border-radius:99px;background:var(--acc);
+  transition:width .55s cubic-bezier(.2,.8,.2,1)}
+.heroFoot{display:flex;justify-content:space-between;gap:8px;margin-top:9px;font-size:12px;color:var(--mut);font-weight:600}
+.heroFoot b{color:var(--c-inc);font-weight:800}
+
+.heroR{position:relative;width:104px;height:104px;flex:0 0 auto}
+.heroR svg{width:100%;height:100%;display:block}
+.ringTrack{fill:none;stroke:var(--surf2);stroke-width:11}
+.ringFill{fill:none;stroke:var(--acc);stroke-width:11;stroke-linecap:round;
+  transition:stroke-dasharray .6s cubic-bezier(.2,.8,.2,1)}
+.ringMid{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.ringPct{font-size:22px;font-weight:800;letter-spacing:-.03em;color:var(--txt);font-variant-numeric:tabular-nums}
+.ringSub{font-size:9.5px;font-weight:700;color:var(--mut);margin-top:1px}
+
+/* stat cards */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.stat{position:relative;overflow:hidden;border-radius:16px;border:1px solid var(--line);
+  background:var(--surf);padding:11px 10px 0;min-height:104px}
+.statName{font-size:11px;font-weight:700;color:var(--mut);line-height:1.25}
+.statVal{margin-top:5px;font-size:17px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.statMeta{margin-top:2px;font-size:10.5px;font-weight:600;color:var(--dim)}
+.stat.inc .statVal{color:var(--c-inc)}
+.stat.exp .statVal{color:var(--c-biz)}
+.stat.net .statVal{color:var(--c-per)}
+.spark{position:absolute;left:0;right:0;bottom:0;width:100%;height:30px;display:block}
+.sparkLine{fill:none;stroke-width:2;vector-effect:non-scaling-stroke}
+.sparkFill{stroke:none;opacity:.18}
+.stat.inc .sparkLine,.stat.inc .sparkFill{stroke:var(--c-inc);fill:var(--c-inc)}
+.stat.exp .sparkLine,.stat.exp .sparkFill{stroke:var(--c-biz);fill:var(--c-biz)}
+.stat.net .sparkLine,.stat.net .sparkFill{stroke:var(--c-per);fill:var(--c-per)}
+
+/* breakdown */
+.bd{padding:15px 14px}
+.bdTop{display:flex;gap:14px;align-items:center}
+.donutWrap{position:relative;width:112px;height:112px;flex:0 0 auto}
+.donutWrap svg{width:100%;height:100%;display:block}
+.donutTrack{fill:none;stroke:var(--surf2);stroke-width:14}
+.donutSeg{fill:none;stroke-width:14;transition:stroke-dasharray .5s}
+.donutSeg.c-biz{stroke:var(--c-biz)} .donutSeg.c-per{stroke:var(--c-per)} .donutSeg.c-pkt{stroke:var(--c-pkt)}
+.donutMid{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.donutVal{font-size:16px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.donutSub{font-size:9.5px;font-weight:700;color:var(--mut)}
+.bdRows{flex:1;min-width:0}
+.bdRow{display:flex;align-items:center;gap:8px;padding:6px 0}
+.bdDot{width:9px;height:9px;border-radius:50%;flex:0 0 auto;background:currentColor}
+.bdName{flex:1;min-width:0;font-size:12px;font-weight:600;color:var(--mut);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bdVal{font-size:12.5px;font-weight:800;font-variant-numeric:tabular-nums}
+.bdPct{font-size:10.5px;font-weight:700;color:var(--dim);width:34px;text-align:right}
+
+/* quick add */
+.qacts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.qact{background:var(--surf);border:1px solid var(--line);border-radius:16px;padding:12px 4px 10px;
+  cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:7px;font-family:var(--body)}
+.qicon{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-size:17px;
+  background:color-mix(in srgb, currentColor 18%, transparent)}
+.qlab{font-size:10.5px;font-weight:700;color:var(--mut);line-height:1.2;text-align:center}
+@supports not (background: color-mix(in srgb, red 10%, blue)){ .qicon{background:var(--surf2)} }

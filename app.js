@@ -27,7 +27,7 @@ window.addEventListener('error', ev => {
   if (document.body) document.body.appendChild(bar);
 }, true);
 
-const APP_VERSION = '0.7.2';
+const APP_VERSION = '0.8.1';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -151,24 +151,10 @@ function bucket(type, p) {
 const total = o => Object.values(o).reduce((a, b) => a + b, 0);
 const countOf = (type, p) => state.entries.filter(e => e.type === type && inRange(e, periodRange(p))).length;
 
-/* ---------- gauge ticks ---------- */
-(function buildTicks() {
-  const g = $('ticks'), cx = 111, cy = 104, N = 30;
-  for (let i = 0; i <= N; i++) {
-    const a = (135 + 270 * i / N) * Math.PI / 180;
-    const l = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    l.setAttribute('x1', cx + 96 * Math.cos(a)); l.setAttribute('y1', cy + 96 * Math.sin(a));
-    l.setAttribute('x2', cx + 102 * Math.cos(a)); l.setAttribute('y2', cy + 102 * Math.sin(a));
-    l.setAttribute('class', 'tick'); l.dataset.i = i; g.appendChild(l);
-  }
-})();
-
-
 /* ---------- swipeable entry rows ----------
    One builder used by both the home Today list and the Entries screen.
-   Swipe left to reveal Edit and Delete; tapping the row also opens Edit.
-   Delete here asks for one confirm via the edit sheet's Delete, so a stray
-   swipe cannot destroy an entry silently. */
+   Swipe left to reveal Edit and Delete. A plain tap does nothing on touch
+   devices — entries get brushed constantly in a moving car. */
 function entryRowHTML(e) {
   return '<div class="swipe-wrap" data-eid="' + e.id + '">' +
     '<div class="swipe-actions">' +
@@ -224,17 +210,11 @@ function wireSwipeRows(container) {
         row.style.transform = '';
         wrap.classList.remove('swiped');
         if (openSwipe === row) openSwipe = null;
-        // A plain tap deliberately does nothing on touch devices — entries are
-        // touched accidentally far too often in a moving car. Edit and Delete
-        // are reachable only through the swipe actions.
       }
       dx = 0;
     });
 
-    // desktop / non-touch: click opens edit
-    row.addEventListener('click', ev => {
-      if (!('ontouchstart' in window)) openEdit(id);
-    });
+    row.addEventListener('click', () => { if (!('ontouchstart' in window)) openEdit(id); });
 
     wrap.querySelectorAll('.swact').forEach(b => b.addEventListener('click', ev => {
       ev.stopPropagation();
@@ -250,39 +230,60 @@ document.addEventListener('touchstart', ev => {
 
 /* ---------- render: home ---------- */
 function render(flash) {
-  const now = new Date();
-  const cssV = (getComputedStyle(document.documentElement)
-    .getPropertyValue('--css-version') || '').trim().replace(/['"]/g, '');
-  const stamp = (cssV && cssV !== APP_VERSION) ? ' · v' + APP_VERSION + ' css' + cssV
-                                               : ' · v' + APP_VERSION;
-  $('hDate').textContent = now.toLocaleDateString(LOCALE, { weekday: 'short', day: 'numeric', month: 'short' })
-    + stamp;
   greet();
+  const now = new Date();
+  $('hDate').textContent = now.toLocaleDateString(LOCALE, { weekday: 'short', day: 'numeric', month: 'short' });
 
   const P = state.period;
-  const val = total(bucket('income', P));
+  const inc = total(bucket('income', P));
+  const biz = total(bucket('business', P));
+  const per = total(bucket('personal', P));
+  const expenses = biz + per;
+  const net = inc - biz;                 // business net — the taxable figure
+  const pocket = inc - expenses;         // what actually stays
   const tgt = state.targets[P];
-  const jobs = countOf('income', P);
-  const label = P === 'day' ? 'today' : P === 'week' ? 'this week' : 'this month';
-  const pct = tgt ? Math.min(val / tgt, 1) : 0;
-  const pctN = tgt ? Math.round(val / tgt * 100) : 0;
+  const label = P === 'day' ? 'Today' : P === 'week' ? 'This week' : 'This month';
 
-  $('fill').setAttribute('stroke-dasharray', (395.8 * pct) + ' 528');
-  $('fill').style.stroke = val >= tgt ? 'var(--good)' : 'var(--acc)';
-  $('gAmt').textContent = money(val);
-  $('gOf').textContent = 'of ' + money(tgt) + ' ' + label;
-  $('gPct').textContent = val >= tgt ? 'Target hit · ' + pctN + '%' : pctN + '%';
-  document.querySelectorAll('.tick').forEach(t => t.classList.toggle('hot', (+t.dataset.i) / 30 <= pct));
+  /* ---- hero ---- */
+  const pct = tgt ? Math.min(inc / tgt, 1) : 0;
+  const pctN = tgt ? Math.round(inc / tgt * 100) : 0;
+  $('heroLab').textContent = (P === 'day' ? "Today's" : P === 'week' ? "This week's" : "This month's") + ' target';
+  $('heroVal').textContent = money(inc);
+  $('heroTgt').textContent = money(tgt);
+  $('heroDone').textContent = inc >= tgt ? 'Target reached' : pctN + '% completed';
+  $('heroDone').classList.toggle('hit', inc >= tgt);
+  $('heroBar').style.width = (pct * 100) + '%';
+  $('heroEarned').textContent = money(inc);
+  $('heroToGo').textContent = inc >= tgt ? money(inc - tgt) + ' over' : money(tgt - inc) + ' to go';
+  $('ringFill').setAttribute('stroke-dasharray', (314 * pct) + ' 314');
+  $('ringPct').textContent = pctN + '%';
 
-  $('sJobs').textContent = jobs;
-  $('sAvg').textContent = money(jobs ? val / jobs : 0);
-  $('kLeft').textContent = val >= tgt ? 'Over' : 'To go';
-  $('sLeft').textContent = money(Math.abs(tgt - val));
+  /* ---- stat cards ---- */
+  $('stInc').textContent = money(inc);
+  $('stExp').textContent = money(expenses);
+  $('stNet').textContent = money(net);
+  ['Inc', 'Exp', 'Net'].forEach(k => { $('st' + k + 'When').textContent = label; });
+  drawSparks();
 
+  /* ---- breakdown ---- */
+  $('bdTitle').firstChild.textContent = label + ' breakdown';
+  $('donutVal').textContent = money(inc);
+  drawDonut(inc, biz, per, pocket);
+  $('bdRows').innerHTML = [
+    ['Total income', inc, 'c-inc', 100],
+    ['Business expenses', biz, 'c-biz', inc ? biz / inc * 100 : 0],
+    ['Personal expenses', per, 'c-per', inc ? per / inc * 100 : 0],
+    ['Money in pocket', pocket, 'c-pkt', inc ? pocket / inc * 100 : 0]
+  ].map(([name, val, cls, share]) =>
+    '<div class="bdRow"><span class="bdDot ' + cls + '"></span>' +
+    '<span class="bdName">' + name + '</span>' +
+    '<span class="bdVal ' + cls + '">' + money(val) + '</span>' +
+    '<span class="bdPct">' + Math.round(share) + '%</span></div>').join('');
+
+  /* ---- the rest ---- */
   drawTargetCard('w', 'week', now);
   drawTargetCard('m', 'month', now);
   drawWeekBars(now);
-  drawList();
 
   $('tSummary').textContent = money(state.targets.day) + ' / day';
   $('verOut').textContent = 'v' + APP_VERSION;
@@ -292,6 +293,61 @@ function render(flash) {
   });
 
   renderReport();
+}
+
+/* ---------- sparklines ----------
+   Fourteen days of real history, so the shape means something rather than
+   being decoration. Flat line when there is nothing to show yet. */
+function seriesFor(type, days) {
+  const out = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = addDays(startOfDay(new Date()), -i);
+    const r = { from: d, to: addDays(d, 1) };
+    out.push(state.entries
+      .filter(e => (type === 'net' ? true : e.type === type) && inRange(e, r))
+      .reduce((a, e) => a + (type === 'net' ? (e.type === 'income' ? e.amt : e.type === 'business' ? -e.amt : 0) : e.amt), 0));
+  }
+  return out;
+}
+
+function sparkPath(vals, w, h) {
+  const max = Math.max(1, ...vals.map(Math.abs));
+  const step = w / Math.max(vals.length - 1, 1);
+  return vals.map((v, i) =>
+    (i ? 'L' : 'M') + (i * step).toFixed(1) + ' ' + (h - (Math.abs(v) / max) * (h - 3) - 1.5).toFixed(1)
+  ).join(' ');
+}
+
+function drawSparks() {
+  [['sparkInc', 'income'], ['sparkExp', 'business'], ['sparkNet', 'net']].forEach(([id, type]) => {
+    const vals = type === 'business'
+      ? seriesFor('business', 14).map((v, i) => v + seriesFor('personal', 14)[i])
+      : seriesFor(type, 14);
+    const d = sparkPath(vals, 100, 28);
+    $(id).innerHTML = '<path class="sparkLine" d="' + d + '"/>' +
+      '<path class="sparkFill" d="' + d + ' L100 28 L0 28 Z"/>';
+  });
+}
+
+/* ---------- donut ----------
+   Income split three ways: business costs, personal costs, and what is left.
+   Drawn with stroke-dasharray rather than arc paths — fewer places to get the
+   trigonometry wrong, and it animates for free. */
+function drawDonut(inc, biz, per, pocket) {
+  const C = 314;                         // circumference at r=50
+  const parts = inc > 0
+    ? [[biz / inc, 'c-biz'], [per / inc, 'c-per'], [Math.max(pocket, 0) / inc, 'c-pkt']]
+    : [];
+  let offset = 0;
+  let svg = '<circle class="donutTrack" cx="60" cy="60" r="50"/>';
+  parts.forEach(([share, cls]) => {
+    const len = Math.max(share, 0) * C;
+    if (len <= 0) return;
+    svg += '<circle class="donutSeg ' + cls + '" cx="60" cy="60" r="50" transform="rotate(-90 60 60)" ' +
+           'stroke-dasharray="' + len.toFixed(1) + ' ' + C + '" stroke-dashoffset="' + (-offset).toFixed(1) + '"/>';
+    offset += len;
+  });
+  $('donut').innerHTML = svg;
 }
 
 function drawTargetCard(k, p, now) {
@@ -324,15 +380,6 @@ function drawWeekBars(now) {
   $('hist').innerHTML = '<div class="goalline" style="top:' + (76 - (tgt / max) * 58 - 12) + 'px"></div>' +
     days.map(x => '<div class="dayw"><div class="hb ' + (x.today ? 'today' : x.v >= tgt ? 'hit' : '') +
       '" style="height:' + Math.max((x.v / max) * 58, 2) + 'px"></div><div class="dl">' + x.l + '</div></div>').join('');
-}
-
-function drawList() {
-  const r = periodRange('day');
-  const rows = state.entries.filter(e => inRange(e, r)).sort((a, b) => b.at - a.at);
-  $('list').innerHTML = rows.length
-    ? rows.map(entryRowHTML).join('')
-    : '<div class="empty">Nothing logged yet today. Tap the + button to add your first job.</div>';
-  wireSwipeRows($('list'));
 }
 
 /* ---------- render: reports ---------- */
@@ -1155,6 +1202,40 @@ async function initAuth() {
 }
 
 
+
+
+/* ---------- quick add ----------
+   One tap opens the entry sheet already set to the right type and category.
+   These four cover the overwhelming majority of what a driver logs. */
+const QUICK = [
+  { label: 'Add fare',  icon: '🚕', type: 'income',   cat: 'Fare',      cls: 'c-inc' },
+  { label: 'Fuel',      icon: '⛽', type: 'business', cat: 'Fuel',      cls: 'c-biz' },
+  { label: 'Repairs',   icon: '🔧', type: 'business', cat: 'Repairs',   cls: 'c-biz' },
+  { label: 'Home cost', icon: '🏠', type: 'personal', cat: 'Groceries', cls: 'c-per' }
+];
+
+$('qacts').innerHTML = QUICK.map((q, i) =>
+  '<button class="qact" data-q="' + i + '"><span class="qicon ' + q.cls + '">' + q.icon + '</span>' +
+  '<span class="qlab">' + q.label + '</span></button>').join('');
+
+$('qacts').querySelectorAll('.qact').forEach(b => b.onclick = () => {
+  const q = QUICK[+b.dataset.q];
+  state.draft = {
+    type: q.type, cat: q.cat, pay: PAYS[q.type][0], val: '',
+    date: startOfDay(new Date())
+  };
+  drawDraft();
+  openSheet('sheet');
+});
+
+$('toReports').onclick = () => {
+  document.querySelectorAll('.nb').forEach(x => x.classList.toggle('on', x.dataset.go === 'reports'));
+  state.rperiod = state.period;
+  document.querySelectorAll('#rtabs button').forEach(x =>
+    x.setAttribute('aria-pressed', x.dataset.p === state.period));
+  renderReport();
+  openSheet('rep');
+};
 
 /* ---------- identity in the header ----------
    The avatar was a hardcoded "ME" placeholder from the first prototype.
