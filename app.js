@@ -27,7 +27,7 @@ window.addEventListener('error', ev => {
   if (document.body) document.body.appendChild(bar);
 }, true);
 
-const APP_VERSION = '0.9.1';
+const APP_VERSION = '0.9.2';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -47,6 +47,30 @@ const PAYS = {
   personal: ['Cash', 'Card', 'Direct debit']
 };
 const ICON = Object.fromEntries(Object.values(CATS).flat());
+
+
+/* ---------- source and payment icons ----------
+   Emoji cannot be recoloured, so the branded sources use an inline taxi glyph on
+   a coloured chip instead: FREENOW red, Uber black. Uber's mark is black, which
+   would disappear against a navy background, so the chip carries the black and
+   the glyph sits on it in white. */
+const TAXI_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">' +
+  '<path d="M10 2.6h4v1.9h-4z"/>' +
+  '<path d="M5 11l1.5-4.4A2.2 2.2 0 018.6 5h6.8a2.2 2.2 0 012.1 1.6L19 11h.4A1.6 1.6 0 0121 12.6V17a1 1 0 01-1 1h-1v.4a1.5 1.5 0 01-3 0V18H8v.4a1.5 1.5 0 01-3 0V18H4a1 1 0 01-1-1v-4.4A1.6 1.6 0 014.6 11H5zm2.3-.6h9.4l-1.1-3.1a.6.6 0 00-.6-.4H9a.6.6 0 00-.6.4L7.3 10.4zM6.6 15.2a1.2 1.2 0 100-2.4 1.2 1.2 0 000 2.4zm10.8 0a1.2 1.2 0 100-2.4 1.2 1.2 0 000 2.4z"/></svg>';
+
+const CHIP = {
+  'Income':   '<span class="chip c-income">€</span>',
+  'Free Now': '<span class="chip c-freenow">' + TAXI_SVG + '</span>',
+  'Uber':     '<span class="chip c-uber">' + TAXI_SVG + '</span>',
+  'Others':   '<span class="chip c-others">⋯</span>'
+};
+
+const PAY_ICON = {
+  'Cash': '💵', 'Card in car': '💳', 'App payout': '📲', 'Bank transfer': '🏦',
+  'Invoice — unpaid': '🧾', 'Card': '💳', 'Direct debit': '🔁', 'On account': '📄'
+};
+
+const iconHTML = cat => CHIP[cat] || (ICON[cat] || '•');
 
 /* ---------- state ---------- */
 const state = {
@@ -165,7 +189,7 @@ function entryRowHTML(e) {
       '<button class="swact del" data-act="del" aria-label="Delete entry">Delete</button>' +
     '</div>' +
     '<div class="row swipe-row" tabindex="0">' +
-      '<span class="dot">' + (ICON[e.cat] || '•') + '</span>' +
+      '<span class="dot">' + iconHTML(e.cat) + '</span>' +
       '<span class="rmain"><span class="rn">' + e.cat + '</span>' +
       '<span class="rs">' + e.at.toLocaleTimeString(LOCALE, { hour: '2-digit', minute: '2-digit' }) + ' · ' + e.pay + '</span></span>' +
       '<span class="rv ' + (e.type === 'income' ? '' : 'neg') + '">' +
@@ -478,11 +502,12 @@ function drawDraft() {
 
   $('tiles').innerHTML = CATS[d.type].map(([n, i]) =>
     '<button type="button" class="tile" data-c="' + n + '" aria-pressed="' + (n === d.cat) + '">' +
-    '<span class="ic">' + i + '</span><span class="tl">' + n + '</span></button>').join('');
+    '<span class="ic">' + (CHIP[n] || i) + '</span><span class="tl">' + n + '</span></button>').join('');
   $('tiles').querySelectorAll('.tile').forEach(b => b.onclick = () => { d.cat = b.dataset.c; drawDraft(); });
 
   $('pays').innerHTML = PAYS[d.type].map(p =>
-    '<button type="button" class="pill" data-p="' + p + '" aria-pressed="' + (p === d.pay) + '">' + p + '</button>').join('');
+    '<button type="button" class="pill" data-p="' + p + '" aria-pressed="' + (p === d.pay) + '">' +
+    '<span class="pico">' + (PAY_ICON[p] || '') + '</span>' + p + '</button>').join('');
   $('pays').querySelectorAll('.pill').forEach(b => b.onclick = () => { d.pay = b.dataset.p; drawDraft(); });
 
   const seen = new Set(), q = [];
@@ -492,7 +517,7 @@ function drawDraft() {
   });
   $('quick').innerHTML = q.map(e =>
     '<button type="button" class="qc" data-c="' + e.cat + '" data-a="' + e.amt + '" data-p="' + e.pay + '">' +
-    (ICON[e.cat] || '•') + ' ' + e.cat + ' <span>' + money(e.amt) + '</span></button>').join('');
+    iconHTML(e.cat) + ' ' + e.cat + ' <span>' + money(e.amt) + '</span></button>').join('');
   $('quick').style.display = q.length ? '' : 'none';
   $('quick').querySelectorAll('.qc[data-c]').forEach(b => b.onclick = () => {
     d.cat = b.dataset.c; d.val = b.dataset.a; d.pay = b.dataset.p; drawDraft();

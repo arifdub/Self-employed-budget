@@ -6,6 +6,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [0.9.2] — 2026-08-09
+
+### Added
+- **Coloured chips for the income sources**, on the entry tiles, the repeat chips and
+  the entry rows: green € for Income, a red taxi for FREENOW, a black taxi for Uber,
+  grey for Others.
+- **Icons on the payment methods** — cash, card, phone payout, bank, invoice, direct
+  debit — on the pills in the entry sheet.
+
+### Notes
+- The taxi is an inline SVG rather than the 🚕 emoji, because emoji cannot be
+  recoloured and the whole point was red for FREENOW and black for Uber.
+- Uber's mark is black, which would vanish against the navy background, so the chip
+  carries the black and the taxi sits on it in white, with a faint outline to keep
+  the circle visible.
+
+---
+
 ## [0.9.1] — 2026-08-09
 
 ### Changed
