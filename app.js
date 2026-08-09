@@ -27,7 +27,7 @@ window.addEventListener('error', ev => {
   if (document.body) document.body.appendChild(bar);
 }, true);
 
-const APP_VERSION = '0.8.2';
+const APP_VERSION = '0.8.3';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -259,11 +259,10 @@ function render(flash) {
   $('ringPct').textContent = pctN + '%';
 
   /* ---- stat cards ---- */
-  $('stInc').textContent = money(inc);
-  $('stExp').textContent = money(expenses);
-  $('stNet').textContent = money(net);
+  setStat('stInc', inc);
+  setStat('stExp', expenses);
+  setStat('stNet', net);
   ['Inc', 'Exp', 'Net'].forEach(k => { $('st' + k + 'When').textContent = label; });
-  drawSparks();
 
   /* ---- breakdown ---- */
   $('bdTitle').firstChild.textContent = label + ' breakdown';
@@ -299,38 +298,14 @@ function render(flash) {
   renderReport();
 }
 
-/* ---------- sparklines ----------
-   Fourteen days of real history, so the shape means something rather than
-   being decoration. Flat line when there is nothing to show yet. */
-function seriesFor(type, days) {
-  const out = [];
-  for (let i = days - 1; i >= 0; i--) {
-    const d = addDays(startOfDay(new Date()), -i);
-    const r = { from: d, to: addDays(d, 1) };
-    out.push(state.entries
-      .filter(e => (type === 'net' ? true : e.type === type) && inRange(e, r))
-      .reduce((a, e) => a + (type === 'net' ? (e.type === 'income' ? e.amt : e.type === 'business' ? -e.amt : 0) : e.amt), 0));
-  }
-  return out;
-}
-
-function sparkPath(vals, w, h) {
-  const max = Math.max(1, ...vals.map(Math.abs));
-  const step = w / Math.max(vals.length - 1, 1);
-  return vals.map((v, i) =>
-    (i ? 'L' : 'M') + (i * step).toFixed(1) + ' ' + (h - (Math.abs(v) / max) * (h - 3) - 1.5).toFixed(1)
-  ).join(' ');
-}
-
-function drawSparks() {
-  [['sparkInc', 'income'], ['sparkExp', 'business'], ['sparkNet', 'net']].forEach(([id, type]) => {
-    const vals = type === 'business'
-      ? seriesFor('business', 14).map((v, i) => v + seriesFor('personal', 14)[i])
-      : seriesFor(type, 14);
-    const d = sparkPath(vals, 100, 28);
-    $(id).innerHTML = '<path class="sparkLine" d="' + d + '"/>' +
-      '<path class="sparkFill" d="' + d + ' L100 28 L0 28 Z"/>';
-  });
+/* Amounts grow but the card does not, so the type steps down rather than
+   overflowing — which is what clipped "€158" in the middle card. */
+function setStat(id, value) {
+  const el = $(id);
+  const txt = money(value);
+  el.textContent = txt;
+  el.classList.toggle('long',  txt.length >= 7 && txt.length < 9);
+  el.classList.toggle('xlong', txt.length >= 9);
 }
 
 /* ---------- donut ----------

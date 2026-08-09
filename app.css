@@ -9,7 +9,7 @@
   --body:'Plus Jakarta Sans',system-ui,sans-serif;
   --mono:'Plus Jakarta Sans',system-ui,sans-serif;
   --r:14px;
-  --css-version:'0.8.2';
+  --css-version:'0.8.3';
   --safe-t:env(safe-area-inset-top,0px);
   --safe-b:env(safe-area-inset-bottom,0px);
 }
@@ -460,29 +460,31 @@ body{font-weight:500}
 .ringSub{font-size:9.5px;font-weight:700;color:var(--mut);margin-top:1px}
 
 /* stat cards */
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
-.stat{position:relative;overflow:hidden;border-radius:16px;padding:11px 10px 0;min-height:104px;
-  border:1px solid transparent}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;align-items:stretch}
+/* Equal by construction: identical padding, one fixed height, centred content.
+   The sparklines that used to sit here forced each card to size around its own
+   graph, which is why they came out uneven and clipped long amounts. */
+.stat{border-radius:16px;border:1px solid transparent;padding:12px 8px;height:96px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  text-align:center;overflow:hidden}
 .stat.inc{background:rgba(52,211,153,.13);  border-color:rgba(52,211,153,.30)}
 .stat.exp{background:rgba(251,113,133,.13); border-color:rgba(251,113,133,.30)}
 .stat.net{background:rgba(96,165,250,.13);  border-color:rgba(96,165,250,.30)}
 html[data-skin="day"] .stat.inc{background:rgba(5,150,105,.10);  border-color:rgba(5,150,105,.24)}
 html[data-skin="day"] .stat.exp{background:rgba(225,29,72,.10);  border-color:rgba(225,29,72,.24)}
 html[data-skin="day"] .stat.net{background:rgba(37,99,235,.10);  border-color:rgba(37,99,235,.24)}
-.stat .statName{color:var(--txt);opacity:.75}
-.stat .statMeta{color:var(--txt);opacity:.55}
-.statName{font-size:11px;font-weight:700;color:var(--mut);line-height:1.25}
-.statVal{margin-top:5px;font-size:17px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
-.statMeta{margin-top:2px;font-size:10.5px;font-weight:600;color:var(--dim)}
+
+.statName{font-size:11px;font-weight:700;color:var(--txt);opacity:.75;line-height:1.2;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.statVal{font-size:17px;font-weight:800;letter-spacing:-.035em;font-variant-numeric:tabular-nums;
+  line-height:1.1;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.statMeta{font-size:10.5px;font-weight:600;color:var(--txt);opacity:.55;line-height:1.2}
 .stat.inc .statVal{color:var(--c-inc)}
 .stat.exp .statVal{color:var(--c-biz)}
 .stat.net .statVal{color:var(--c-per)}
-.spark{position:absolute;left:0;right:0;bottom:0;width:100%;height:30px;display:block}
-.sparkLine{fill:none;stroke-width:2;vector-effect:non-scaling-stroke}
-.sparkFill{stroke:none;opacity:.18}
-.stat.inc .sparkLine,.stat.inc .sparkFill{stroke:var(--c-inc);fill:var(--c-inc)}
-.stat.exp .sparkLine,.stat.exp .sparkFill{stroke:var(--c-biz);fill:var(--c-biz)}
-.stat.net .sparkLine,.stat.net .sparkFill{stroke:var(--c-per);fill:var(--c-per)}
+/* four figures and up need a size down to stay on one line at this width */
+.statVal.long{font-size:15px}
+.statVal.xlong{font-size:13px;letter-spacing:-.045em}
 
 /* breakdown */
 .bd{padding:15px 14px}

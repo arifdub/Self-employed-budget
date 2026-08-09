@@ -6,6 +6,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [0.8.3] — 2026-08-09
+
+### Fixed
+- **The three stat cards were not the same size and the middle one clipped its
+  amount.** The sparkline was the cause: each card sized itself around its own graph,
+  and the graph took the space the figure needed, so "€158" ran off the edge. The
+  sparklines are gone and the cards are now equal by construction — identical padding,
+  one fixed height, content centred.
+- **Layout is now consistent**: label on top, amount bold in the middle, period
+  underneath, all centred.
+- **Long amounts step the type down** instead of overflowing. Four figures drop a
+  size, five drop another, so a €12,450 month still fits on one line.
+
+### Changed
+- Solid tinted backgrounds fill each card, with no graph area at the bottom.
+
+---
+
 ## [0.8.2] — 2026-08-09
 
 ### Changed
