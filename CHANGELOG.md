@@ -6,6 +6,23 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [0.9.1] — 2026-08-09
+
+### Changed
+- **"Fare" is now "Income"** everywhere: the stat card, the quick-add button, and the
+  first income source on the entry screen. Free Now, Uber and Others are unchanged.
+- The taxi icon is gone from that source tile — the word alone is clearer, and the
+  tile centres the label when there is no icon rather than leaving a gap.
+- Quick add reads "Add income".
+
+### Notes
+- **Existing entries are relabelled automatically.** Anything already logged as
+  "Fare", on the phone or in the database, is read back as "Income" and queued for
+  re-upload, so history and new entries agree instead of the reports splitting the
+  same thing across two names.
+
+---
+
 ## [0.9.0] — 2026-08-09
 
 ### Added

@@ -27,13 +27,13 @@ window.addEventListener('error', ev => {
   if (document.body) document.body.appendChild(bar);
 }, true);
 
-const APP_VERSION = '0.9.0';
+const APP_VERSION = '0.9.1';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
 const LOCALE = 'en-IE';
 
-const SOURCES = [['Fare', '🚕'], ['Free Now', 'FN'], ['Uber', 'U'], ['Others', '⋯']];
+const SOURCES = [['Income', ''], ['Free Now', 'FN'], ['Uber', 'U'], ['Others', '⋯']];
 const CATS = {
   income: SOURCES,
   business: [['Fuel', '⛽'], ['Insurance', '🛡'], ['Repairs', '🔧'], ['Car wash', '🫧'],
@@ -55,7 +55,7 @@ const state = {
   period: 'day',
   rperiod: 'day',
   skin: 'night',
-  draft: { type: 'income', cat: 'Fare', pay: 'Cash', val: '',
+  draft: { type: 'income', cat: 'Income', pay: 'Cash', val: '',
     // Inline rather than calling startOfDay(): that helper is declared further
     // down the file, and a const is not readable before its own definition runs.
     date: (() => { const x = new Date(); x.setHours(0, 0, 0, 0); return x; })() }
@@ -84,7 +84,10 @@ function loadEntries() {
     const raw = localStorage.getItem(STORE_KEY);
     if (!raw) return [];
     return JSON.parse(raw).map(e => ({ ...e, at: new Date(e.at) }))
-      .filter(e => e.id && e.amt > 0 && !isNaN(e.at));
+      .filter(e => e.id && e.amt > 0 && !isNaN(e.at))
+      // "Fare" was renamed to "Income" in v0.9.1. Entries logged before that
+      // are relabelled on load so the history reads consistently.
+      .map(e => (e.cat === 'Fare' ? { ...e, cat: 'Income' } : e));
   } catch (err) {
     return [];
   }
@@ -626,7 +629,7 @@ function closeSheet(id) {
 }
 
 $('openAdd').onclick = () => {
-  state.draft = { type: 'income', cat: 'Fare', pay: 'Cash', val: '', date: startOfDay(new Date()) };
+  state.draft = { type: 'income', cat: 'Income', pay: 'Cash', val: '', date: startOfDay(new Date()) };
   drawDraft(); openSheet('sheet');
 };
 $('closeAdd').onclick = () => closeSheet('sheet');
@@ -955,7 +958,7 @@ const toRow = e => ({
   deleted_at: tombstones[e.id] || null
 });
 const fromRow = r => ({
-  id: r.id, type: r.type, cat: r.category,
+  id: r.id, type: r.type, cat: r.category === 'Fare' ? 'Income' : r.category,
   amt: Number(r.amount), pay: r.pay_method || 'Cash',
   at: new Date(r.occurred_at)
 });
@@ -1240,7 +1243,7 @@ async function initAuth() {
    One tap opens the entry sheet already set to the right type and category.
    These four cover the overwhelming majority of what a driver logs. */
 const QUICK = [
-  { label: 'Add fare',  icon: '🚕', type: 'income',   cat: 'Fare',      cls: 'c-inc' },
+  { label: 'Add income', icon: '💶', type: 'income',   cat: 'Income',    cls: 'c-inc' },
   { label: 'Fuel',      icon: '⛽', type: 'business', cat: 'Fuel',      cls: 'c-biz' },
   { label: 'Repairs',   icon: '🔧', type: 'business', cat: 'Repairs',   cls: 'c-biz' },
   { label: 'Home cost', icon: '🏠', type: 'personal', cat: 'Groceries', cls: 'c-per' }
@@ -1409,6 +1412,8 @@ $('avatar').onclick = () => {
 /* ---------- go ---------- */
 loadSettings();
 state.entries = loadEntries();
+// Anything relabelled from Fare needs re-uploading so the database matches.
+state.entries.forEach(e => { if (e.cat === 'Income') dirty.add(e.id); });
 setSkin(state.skin);
 drawDraft();
 render();
