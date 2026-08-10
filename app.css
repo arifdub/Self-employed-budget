@@ -9,7 +9,7 @@
   --body:'Plus Jakarta Sans',system-ui,sans-serif;
   --mono:'Plus Jakarta Sans',system-ui,sans-serif;
   --r:14px;
-  --css-version:'0.9.5';
+  --css-version:'0.9.6';
   --safe-t:env(safe-area-inset-top,0px);
   --safe-b:env(safe-area-inset-bottom,0px);
 }
@@ -102,7 +102,7 @@ html[data-skin="day"] .cell .k{font-family:var(--body);letter-spacing:.05em}
 
 /* section heads */
 .sec{font-family:var(--dspl);font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--mut);
-  font-weight:700;margin:15px 0 7px;display:flex;justify-content:space-between;align-items:center}
+  font-weight:800;margin:16px 0 8px;font-size:12.5px;display:flex;justify-content:space-between;align-items:center}
 html[data-skin="day"] .sec{font-family:var(--dspl);font-size:14px;letter-spacing:-.02em;text-transform:none;color:var(--txt)}
 .sec .edit{font-family:var(--body);font-size:11px;letter-spacing:.02em;text-transform:none;
   color:var(--acc);background:none;border:0;cursor:pointer;font-weight:600}
@@ -500,20 +500,14 @@ body{font-weight:500}
 .ringSub{font-size:9.5px;font-weight:700;color:var(--mut);margin-top:1px}
 
 /* stat cards */
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px;align-items:stretch}
-/* Equal by construction: identical padding, one fixed height, centred content.
-   The sparklines that used to sit here forced each card to size around its own
-   graph, which is why they came out uneven and clipped long amounts. */
-/* min-width:0 is the fix. A grid item will not shrink below its content by
-   default, so "Net income" and "Fares" pushed their columns wider than 1fr and
-   stole the difference from the middle one — which is why only Expenses came out
-   narrow. Allowing the items to shrink makes all three exactly equal. */
-.stat{min-width:0;align-self:stretch;min-height:88px;border-radius:16px;border:1px solid transparent;
-  padding:11px 7px;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:3px;text-align:center;overflow:hidden;box-sizing:border-box}
-/* Grid rows equalise their items by default. A fixed height fought that on WebKit
-   and left the middle card sitting lower than its neighbours, so the height is set
-   by the row now and min-height only guards against an empty card collapsing. */
+/* Flex rather than grid. Grid stretching was being overridden somewhere and the
+   middle card kept centring itself in the row instead of filling it; a flex row
+   with equal basis and explicit stretch leaves nothing to interpret. */
+.stats{display:flex;gap:8px;margin-top:9px;align-items:stretch}
+.stat{flex:1 1 0;min-width:0;align-self:stretch;min-height:104px;
+  border-radius:16px;border:1px solid transparent;padding:12px 8px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  text-align:center;overflow:hidden;box-sizing:border-box}
 .stat.inc{background:rgba(52,211,153,.13);  border-color:rgba(52,211,153,.30)}
 .stat.exp{background:rgba(251,113,133,.13); border-color:rgba(251,113,133,.30)}
 .stat.net{background:rgba(96,165,250,.13);  border-color:rgba(96,165,250,.30)}
@@ -521,36 +515,35 @@ html[data-skin="day"] .stat.inc{background:rgba(5,150,105,.10);  border-color:rg
 html[data-skin="day"] .stat.exp{background:rgba(225,29,72,.10);  border-color:rgba(225,29,72,.24)}
 html[data-skin="day"] .stat.net{background:rgba(37,99,235,.10);  border-color:rgba(37,99,235,.24)}
 
-.statName{font-size:11px;font-weight:700;color:var(--txt);opacity:.75;line-height:1.2;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
-.statVal{font-size:17px;font-weight:800;letter-spacing:-.035em;font-variant-numeric:tabular-nums;
-  line-height:1.1;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
-.statMeta{font-size:10.5px;font-weight:600;color:var(--txt);opacity:.55;line-height:1.2}
+.statName{font-size:12.5px;font-weight:700;color:var(--txt);opacity:.85;line-height:1.25;
+  max-width:100%;overflow-wrap:break-word}
+.statVal{font-size:20px;font-weight:800;letter-spacing:-.035em;font-variant-numeric:tabular-nums;
+  line-height:1.1;white-space:nowrap;max-width:100%}
+.statMeta{font-size:11.5px;font-weight:600;color:var(--txt);opacity:.6;line-height:1.2}
 .stat.inc .statVal{color:var(--c-inc)}
 .stat.exp .statVal{color:var(--c-biz)}
 .stat.net .statVal{color:var(--c-per)}
-/* four figures and up need a size down to stay on one line at this width */
-.statVal.long{font-size:15px}
-.statVal.xlong{font-size:13px;letter-spacing:-.045em}
+.statVal.long{font-size:17px}
+.statVal.xlong{font-size:14.5px;letter-spacing:-.045em}
 
 /* breakdown */
 .bd{padding:12px 12px}
-.bdTop{display:flex;gap:14px;align-items:center}
-.donutWrap{position:relative;width:112px;height:112px;flex:0 0 auto}
+.bdTop{display:flex;gap:12px;align-items:center}
+.donutWrap{position:relative;width:134px;height:134px;flex:0 0 auto}
 .donutWrap svg{width:100%;height:100%;display:block}
-.donutTrack{fill:none;stroke:var(--surf2);stroke-width:14}
-.donutSeg{fill:none;stroke-width:14;transition:stroke-dasharray .5s}
+.donutTrack{fill:none;stroke:var(--surf2);stroke-width:15}
+.donutSeg{fill:none;stroke-width:15;transition:stroke-dasharray .5s}
 .donutSeg.c-biz{stroke:var(--c-biz)} .donutSeg.c-per{stroke:var(--c-per)} .donutSeg.c-pkt{stroke:var(--c-pkt)}
 .donutMid{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
-.donutVal{font-size:19px;font-weight:800;letter-spacing:-.035em;font-variant-numeric:tabular-nums;color:var(--c-pkt);line-height:1.05}
+.donutVal{font-size:23px;font-weight:800;letter-spacing:-.04em;font-variant-numeric:tabular-nums;color:var(--c-pkt);line-height:1.05}
 .donutVal.neg{color:var(--c-biz)}
-.donutSub{font-size:8.5px;font-weight:700;color:var(--mut);margin-top:2px;line-height:1.25;max-width:78px}
+.donutSub{font-size:10px;font-weight:700;color:var(--mut);margin-top:3px;line-height:1.25;max-width:92px}
 .bdRows{flex:1;min-width:0}
-.bdRow{display:flex;align-items:center;gap:7px;padding:5px 0}
-.bdDot{width:9px;height:9px;border-radius:50%;flex:0 0 auto;background:currentColor}
-.bdName{flex:1;min-width:0;font-size:11.5px;font-weight:600;color:var(--mut);line-height:1.25}
-.bdVal{font-size:12.5px;font-weight:800;font-variant-numeric:tabular-nums;flex:0 0 auto;white-space:nowrap}
-.bdPct{font-size:10px;font-weight:700;color:var(--dim);width:30px;text-align:right;flex:0 0 auto}
+.bdRow{display:flex;align-items:center;gap:9px;padding:7px 0}
+.bdDot{width:10px;height:10px;border-radius:50%;flex:0 0 auto;background:currentColor}
+.bdName{flex:1;min-width:0;font-size:13px;font-weight:700;color:var(--txt);opacity:.9;line-height:1.3}
+.bdVal{font-size:14px;font-weight:800;font-variant-numeric:tabular-nums;flex:0 0 auto;white-space:nowrap}
+.bdPct{font-size:11.5px;font-weight:700;color:var(--mut);width:36px;text-align:right;flex:0 0 auto}
 
 /* quick add */
 .qacts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}

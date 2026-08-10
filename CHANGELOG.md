@@ -6,6 +6,29 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [0.9.6] — 2026-08-10
+
+### Fixed
+- **The middle stat card again — this time properly.** It was not taller, it was
+  shorter and centring itself in the row, which means the grid stretch was being
+  overridden rather than the sizing being wrong. The row is now a flex layout with
+  equal basis and explicit stretch, which leaves nothing for the browser to
+  interpret. Three attempts at this were spent adjusting sizing when the actual
+  problem was alignment.
+
+### Changed
+- **Larger, bolder type throughout the summary.** Card labels 11 to 12.5px at weight
+  700, amounts 17 to 20px, period labels 10.5 to 11.5px. Card height raised to 104px
+  to suit.
+- Breakdown rows: names 11.5 to 13px and now full-strength rather than muted,
+  amounts to 14px, percentages to 11.5px, with more space between rows.
+- **Donut enlarged** from 112 to 134px with a thicker ring, the centre figure from 19
+  to 23px, and its caption from 8.5 to 10px so "disposable income" is readable rather
+  than decorative.
+- Section headings up to 12.5px at weight 800.
+
+---
+
 ## [0.9.5] — 2026-08-09
 
 Reports are complete: history browsing and working exports.
