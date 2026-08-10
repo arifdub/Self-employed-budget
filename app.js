@@ -27,7 +27,7 @@ window.addEventListener('error', ev => {
   if (document.body) document.body.appendChild(bar);
 }, true);
 
-const APP_VERSION = '0.9.6';
+const APP_VERSION = '0.9.7';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -951,7 +951,6 @@ $('rtabs').addEventListener('click', e => {
   document.querySelectorAll('#rtabs button').forEach(x => x.setAttribute('aria-pressed', x === b));
   renderReport();
 });
-$('rPrev').onclick = () => toast('Browsing past periods arrives in v0.7');
 
 
 /* ---------- pull-to-dismiss ----------

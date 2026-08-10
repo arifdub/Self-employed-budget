@@ -6,6 +6,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [0.9.7] — 2026-08-10
+
+### Fixed
+- **The back arrow in Reports showed "Browsing past periods arrives in v0.7"
+  instead of working.** A placeholder handler from that era was still in the file,
+  and because it was assigned further down than the real one, it silently replaced
+  it — `onclick` keeps only the last assignment. The date picker worked because it
+  had no such duplicate. Placeholder removed.
+
+---
+
 ## [0.9.6] — 2026-08-10
 
 ### Fixed
