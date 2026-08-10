@@ -6,6 +6,28 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [0.10.1] — 2026-08-10
+
+### Fixed
+- **The middle stat card, definitively.** Every previous attempt relied on the three
+  cards *agreeing* on a height — grid stretch, then flex stretch — and something kept
+  overriding it, leaving the middle one centred and inset. They now carry an explicit
+  106px height. A fixed height on a flex item is honoured regardless of what the
+  alignment does, so the cards are identical by definition rather than by consensus.
+- **Breakdown rows fit on one line each.** The names wrapped to two and three lines,
+  which pushed the quick-add buttons off the bottom of the screen. Names are now
+  single-line with the amount and percentage pinned to the right edge, and
+  "Personal & home expenses" is shortened to "Personal & home".
+
+### Changed
+- Type trimmed slightly across the summary — card labels 12px, amounts 19px,
+  breakdown names 12px — and the donut reduced from 134 to 116px, so quick add is
+  visible without scrolling.
+- Middle card relabelled "Business costs", which fits the width better than
+  "Business expenses".
+
+---
+
 ## [0.10.0] — 2026-08-10
 
 Keeping the database awake, measuring usage, and making the site findable.

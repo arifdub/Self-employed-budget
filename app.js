@@ -27,7 +27,7 @@ window.addEventListener('error', ev => {
   if (document.body) document.body.appendChild(bar);
 }, true);
 
-const APP_VERSION = '0.10.0';
+const APP_VERSION = '0.10.1';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -303,7 +303,7 @@ function render(flash) {
   $('bdRows').innerHTML = [
     ['Gross income', inc, 'c-inc', 100],
     ['Business expenses', biz, 'c-biz', inc ? biz / inc * 100 : 0],
-    ['Personal &amp; home expenses', per, 'c-per', inc ? per / inc * 100 : 0],
+    ['Personal &amp; home', per, 'c-per', inc ? per / inc * 100 : 0],
     ['Disposable income', pocket, 'c-pkt', inc ? pocket / inc * 100 : 0]
   ].map(([name, val, cls, share]) =>
     '<div class="bdRow"><span class="bdDot ' + cls + '"></span>' +
