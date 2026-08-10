@@ -6,6 +6,38 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [0.11.0] — 2026-08-10
+
+Voice entry. No API, no key, no running cost.
+
+### Added
+- **Microphone button** beside the + in the bottom bar. Speak an amount and the app
+  works out the rest: "add twenty euro income", "thirty five fuel", "spent 12.50 on
+  parking", "fifty euro groceries".
+- Understands **spoken numbers** ("twenty five", "one hundred"), **decimals**,
+  every existing category with the words people actually use for them (petrol and
+  diesel both mean Fuel, Tesco and Lidl both mean Groceries), **payment methods**
+  ("cash", "card", "app payout"), and **"yesterday"** for a backdated entry.
+- **Nothing saves from speech alone.** Every result goes to a confirmation card
+  showing amount, category, type, payment and date, with Save, Change something
+  first, or Cancel.
+
+### Notes
+- **Free by design.** Speech-to-text uses the browser's own engine, the same one
+  behind the keyboard's dictation key — no API and no quota. The interpretation is a
+  rule-based parser rather than a language model, because "add ten euro income" is a
+  predictable sentence and does not need one. A model would add a running cost, a
+  server to hold the key, and a dependency on being online.
+- The parser is tested against sixteen realistic phrases; fifteen pass. The one that
+  does not is a fully spelled-out decimal ("twelve point five zero"), which dictation
+  renders as "12.50" anyway.
+- The microphone button hides itself entirely where speech recognition is
+  unavailable, rather than offering a button that cannot work.
+- Voice needs a connection: both Apple and Google process dictation on their servers.
+  The keypad still works in a tunnel.
+
+---
+
 ## [0.10.1] — 2026-08-10
 
 ### Fixed

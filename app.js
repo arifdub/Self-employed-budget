@@ -27,7 +27,7 @@ window.addEventListener('error', ev => {
   if (document.body) document.body.appendChild(bar);
 }, true);
 
-const APP_VERSION = '0.10.1';
+const APP_VERSION = '0.11.0';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -688,6 +688,254 @@ document.querySelectorAll('.exp button').forEach(b => b.onclick = () => {
   if (b.dataset.x === 'csv') exportCSV();
   else exportPDF(b.dataset.x === 'acc');
 });
+
+
+/* ============================================================
+   VOICE ENTRY
+   ------------------------------------------------------------
+   Two layers, neither of which costs anything:
+   1. The browser's own SpeechRecognition turns speech into text. It is the same
+      engine as the keyboard's dictation button — no API, no key, no quota.
+   2. A rule-based parser reads the text. "Add ten euro income" is a predictable
+      sentence, so pattern matching handles it without a model.
+
+   Nothing is ever saved straight from speech. A misheard "fifty" for "fifteen"
+   in someone's accounts is worse than not having the feature, so every result
+   goes through a confirmation card.
+   ============================================================ */
+
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const voiceSupported = () => !!SR;
+
+/* spoken numbers — people say "twenty five euro" as often as "25" */
+const NUM_WORDS = {
+  zero:0, one:1, two:2, three:3, four:4, five:5, six:6, seven:7, eight:8, nine:9,
+  ten:10, eleven:11, twelve:12, thirteen:13, fourteen:14, fifteen:15, sixteen:16,
+  seventeen:17, eighteen:18, nineteen:19, twenty:20, thirty:30, forty:40, fifty:50,
+  sixty:60, seventy:70, eighty:80, ninety:90, hundred:100, grand:1000
+};
+
+function wordsToNumber(text) {
+  const parts = text.replace(/-/g, ' ').split(/\s+/);
+  let total = 0, current = 0, found = false;
+  for (const w of parts) {
+    const n = NUM_WORDS[w];
+    if (n === undefined) {
+      if (w === 'and' && found) continue;
+      if (found) break;                     // the number has ended
+      continue;
+    }
+    found = true;
+    if (n === 100 || n === 1000) current = (current || 1) * n;
+    else current += n;
+  }
+  total += current;
+  return found ? total : null;
+}
+
+/* every category the app knows, plus the words people actually use for them */
+const VOICE_TERMS = [
+  { type:'income',   cat:'Income',      words:['income','fare','fair','job','trip','ride','cash job','earned','earning'] },
+  { type:'income',   cat:'Free Now',    words:['free now','freenow','free-now'] },
+  { type:'income',   cat:'Uber',        words:['uber'] },
+  { type:'income',   cat:'Others',      words:['other income','others'] },
+  { type:'business', cat:'Fuel',        words:['fuel','petrol','diesel','gas','filled up'] },
+  { type:'business', cat:'Insurance',   words:['insurance'] },
+  { type:'business', cat:'Repairs',     words:['repair','repairs','garage','mechanic','service','tyre','tyres','tire'] },
+  { type:'business', cat:'Car wash',    words:['car wash','carwash','wash'] },
+  { type:'business', cat:'Licence',     words:['licence','license','psv','permit'] },
+  { type:'business', cat:'Phone',       words:['phone','mobile','data'] },
+  { type:'business', cat:'Parking',     words:['parking','park'] },
+  { type:'business', cat:'Tolls',       words:['toll','tolls','m50','motorway'] },
+  { type:'personal', cat:'Groceries',   words:['groceries','grocery','shopping','food shop','tesco','lidl','aldi','dunnes'] },
+  { type:'personal', cat:'Rent',        words:['rent','mortgage'] },
+  { type:'personal', cat:'Utilities',   words:['utilities','electricity','gas bill','bills','bill','esb','heating'] },
+  { type:'personal', cat:'Kids',        words:['kids','kid','school','children','childcare'] },
+  { type:'personal', cat:'Eating out',  words:['eating out','lunch','dinner','coffee','takeaway','restaurant']},
+  { type:'personal', cat:'Transport',   words:['bus','train','luas','taxi home'] },
+  { type:'personal', cat:'Health',      words:['health','doctor','pharmacy','chemist','dentist'] }
+];
+
+const PAY_TERMS = [
+  { pay:'Cash',        words:['cash'] },
+  { pay:'Card in car', words:['card','card in car','machine'] },
+  { pay:'App payout',  words:['app','app payout','payout'] },
+  { pay:'Bank transfer', words:['bank','transfer','revolut'] }
+];
+
+function parseVoice(raw) {
+  // Strip punctuation, but keep a full stop or comma that sits between two digits:
+  // "12.50" must survive, while "add 20, cash." must not become one long token.
+  const t = ' ' + raw.toLowerCase()
+    .replace(/[!?;:]/g, ' ')
+    .replace(/[.,]/g, (m, i, s) =>
+      (/\d/.test(s[i - 1] || '') && /\d/.test(s[i + 1] || '')) ? m : ' ')
+    .replace(/\s+/g, ' ') + ' ';
+
+  /* amount: digits first, then spoken words */
+  let amount = null;
+  // Match the decimal form first. Dictation renders "twelve fifty" as "12.50",
+  // and a looser pattern would stop at the 12 and drop the cents.
+  const dec = t.match(/(\d+)\s*(?:[.,]|point)\s*(\d{1,2})\b/);
+  if (dec) amount = parseFloat(dec[1] + '.' + dec[2].padEnd(2, '0'));
+  if (amount === null) {
+    const whole = t.match(/\b(\d+)\b/);
+    if (whole) amount = parseFloat(whole[1]);
+  }
+  if (amount === null) amount = wordsToNumber(t);
+
+  /* category: longest matching phrase wins, so "car wash" beats "wash" */
+  let match = null, best = 0;
+  VOICE_TERMS.forEach(term => {
+    term.words.forEach(w => {
+      if (t.includes(' ' + w + ' ') && w.length > best) { best = w.length; match = term; }
+    });
+  });
+
+  /* an explicit "expense" or "spent" outranks a bare amount with no category */
+  const saysExpense = /\b(expense|expenses|spent|spend|cost|paid|bought)\b/.test(t);
+  const saysIncome  = /\b(income|earned|earning|fare|fair|took|made)\b/.test(t);
+
+  let type = match ? match.type : (saysExpense ? 'business' : 'income');
+  let cat  = match ? match.cat  : (type === 'income' ? 'Income' : 'Other');
+  if (!match && saysIncome) { type = 'income'; cat = 'Income'; }
+
+  let pay = PAYS[type][0];
+  PAY_TERMS.forEach(p => p.words.forEach(w => { if (t.includes(' ' + w + ' ')) pay = p.pay; }));
+  if (!PAYS[type].includes(pay)) pay = PAYS[type][0];
+
+  /* yesterday is common — you remember the fare you forgot the next morning */
+  let date = startOfDay(new Date());
+  if (/\byesterday\b/.test(t)) date = addDays(date, -1);
+
+  return { amount, type, cat, pay, date, heard: raw, matched: !!match };
+}
+
+/* ---------- microphone ---------- */
+let recog = null, listening = false, pending = null;
+
+function openVoice() {
+  if (!voiceSupported()) {
+    toast('Voice input is not supported in this browser');
+    return;
+  }
+  pending = null;
+  $('vHeard').textContent = '';
+  $('vResult').hidden = true;
+  $('vHint').textContent = 'Try: "add twenty euro income" or "thirty five fuel"';
+  $('voiceModal').classList.add('on');
+  $('voiceModal').setAttribute('aria-hidden', 'false');
+  startListening();
+}
+
+function closeVoice() {
+  stopListening();
+  $('voiceModal').classList.remove('on');
+  $('voiceModal').setAttribute('aria-hidden', 'true');
+}
+
+function startListening() {
+  try {
+    recog = new SR();
+    recog.lang = 'en-IE';
+    recog.interimResults = true;
+    recog.continuous = false;
+    recog.maxAlternatives = 1;
+
+    recog.onstart = () => {
+      listening = true;
+      $('vMic').classList.add('live');
+      $('vState').textContent = 'Listening…';
+    };
+
+    recog.onresult = ev => {
+      let text = '';
+      for (let i = ev.resultIndex; i < ev.results.length; i++) text += ev.results[i][0].transcript;
+      $('vHeard').textContent = text;
+      if (ev.results[ev.results.length - 1].isFinal) handleHeard(text);
+    };
+
+    recog.onerror = ev => {
+      listening = false;
+      $('vMic').classList.remove('live');
+      $('vState').textContent =
+        ev.error === 'not-allowed' ? 'Microphone blocked — allow it in Settings'
+        : ev.error === 'no-speech' ? 'Did not catch that'
+        : ev.error === 'network'   ? 'Voice needs a connection'
+        : 'Could not listen';
+    };
+
+    recog.onend = () => {
+      listening = false;
+      $('vMic').classList.remove('live');
+      if (!pending) $('vState').textContent = 'Tap the microphone to try again';
+    };
+
+    recog.start();
+  } catch (err) {
+    $('vState').textContent = 'Could not start the microphone';
+  }
+}
+
+function stopListening() {
+  if (recog && listening) { try { recog.stop(); } catch (e) {} }
+  listening = false;
+  $('vMic').classList.remove('live');
+}
+
+function handleHeard(text) {
+  const p = parseVoice(text);
+  if (!p.amount || p.amount <= 0) {
+    $('vState').textContent = 'No amount heard — say the number too';
+    return;
+  }
+  pending = p;
+  $('vState').textContent = 'Is this right?';
+  $('vResult').hidden = false;
+  $('vAmt').textContent = money(p.amount);
+  $('vAmt').className = 'vAmt ' + (p.type === 'income' ? 'c-inc' : p.type === 'business' ? 'c-biz' : 'c-per');
+  $('vCat').textContent = p.cat;
+  $('vType').textContent = p.type === 'income' ? 'Income'
+    : p.type === 'business' ? 'Business cost' : 'Home cost';
+  $('vPay').textContent = p.pay;
+  $('vDate').textContent = startOfDay(p.date).getTime() === startOfDay(new Date()).getTime()
+    ? 'Today' : 'Yesterday';
+  $('vHint').textContent = p.matched
+    ? ''
+    : 'No category recognised, so this went to ' + p.cat + '. Edit it if that is wrong.';
+}
+
+$('vMic').onclick = () => { if (listening) stopListening(); else { pending = null; $('vResult').hidden = true; startListening(); } };
+$('vCancel').onclick = closeVoice;
+$('voiceModal').onclick = e => { if (e.target === $('voiceModal')) closeVoice(); };
+
+$('vEdit').onclick = () => {
+  if (!pending) return;
+  const p = pending;
+  closeVoice();
+  state.draft = { type: p.type, cat: p.cat, pay: p.pay, val: String(p.amount), date: p.date };
+  drawDraft();
+  openSheet('sheet');
+};
+
+$('vSave').onclick = () => {
+  if (!pending) return;
+  const p = pending;
+  const now = new Date();
+  const at = new Date(p.date);
+  at.setHours(now.getHours(), now.getMinutes(), 0, 0);
+  const id = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()));
+  state.entries.push({ id, type: p.type, cat: p.cat, amt: p.amount, pay: p.pay, at });
+  saveEntries();
+  markDirty(id);
+  closeVoice();
+  render(true);
+  toast(money(p.amount) + ' · ' + p.cat + ' saved');
+};
+
+/* the button only appears where it can actually work */
+if (!voiceSupported()) $('micBtn').style.display = 'none';
+$('micBtn').onclick = openVoice;
 
 /* ---------- entry date ----------
    Entries default to today but can be backdated, for the fares you forgot to log

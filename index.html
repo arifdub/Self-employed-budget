@@ -168,6 +168,12 @@
     <button class="nb on" data-go="home"><i>◉</i>Today</button>
     <button class="nb" data-go="entries"><i>▤</i>Entries</button>
     <button class="fab" id="openAdd" aria-label="Add an entry">+</button>
+    <button class="micNav" id="micBtn" aria-label="Add by voice">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M12 14a3 3 0 003-3V6a3 3 0 10-6 0v5a3 3 0 003 3z"/>
+        <path d="M18 11a1 1 0 10-2 0 4 4 0 01-8 0 1 1 0 10-2 0 6 6 0 005 5.91V19H9a1 1 0 100 2h6a1 1 0 100-2h-2v-2.09A6 6 0 0018 11z"/>
+      </svg>
+    </button>
     <button class="nb" data-go="reports"><i>◧</i>Reports</button>
     <button class="nb" data-go="more"><i>☰</i>Settings</button>
   </nav>
@@ -335,6 +341,37 @@
       <div class="trow last"><label>Delete this entry</label>
         <button class="save ghost danger" id="eDel" style="margin:0;padding:9px 16px">Delete</button></div>
       <button class="save" style="margin:14px 0 0;width:100%" id="eSave">Save changes</button>
+    </div>
+  </div>
+
+  <!-- voice entry -->
+  <div class="modal" id="voiceModal" aria-hidden="true">
+    <div class="mbox">
+      <h4>Say what you spent or earned</h4>
+      <p id="vHint">Try: "add twenty euro income" or "thirty five fuel"</p>
+
+      <button class="vMic" id="vMic" aria-label="Start or stop listening">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M12 14a3 3 0 003-3V6a3 3 0 10-6 0v5a3 3 0 003 3z"/>
+          <path d="M18 11a1 1 0 10-2 0 4 4 0 01-8 0 1 1 0 10-2 0 6 6 0 005 5.91V19H9a1 1 0 100 2h6a1 1 0 100-2h-2v-2.09A6 6 0 0018 11z"/>
+        </svg>
+      </button>
+      <div class="vState" id="vState">Listening…</div>
+      <div class="vHeard" id="vHeard"></div>
+
+      <div class="vResult" id="vResult" hidden>
+        <div class="vAmt c-inc" id="vAmt">€0</div>
+        <div class="vMeta">
+          <span id="vCat">Income</span><span class="vDot">·</span>
+          <span id="vType">Income</span><span class="vDot">·</span>
+          <span id="vPay">Cash</span><span class="vDot">·</span>
+          <span id="vDate">Today</span>
+        </div>
+        <button class="save" style="margin:14px 0 0;width:100%" id="vSave">Save this</button>
+        <button class="save ghost" style="margin:8px 0 0;width:100%" id="vEdit">Change something first</button>
+      </div>
+
+      <button class="save ghost" style="margin:10px 0 0;width:100%" id="vCancel">Cancel</button>
     </div>
   </div>
 

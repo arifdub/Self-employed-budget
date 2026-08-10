@@ -9,7 +9,7 @@
   --body:'Plus Jakarta Sans',system-ui,sans-serif;
   --mono:'Plus Jakarta Sans',system-ui,sans-serif;
   --r:14px;
-  --css-version:'0.10.1';
+  --css-version:'0.11.0';
   --safe-t:env(safe-area-inset-top,0px);
   --safe-b:env(safe-area-inset-bottom,0px);
 }
@@ -615,3 +615,33 @@ html[data-skin="day"] .c-income{background:rgba(5,150,105,.16);color:#059669}
 .consent button{flex:1;border:1px solid var(--line);background:var(--surf2);color:var(--txt);
   border-radius:11px;padding:11px 8px;font-family:var(--body);font-size:13px;font-weight:700;cursor:pointer}
 .consent button.primary{background:var(--acc);color:var(--on-acc);border-color:var(--acc)}
+
+
+/* ============================================================
+   Voice entry
+   ============================================================ */
+.micNav{position:absolute;right:14px;bottom:calc(16px + var(--safe-b));
+  width:40px;height:40px;border-radius:50%;border:1px solid var(--line);
+  background:var(--surf);color:var(--acc);display:none;place-items:center;cursor:pointer;z-index:22}
+.micNav svg{width:19px;height:19px}
+.nav{position:relative}
+@media (min-width:0px){ .micNav{display:grid} }
+
+.vMic{display:grid;place-items:center;width:84px;height:84px;margin:6px auto 0;
+  border-radius:50%;border:0;cursor:pointer;background:var(--surf2);color:var(--acc);
+  transition:transform .2s ease, background .2s ease}
+.vMic svg{width:34px;height:34px}
+.vMic.live{background:var(--acc);color:var(--on-acc);animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(255,176,32,.45)}
+  50%{box-shadow:0 0 0 16px rgba(255,176,32,0)}
+}
+.vState{text-align:center;font-size:12.5px;font-weight:700;color:var(--mut);margin-top:12px}
+.vHeard{text-align:center;font-size:15px;font-weight:600;color:var(--txt);
+  margin-top:6px;min-height:22px;line-height:1.35}
+
+.vResult{margin-top:14px;padding-top:14px;border-top:1px solid var(--line);text-align:center}
+.vAmt{font-size:38px;font-weight:800;letter-spacing:-.04em;font-variant-numeric:tabular-nums;line-height:1}
+.vMeta{margin-top:7px;font-size:12.5px;font-weight:700;color:var(--mut);
+  display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.vDot{opacity:.5}
