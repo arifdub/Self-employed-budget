@@ -71,9 +71,9 @@
   </div>
 
   <header class="top">
-    <div>
-      <div class="eyebrow" id="hDate">Today</div>
-      <h1 class="who" id="hGreet">Hello</h1>
+    <div class="hline">
+      <h1 class="who" id="hGreet">Welcome back</h1>
+      <span class="eyebrow" id="hDate"></span>
     </div>
     <div class="tools">
       <button class="micHead" id="micBtn" aria-label="Add an entry by voice">
@@ -358,6 +358,13 @@
       </button>
       <div class="vState" id="vState">Listening…</div>
       <div class="vHeard" id="vHeard"></div>
+
+      <div class="vType2" id="vTypeBox" hidden>
+        <input id="vText" type="text" autocapitalize="none" autocomplete="off"
+               placeholder="e.g. twenty euro fuel"
+               aria-label="Type or dictate an entry">
+        <button class="save" style="margin:9px 0 0;width:100%" id="vRead">Read that</button>
+      </div>
 
       <div class="vResult" id="vResult" hidden>
         <div class="vAmt c-inc" id="vAmt">€0</div>

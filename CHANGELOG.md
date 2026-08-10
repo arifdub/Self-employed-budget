@@ -6,6 +6,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [0.11.2] — 2026-08-10
+
+### Added
+- **A way around the iPhone microphone restriction.** A home screen web app cannot
+  open the microphone, but the keyboard's own dictation works in any text field —
+  and that is available inside a standalone app. Voice entry on iPhone now opens a
+  text box and asks you to tap the 🎤 key on the keyboard. The words arrive as text,
+  the same parser reads them, and the same confirmation card appears. No permission
+  needed, still free, and it works offline for the parsing.
+- The box doubles as a typing shortcut on any device: "35 fuel" is faster to type
+  than five taps through the entry sheet.
+
+### Changed
+- **Header reduced to one row.** "Good afternoon, Arif" over a date line took two
+  rows out of the top of every screen and pushed quick add below the fold. It now
+  reads "Hi Arif" with the date inline beside it, at a smaller size.
+
+---
+
 ## [0.11.1] — 2026-08-10
 
 ### Fixed

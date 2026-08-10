@@ -27,7 +27,7 @@ window.addEventListener('error', ev => {
   if (document.body) document.body.appendChild(bar);
 }, true);
 
-const APP_VERSION = '0.11.1';
+const APP_VERSION = '0.11.2';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -828,19 +828,27 @@ function openVoice() {
     toast('This browser has no voice input — try Safari or Chrome');
     return;
   }
-  if (iosStandalone()) {
+  /* iPhone home screen apps cannot open the microphone directly, but the
+     keyboard's own dictation works in any text field — and that is available
+     inside a standalone app. So instead of asking for the mic, we hand the job
+     to the keyboard and parse whatever it types. Same result, no permission. */
+  if (iosStandalone() || !voiceSupported()) {
     pending = null;
     $('vHeard').textContent = '';
     $('vResult').hidden = true;
     $('vMic').classList.add('off');
-    $('vState').textContent = 'Voice does not work in the installed app on iPhone';
-    $('vHint').textContent = 'Apple does not allow the microphone in a home screen web app. ' +
-      'Open sebudget.com in Safari and the microphone button works there. Everything else is unaffected.';
+    $('vTypeBox').hidden = false;
+    $('vState').textContent = 'Tap the microphone on your keyboard';
+    $('vHint').textContent = 'Tap the box, then the 🎤 key on your keyboard, and speak. ' +
+      'You can also just type it.';
     $('voiceModal').classList.add('on');
     $('voiceModal').setAttribute('aria-hidden', 'false');
+    $('vText').value = '';
+    setTimeout(() => $('vText').focus(), 350);
     return;
   }
   $('vMic').classList.remove('off');
+  $('vTypeBox').hidden = true;
   pending = null;
   $('vHeard').textContent = '';
   $('vResult').hidden = true;
@@ -931,6 +939,14 @@ function handleHeard(text) {
     ? ''
     : 'No category recognised, so this went to ' + p.cat + '. Edit it if that is wrong.';
 }
+
+$('vRead').onclick = () => {
+  const text = $('vText').value.trim();
+  if (!text) { $('vState').textContent = 'Say or type an amount first'; return; }
+  $('vHeard').textContent = text;
+  handleHeard(text);
+};
+$('vText').addEventListener('keydown', e => { if (e.key === 'Enter') $('vRead').click(); });
 
 $('vMic').onclick = () => { if (listening) stopListening(); else { pending = null; $('vResult').hidden = true; startListening(); } };
 $('vCancel').onclick = closeVoice;
@@ -1875,10 +1891,10 @@ function refreshIdentity() {
 }
 
 function greet() {
-  const h = new Date().getHours();
-  const base = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+  // One short line. The full "Good afternoon, Arif" plus a date beneath it took
+  // two rows out of the top of the screen and pushed quick add below the fold.
   const first = (currentName() || '').trim().split(/\s+/)[0] || '';
-  $('hGreet').textContent = first ? base + ', ' + first : base;
+  $('hGreet').textContent = first ? 'Hi ' + first : 'Welcome back';
 }
 
 $('avatar').onclick = () => {
