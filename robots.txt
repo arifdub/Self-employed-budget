@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# Nothing here is private — the app itself is behind sign-in and renders
+# client-side, so there is nothing for a crawler to reach.
+Disallow: /config.js
+
+Sitemap: https://sebudget.com/sitemap.xml

@@ -1,0 +1,37 @@
+# Keeps the Supabase project awake.
+#
+# Free Supabase projects pause after 7 days with no API requests. This pings the
+# database twice a week so that timer never runs down. It costs a couple of
+# seconds of Actions time a month.
+#
+# Setup: repo → Settings → Secrets and variables → Actions → New repository secret
+#   SUPABASE_URL       https://wfuvnnpjsajiotmukwws.supabase.co
+#   SUPABASE_ANON_KEY  your anon public key
+#
+# Note: GitHub disables scheduled workflows in a repository with no commits for
+# 60 days. It emails you first, and one push re-enables it.
+
+name: Keep Supabase awake
+
+on:
+  schedule:
+    - cron: '0 6 * * 1,4'      # Mondays and Thursdays, 06:00 UTC
+  workflow_dispatch:            # and a manual "Run workflow" button
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Query the heartbeat table
+        run: |
+          CODE=$(curl -s -o /tmp/out.txt -w "%{http_code}" \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/heartbeat?select=id&limit=1" \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}")
+          echo "HTTP $CODE"
+          cat /tmp/out.txt
+          if [ "$CODE" != "200" ]; then
+            echo "::error::Ping failed — the project may be paused or the key is wrong."
+            exit 1
+          fi
+          echo "Project is awake."

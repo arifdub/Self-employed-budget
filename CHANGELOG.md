@@ -6,6 +6,36 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [0.10.0] — 2026-08-10
+
+Keeping the database awake, measuring usage, and making the site findable.
+
+### Added
+- **Supabase keep-alive.** A GitHub Actions workflow queries a `heartbeat` table
+  every Monday and Thursday, so the free project never reaches seven days of
+  inactivity and pauses. The ping hits a real table rather than the API gateway, so
+  it exercises the database itself. `supabase/heartbeat.sql` creates that table —
+  one row, no user data, readable by anyone.
+- **Analytics, consent-gated.** `analytics.js` loads Google Analytics only after the
+  visitor agrees, and only when a measurement ID is set in `config.js`. With no ID,
+  no analytics code loads at all.
+- **SEO.** Canonical URL, a description written for the people being searched for
+  rather than for a crawler, Open Graph and Twitter card tags, and JSON-LD marking
+  the page as a free finance application with its feature list.
+- **`og-image.png`** — a 1200×630 preview so links shared on WhatsApp, Messenger or
+  iMessage show the app rather than a blank rectangle.
+- **`robots.txt`** and **`sitemap.xml`**.
+
+### Notes
+- Consent is requested **before** Google Analytics loads, not alongside it. Ireland
+  applies the ePrivacy Regulation: analytics cookies need agreement first, so a
+  banner shown while tracking already runs does not comply.
+- The service worker never caches analytics or Supabase requests.
+- GitHub disables scheduled workflows in a repository with no commits for 60 days.
+  It emails first, and a single push re-enables it.
+
+---
+
 ## [0.9.7] — 2026-08-10
 
 ### Fixed

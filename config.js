@@ -13,5 +13,9 @@ window.SEB_CONFIG = {
 
   // Supabase → Settings → API → Project API keys → "anon public"
   // Replace the line below with that key.
-  anonKey: 'sb_publishable_W3QSdM4LLwNJ21pYrptRRw_rqqKyjkW'
+  anonKey: 'sb_publishable_W3QSdM4LLwNJ21pYrptRRw_rqqKyjkW',
+
+  // Google Analytics measurement ID, e.g. 'G-XXXXXXXXXX'.
+  // Leave empty and no analytics code loads at all.
+  gaMeasurementId: 'G-FBLBZ5VV9Q'
 };
