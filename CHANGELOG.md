@@ -6,6 +6,26 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [0.11.1] — 2026-08-10
+
+### Fixed
+- **The bottom bar stopped sticking and fell to the end of the page.** v0.11.0 put
+  the mic button inside the nav with absolute positioning, which required
+  `position: relative` on `.nav` — and that silently cancelled its
+  `position: sticky`. One line, whole footer. The rule is gone and the bar sticks
+  again.
+- **The microphone moved to the header**, beside the theme toggle, where it needs no
+  positioning tricks.
+
+### Changed
+- **Voice now explains itself when it cannot work.** Apple does not allow microphone
+  access inside a home screen web app on iPhone — the API is present but never
+  returns anything, which is why the button appeared to do nothing at all. Opening
+  voice from the installed app now says so and points to Safari, where it does work.
+- A session that ends having heard nothing says so, instead of sitting silent.
+
+---
+
 ## [0.11.0] — 2026-08-10
 
 Voice entry. No API, no key, no running cost.

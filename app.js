@@ -27,7 +27,7 @@ window.addEventListener('error', ev => {
   if (document.body) document.body.appendChild(bar);
 }, true);
 
-const APP_VERSION = '0.11.0';
+const APP_VERSION = '0.11.1';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -707,6 +707,15 @@ document.querySelectorAll('.exp button').forEach(b => b.onclick = () => {
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 const voiceSupported = () => !!SR;
 
+/* iOS exposes webkitSpeechRecognition inside a home screen app but it does not
+   actually produce results there — the microphone opens and nothing comes back.
+   Safari proper works. Rather than leave someone tapping a dead button, detect
+   the case and say so. */
+const iosStandalone = () =>
+  (/iphone|ipad|ipod/i.test(navigator.userAgent) ||
+   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) &&
+  (window.matchMedia('(display-mode: standalone)').matches || !!navigator.standalone);
+
 /* spoken numbers — people say "twenty five euro" as often as "25" */
 const NUM_WORDS = {
   zero:0, one:1, two:2, three:3, four:4, five:5, six:6, seven:7, eight:8, nine:9,
@@ -816,9 +825,22 @@ let recog = null, listening = false, pending = null;
 
 function openVoice() {
   if (!voiceSupported()) {
-    toast('Voice input is not supported in this browser');
+    toast('This browser has no voice input — try Safari or Chrome');
     return;
   }
+  if (iosStandalone()) {
+    pending = null;
+    $('vHeard').textContent = '';
+    $('vResult').hidden = true;
+    $('vMic').classList.add('off');
+    $('vState').textContent = 'Voice does not work in the installed app on iPhone';
+    $('vHint').textContent = 'Apple does not allow the microphone in a home screen web app. ' +
+      'Open sebudget.com in Safari and the microphone button works there. Everything else is unaffected.';
+    $('voiceModal').classList.add('on');
+    $('voiceModal').setAttribute('aria-hidden', 'false');
+    return;
+  }
+  $('vMic').classList.remove('off');
   pending = null;
   $('vHeard').textContent = '';
   $('vResult').hidden = true;
@@ -868,7 +890,12 @@ function startListening() {
     recog.onend = () => {
       listening = false;
       $('vMic').classList.remove('live');
-      if (!pending) $('vState').textContent = 'Tap the microphone to try again';
+      if (!pending && !$('vHeard').textContent) {
+        $('vState').textContent = 'Nothing was heard — tap to try again';
+        $('vHint').textContent = 'Speak clearly and include the amount, for example "twenty euro fuel".';
+      } else if (!pending) {
+        $('vState').textContent = 'Tap the microphone to try again';
+      }
     };
 
     recog.start();
