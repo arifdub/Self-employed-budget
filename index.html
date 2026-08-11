@@ -182,7 +182,17 @@
 
   <!-- ============ ADD ============ -->
   <section class="sheet" id="sheet" aria-hidden="true">
-    <div class="shead"><span class="eyebrow">New entry</span><button class="x" id="closeAdd" aria-label="Close">✕</button></div>
+    <div class="shead"><span class="eyebrow">New entry</span>
+      <span class="sheadBtns">
+        <button class="micHead" id="micBtn2" aria-label="Add by voice">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 14a3 3 0 003-3V6a3 3 0 10-6 0v5a3 3 0 003 3z"/>
+            <path d="M18 11a1 1 0 10-2 0 4 4 0 01-8 0 1 1 0 10-2 0 6 6 0 005 5.91V19H9a1 1 0 100 2h6a1 1 0 100-2h-2v-2.09A6 6 0 0018 11z"/>
+          </svg>
+        </button>
+        <button class="x" id="closeAdd" aria-label="Close">✕</button>
+      </span>
+    </div>
     <div class="seg" id="seg">
       <button data-t="income" aria-pressed="true">Add income</button>
       <button data-t="business" aria-pressed="false">Business <span class="lw">expense</span><span class="sw">exp</span></button>
@@ -337,7 +347,7 @@
     <div class="mbox">
       <h4>Edit entry</h4>
       <p id="editMeta"></p>
-      <div class="trow"><label for="eAmt">Amount</label><input id="eAmt" type="number" step="0.01" inputmode="decimal"></div>
+      <div class="trow"><label for="eAmt">Amount</label><input id="eAmt" type="number" step="1" inputmode="numeric"></div>
       <div class="trow last"><label>Delete this entry</label>
         <button class="save ghost danger" id="eDel" style="margin:0;padding:9px 16px">Delete</button></div>
       <button class="save" style="margin:14px 0 0;width:100%" id="eSave">Save changes</button>

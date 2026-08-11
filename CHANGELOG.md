@@ -6,6 +6,28 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [0.13.0] — 2026-08-10
+
+### Changed
+- **Whole euros throughout.** Cents added noise to every screen without changing a
+  single decision. Amounts round when they are entered, not when they are shown —
+  rounding at display time would leave a column of rows disagreeing with its own
+  total. Half rounds down, as asked: 19.50 becomes 19, 19.60 becomes 20.
+- The keypad's decimal point is replaced by a **00** key, which is more use for
+  entering round amounts quickly.
+- CSV and PDF exports carry whole euros as well, so they match what the app shows.
+
+### Added
+- **Microphone button in the New entry sheet**, beside the close button. It closes
+  the sheet and opens voice entry, so the two never stack on top of each other.
+
+### Notes
+- Existing entries holding cents are rounded when they load and queued to sync, so
+  history and new entries follow the same rule. Amounts recorded before this update
+  will shift by up to 49 cents each.
+
+---
+
 ## [0.12.0] — 2026-08-10
 
 Batch entry. Paste a list or a statement instead of typing entries one at a time.

@@ -27,7 +27,7 @@ window.addEventListener('error', ev => {
   if (document.body) document.body.appendChild(bar);
 }, true);
 
-const APP_VERSION = '0.12.0';
+const APP_VERSION = '0.13.0';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -112,7 +112,10 @@ function loadEntries() {
       .filter(e => e.id && e.amt > 0 && !isNaN(e.at))
       // "Fare" was renamed to "Income" in v0.9.1. Entries logged before that
       // are relabelled on load so the history reads consistently.
-      .map(e => (e.cat === 'Fare' ? { ...e, cat: 'Income' } : e));
+      .map(e => (e.cat === 'Fare' ? { ...e, cat: 'Income' } : e))
+      // v0.13.0 moved to whole euros; older entries are rounded so totals and
+      // rows always agree.
+      .map(e => (e.amt % 1 ? { ...e, amt: roundEuro(e.amt) } : e));
   } catch (err) {
     return [];
   }
@@ -138,9 +141,12 @@ function loadSettings() {
 
 /* ---------- helpers ---------- */
 const $ = id => document.getElementById(id);
-const money = n => CURRENCY + (Math.round(n * 100) / 100).toLocaleString(LOCALE, {
-  minimumFractionDigits: Math.round(n * 100) % 100 ? 2 : 0, maximumFractionDigits: 2
-});
+/* Whole euros only. Cents added noise to every screen without changing a single
+   decision, so amounts are rounded once, when they are entered, and stored that
+   way — rounding only at display time would make a column of rows disagree with
+   its own total. Half rounds down: 19.50 becomes 19, 19.60 becomes 20. */
+const roundEuro = n => (n < 0 ? -Math.ceil(-n - 0.5) : Math.ceil(n - 0.5));
+const money = n => CURRENCY + roundEuro(n).toLocaleString(LOCALE, { maximumFractionDigits: 0 });
 const startOfDay = d => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
 const startOfWeek = d => { // Monday
   const x = startOfDay(d); const day = (x.getDay() + 6) % 7;
@@ -549,18 +555,18 @@ function buildCSV(p, ref) {
     typeName[e.type] || e.type,
     e.cat,
     e.pay || '',
-    e.amt.toFixed(2)
+    String(roundEuro(e.amt))
   ]);
   const inc = rows.filter(e => e.type === 'income').reduce((a, e) => a + e.amt, 0);
   const biz = rows.filter(e => e.type === 'business').reduce((a, e) => a + e.amt, 0);
   const per = rows.filter(e => e.type === 'personal').reduce((a, e) => a + e.amt, 0);
 
   return [head, ...body, [],
-    ['', '', '', '', 'Gross income', inc.toFixed(2)],
-    ['', '', '', '', 'Business expenses', biz.toFixed(2)],
-    ['', '', '', '', 'Net income', (inc - biz).toFixed(2)],
-    ['', '', '', '', 'Personal & home', per.toFixed(2)],
-    ['', '', '', '', 'Disposable income', (inc - biz - per).toFixed(2)]
+    ['', '', '', '', 'Gross income', String(roundEuro(inc))],
+    ['', '', '', '', 'Business expenses', String(roundEuro(biz))],
+    ['', '', '', '', 'Net income', String(roundEuro(inc - biz))],
+    ['', '', '', '', 'Personal & home', String(roundEuro(per))],
+    ['', '', '', '', 'Disposable income', String(roundEuro(inc - biz - per))]
   ].map(r => r.map(csvCell).join(',')).join('\r\n');
 }
 
@@ -598,7 +604,7 @@ function buildPDF() {
   const doc = new jsPDF({ unit: 'pt', format: 'a4' });
   const W = doc.internal.pageSize.getWidth();
   const M = 42;
-  const eur = n => '\u20AC' + n.toFixed(2);
+  const eur = n => '\u20AC' + roundEuro(n).toLocaleString('en-IE', { maximumFractionDigits: 0 });
   let y = M;
 
   const ref = refDate(), p = state.rperiod;
@@ -943,7 +949,7 @@ $('bSaveAll').onclick = () => {
     const at = new Date(r.date);
     at.setHours(now.getHours(), Math.max(0, now.getMinutes() - (chosen.length - k)), 0, 0);
     const id = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random() + k));
-    state.entries.push({ id, type: r.type, cat: r.cat, amt: r.amount, pay: r.pay, at });
+    state.entries.push({ id, type: r.type, cat: r.cat, amt: roundEuro(r.amount), pay: r.pay, at });
     markDirty(id);
   });
   saveEntries();
@@ -1107,7 +1113,7 @@ $('vSave').onclick = () => {
   const at = new Date(p.date);
   at.setHours(now.getHours(), now.getMinutes(), 0, 0);
   const id = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()));
-  state.entries.push({ id, type: p.type, cat: p.cat, amt: p.amount, pay: p.pay, at });
+  state.entries.push({ id, type: p.type, cat: p.cat, amt: roundEuro(p.amount), pay: p.pay, at });
   saveEntries();
   markDirty(id);
   closeVoice();
@@ -1118,6 +1124,8 @@ $('vSave').onclick = () => {
 /* the button only appears where it can actually work */
 if (!voiceSupported()) $('micBtn').style.display = 'none';
 $('micBtn').onclick = openVoice;
+$('micBtn2').onclick = () => { closeSheet('sheet'); setTimeout(openVoice, 260); };
+if (!voiceSupported() && !iosStandalone()) $('micBtn2').style.display = 'none';
 
 /* ---------- entry date ----------
    Entries default to today but can be backdated, for the fares you forgot to log
@@ -1157,18 +1165,14 @@ $('eDate').addEventListener('change', () => {
 });
 
 /* ---------- add sheet ---------- */
-['1','2','3','4','5','6','7','8','9','.','0','⌫'].forEach(k => {
+['1','2','3','4','5','6','7','8','9','00','0','⌫'].forEach(k => {
   const b = document.createElement('button');
   b.className = 'key'; b.textContent = k; b.type = 'button';
   b.onclick = () => {
     const d = state.draft;
     if (k === '⌫') d.val = d.val.slice(0, -1);
-    else if (k === '.' && d.val.includes('.')) { /* ignore */ }
-    else if (k === '.' && !d.val) d.val = '0.';
-    else if (d.val.replace('.', '').length < 7) {
-      const next = d.val + k;
-      if (!/\.\d{3,}$/.test(next)) d.val = next;
-    }
+    else if (k === '00') { if (d.val && d.val.length < 6) d.val += '00'; }
+    else if (d.val.length < 7) d.val += k;
     drawDraft();
   };
   $('pad').appendChild(b);
@@ -1226,7 +1230,7 @@ $('save').onclick = () => {
   at.setHours(now.getHours(), now.getMinutes(), 0, 0);
   state.entries.push({
     id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random())),
-    type: d.type, cat: d.cat, amt: v, pay: d.pay, at
+    type: d.type, cat: d.cat, amt: roundEuro(v), pay: d.pay, at
   });
   saveEntries();
   markDirty(state.entries[state.entries.length - 1].id);
@@ -1311,7 +1315,7 @@ $('eSave').onclick = () => {
   const e = state.entries.find(x => x.id === editingId);
   const v = parseFloat($('eAmt').value);
   if (!e || !v || v <= 0) { toast('Enter a valid amount'); return; }
-  e.amt = v;
+  e.amt = roundEuro(v);
   saveEntries(); markDirty(e.id); closeEdit(); render();
   if ($('ent').classList.contains('up')) renderEntries();
   toast('Entry updated');
@@ -1677,7 +1681,7 @@ const toRow = e => ({
 });
 const fromRow = r => ({
   id: r.id, type: r.type, cat: r.category === 'Fare' ? 'Income' : r.category,
-  amt: Number(r.amount), pay: r.pay_method || 'Cash',
+  amt: roundEuro(Number(r.amount)), pay: r.pay_method || 'Cash',
   at: new Date(r.occurred_at)
 });
 

@@ -9,7 +9,7 @@
   --body:'Plus Jakarta Sans',system-ui,sans-serif;
   --mono:'Plus Jakarta Sans',system-ui,sans-serif;
   --r:14px;
-  --css-version:'0.12.0';
+  --css-version:'0.13.0';
   --safe-t:env(safe-area-inset-top,0px);
   --safe-b:env(safe-area-inset-bottom,0px);
 }
@@ -624,8 +624,10 @@ html[data-skin="day"] .c-income{background:rgba(5,150,105,.16);color:#059669}
    an absolutely positioned button in there required position:relative on .nav,
    which silently cancelled its position:sticky and dropped the whole footer to
    the end of the page. */
-.micHead{width:34px;height:34px;border-radius:11px;border:0;background:var(--surf2);
+.micHead{width:31px;height:31px;border-radius:10px;border:0;background:var(--surf2);
   color:var(--acc);display:grid;place-items:center;cursor:pointer;flex:0 0 auto}
+.top .micHead{width:34px;height:34px;border-radius:11px}
+.sheadBtns{display:flex;align-items:center;gap:8px}
 .micHead svg{width:17px;height:17px}
 .micHead.off{display:none}
 
