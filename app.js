@@ -27,7 +27,7 @@ window.addEventListener('error', ev => {
   if (document.body) document.body.appendChild(bar);
 }, true);
 
-const APP_VERSION = '0.13.0';
+const APP_VERSION = '1.0.0';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -945,6 +945,7 @@ $('bSaveAll').onclick = () => {
   const chosen = batchRows.filter(r => r.include);
   if (!chosen.length) return;
   const now = new Date();
+
   chosen.forEach((r, k) => {
     const at = new Date(r.date);
     at.setHours(now.getHours(), Math.max(0, now.getMinutes() - (chosen.length - k)), 0, 0);
@@ -954,8 +955,28 @@ $('bSaveAll').onclick = () => {
   });
   saveEntries();
   closeVoice();
+
+  /* A pasted statement is nearly always backdated, so the entries land outside
+     the Day view and the home screen looks unchanged — which reads as "it did not
+     save". Move the view to the smallest period that actually contains them. */
+  const oldest = chosen.reduce((a, r) => (r.date < a ? r.date : a), chosen[0].date);
+  const inPeriod = p => oldest >= periodRange(p, new Date()).from;
+  const target = inPeriod('day') ? 'day' : inPeriod('week') ? 'week' : 'month';
+  const moved = target !== state.period;
+
+  if (moved) {
+    state.period = target;
+    document.querySelectorAll('#tabs button')
+      .forEach(x => x.setAttribute('aria-pressed', x.dataset.p === target));
+  }
+
   render(true);
-  toast(chosen.length + ' entries added');
+
+  const label = target === 'day' ? 'today' : target === 'week' ? 'this week' : 'this month';
+  toast(chosen.length + ' entries added' +
+    (moved ? ' — showing ' + label : '') +
+    (target === 'month' && oldest < periodRange('month', new Date()).from
+      ? '. Some are older than this month — see Reports' : ''));
 };
 
 /* ---------- microphone ---------- */

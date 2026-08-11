@@ -9,7 +9,7 @@
   --body:'Plus Jakarta Sans',system-ui,sans-serif;
   --mono:'Plus Jakarta Sans',system-ui,sans-serif;
   --r:14px;
-  --css-version:'0.13.0';
+  --css-version:'1.0.0';
   --safe-t:env(safe-area-inset-top,0px);
   --safe-b:env(safe-area-inset-bottom,0px);
 }

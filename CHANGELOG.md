@@ -6,6 +6,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [1.0.0] — 2026-08-11
+
+First release. Everything below this line was the road to it.
+
+### Fixed
+- **A pasted statement looked like it had not saved.** The entries were stored and
+  synced correctly, but a statement is nearly always backdated, so nothing landed in
+  the Day view the home screen was showing — the totals did not move and the data
+  appeared lost. Saving a batch now moves the home screen to the smallest period
+  that actually contains the new entries, and says which one: "6 entries added —
+  showing this month". If anything is older than the current month, the message
+  points to Reports.
+
+### Changed
+- Version set to 1.0.0 across the app, service worker and stylesheet.
+
+---
+
 ## [0.13.0] — 2026-08-10
 
 ### Changed
