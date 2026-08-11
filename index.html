@@ -360,10 +360,10 @@
       <div class="vHeard" id="vHeard"></div>
 
       <div class="vType2" id="vTypeBox" hidden>
-        <input id="vText" type="text" autocapitalize="none" autocomplete="off"
-               placeholder="e.g. twenty euro fuel"
-               aria-label="Type or dictate an entry">
-        <button class="save" style="margin:9px 0 0;width:100%" id="vRead">Read that</button>
+        <textarea id="vText" rows="3" autocapitalize="none" autocomplete="off" spellcheck="false"
+               placeholder="twenty euro fuel&#10;fifty groceries&#10;— or paste a statement —"
+               aria-label="Type, dictate or paste entries"></textarea>
+        <button class="save" style="margin:9px 0 0;width:100%" id="vRead">Read it</button>
       </div>
 
       <div class="vResult" id="vResult" hidden>
@@ -376,6 +376,13 @@
         </div>
         <button class="save" style="margin:14px 0 0;width:100%" id="vSave">Save this</button>
         <button class="save ghost" style="margin:8px 0 0;width:100%" id="vEdit">Change something first</button>
+      </div>
+
+      <div class="vBatch" id="vBatch" hidden>
+        <div class="bList" id="bList"></div>
+        <button class="save" style="margin:12px 0 0;width:100%" id="bSaveAll">
+          <span id="bCount">Save entries</span>
+        </button>
       </div>
 
       <button class="save ghost" style="margin:10px 0 0;width:100%" id="vCancel">Cancel</button>

@@ -6,6 +6,38 @@ Format follows [Keep a Changelog](https://keepachangelog.com); versions follow
 
 ---
 
+## [0.12.0] — 2026-08-10
+
+Batch entry. Paste a list or a statement instead of typing entries one at a time.
+
+### Added
+- **Multiple entries from one block of text.** The box takes several lines, or one
+  sentence holding several amounts: "twenty euro income and fifteen euro fuel" is
+  read as two entries.
+- **Bank and card statements can be pasted directly.** A line with a date at the
+  start and an amount at the end is recognised as a transaction, and the merchant in
+  between is matched to a category — Circle K and Applegreen become Fuel, Tesco and
+  Lidl become Groceries, eFlow becomes Tolls, Vodafone becomes Phone. Roughly forty
+  Irish merchants are mapped.
+- **Review list before anything is saved.** Each proposed entry shows its type,
+  category, amount and date. Tap the type to cycle Income → Business → Home, tap the
+  tick to leave one out. Anything the parser could not categorise is flagged with a
+  marker so it is obvious what needs a second look.
+
+### Fixed
+- A line filter was checking for number words with a hand-written list that omitted
+  eleven through nineteen, so "fifteen euro fuel" was discarded before it reached the
+  parser. It now asks the number parser instead of guessing.
+
+### Notes
+- Statement rows default to a business expense unless the merchant maps to a personal
+  category, because that is the safer assumption for a self-employed account — an
+  expense wrongly claimed matters more than one wrongly left out.
+- Nothing is written until Save is pressed, and entries land with the statement's own
+  date rather than today's.
+
+---
+
 ## [0.11.2] — 2026-08-10
 
 ### Added

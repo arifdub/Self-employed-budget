@@ -27,7 +27,7 @@ window.addEventListener('error', ev => {
   if (document.body) document.body.appendChild(bar);
 }, true);
 
-const APP_VERSION = '0.11.2';
+const APP_VERSION = '0.12.0';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -748,19 +748,24 @@ const VOICE_TERMS = [
   { type:'income',   cat:'Free Now',    words:['free now','freenow','free-now'] },
   { type:'income',   cat:'Uber',        words:['uber'] },
   { type:'income',   cat:'Others',      words:['other income','others'] },
-  { type:'business', cat:'Fuel',        words:['fuel','petrol','diesel','gas','filled up'] },
-  { type:'business', cat:'Insurance',   words:['insurance'] },
-  { type:'business', cat:'Repairs',     words:['repair','repairs','garage','mechanic','service','tyre','tyres','tire'] },
+  { type:'business', cat:'Fuel',        words:['fuel','petrol','diesel','gas','filled up',
+      'circle k','circlek','applegreen','maxol','texaco','topaz','emo oil','inver','tesco fuel'] },
+  { type:'business', cat:'Insurance',   words:['insurance','axa','aviva','allianz','liberty','fbd','its4women'] },
+  { type:'business', cat:'Repairs',     words:['repair','repairs','garage','mechanic','service','tyre','tyres','tire',
+      'advance pitstop','fastfit','halfords','autozone','motor factors'] },
   { type:'business', cat:'Car wash',    words:['car wash','carwash','wash'] },
   { type:'business', cat:'Licence',     words:['licence','license','psv','permit'] },
-  { type:'business', cat:'Phone',       words:['phone','mobile','data'] },
-  { type:'business', cat:'Parking',     words:['parking','park'] },
-  { type:'business', cat:'Tolls',       words:['toll','tolls','m50','motorway'] },
-  { type:'personal', cat:'Groceries',   words:['groceries','grocery','shopping','food shop','tesco','lidl','aldi','dunnes'] },
+  { type:'business', cat:'Phone',       words:['phone','mobile','data','vodafone','three ie','eir','48 months','gomo','tesco mobile'] },
+  { type:'business', cat:'Parking',     words:['parking','park','apcoa','q park','qpark','parkrite','parking tag'] },
+  { type:'business', cat:'Tolls',       words:['toll','tolls','m50','motorway','eflow','e-flow','payzone toll'] },
+  { type:'personal', cat:'Groceries',   words:['groceries','grocery','shopping','food shop','tesco','lidl','aldi','dunnes',
+      'supervalu','spar','centra','marks and spencer','m and s'] },
   { type:'personal', cat:'Rent',        words:['rent','mortgage'] },
-  { type:'personal', cat:'Utilities',   words:['utilities','electricity','gas bill','bills','bill','esb','heating'] },
+  { type:'personal', cat:'Utilities',   words:['utilities','electricity','gas bill','bills','bill','esb','heating',
+      'electric ireland','bord gais','sse airtricity','energia','virgin media','sky ireland','irish water'] },
   { type:'personal', cat:'Kids',        words:['kids','kid','school','children','childcare'] },
-  { type:'personal', cat:'Eating out',  words:['eating out','lunch','dinner','coffee','takeaway','restaurant']},
+  { type:'personal', cat:'Eating out',  words:['eating out','lunch','dinner','coffee','takeaway','restaurant',
+      'mcdonald','supermac','starbucks','costa','insomnia','deliveroo','just eat','domino']},
   { type:'personal', cat:'Transport',   words:['bus','train','luas','taxi home'] },
   { type:'personal', cat:'Health',      words:['health','doctor','pharmacy','chemist','dentist'] }
 ];
@@ -820,10 +825,138 @@ function parseVoice(raw) {
   return { amount, type, cat, pay, date, heard: raw, matched: !!match };
 }
 
+
+/* ---------- batch entry ----------
+   Handles a block of text: several spoken sentences, a list written elsewhere,
+   or lines pasted straight from a bank or card statement. Each line becomes one
+   proposed entry, and nothing is saved until the list has been reviewed. */
+
+/* Statement lines look like: 09/08/2026  CIRCLE K DUBLIN 12  45.20
+   A date at the start and an amount at the end, with the merchant between. */
+const STATEMENT_RE = /^\s*(\d{1,4}[\/\-.]\d{1,2}[\/\-.]\d{2,4})\s+(.+?)\s+[-+€$]?\s*(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)\s*$/;
+
+function parseStatementDate(s) {
+  const parts = s.split(/[\/\-.]/).map(Number);
+  if (parts.length !== 3) return null;
+  let [a, b, c] = parts;
+  let y, m, d;
+  if (a > 31) { y = a; m = b; d = c; }            // 2026-08-09
+  else { d = a; m = b; y = c; }                    // 09/08/2026
+  if (y < 100) y += 2000;
+  const dt = new Date(y, m - 1, d);
+  return isNaN(dt) ? null : startOfDay(dt);
+}
+
+function parseBatch(raw) {
+  // split on lines first, then on "and" / ";" so one dictated sentence can hold
+  // several entries: "twenty euro income and thirty five fuel"
+  const chunks = [];
+  raw.split(/[\n\r]+/).forEach(line => {
+    if (!line.trim()) return;
+    if (STATEMENT_RE.test(line)) { chunks.push(line); return; }   // never split a statement row
+    line.split(/\s*(?:;|\band then\b|\balso\b|\band\b)\s*/i).forEach(part => {
+      // Ask the number parser rather than listing number words in a regex —
+      // the hand-written list quietly omitted eleven through nineteen, so
+      // "fifteen euro fuel" was being thrown away before it was ever parsed.
+      if (part && (/\d/.test(part) || wordsToNumber(part.toLowerCase()) !== null))
+        chunks.push(part);
+    });
+  });
+
+  const out = [];
+  chunks.forEach(chunk => {
+    const st = chunk.match(STATEMENT_RE);
+    if (st) {
+      const date = parseStatementDate(st[1]) || startOfDay(new Date());
+      const desc = st[2];
+      const amount = parseFloat(st[3].replace(/,/g, ''));
+      const guess = parseVoice(desc + ' ' + amount);
+      out.push({
+        amount, type: guess.matched ? guess.type : 'business',
+        cat: guess.matched ? guess.cat : 'Other',
+        pay: 'Card', date, heard: chunk.trim(),
+        matched: guess.matched, include: true
+      });
+      return;
+    }
+    const p = parseVoice(chunk);
+    if (p.amount && p.amount > 0) out.push({ ...p, heard: chunk.trim(), include: true });
+  });
+  return out;
+}
+
+/* ---------- review list ---------- */
+let batchRows = [];
+const TYPE_CYCLE = ['income', 'business', 'personal'];
+const TYPE_LABEL = { income: 'Income', business: 'Business', personal: 'Home' };
+const TYPE_CLASS = { income: 'c-inc', business: 'c-biz', personal: 'c-per' };
+
+function drawBatch() {
+  const on = batchRows.filter(r => r.include);
+  $('bCount').textContent = on.length
+    ? 'Save ' + on.length + ' ' + (on.length === 1 ? 'entry' : 'entries')
+    : 'Nothing selected';
+  $('bSaveAll').disabled = !on.length;
+
+  $('bList').innerHTML = batchRows.map((r, i) =>
+    '<div class="bRow' + (r.include ? '' : ' off') + '" data-i="' + i + '">' +
+      '<button class="bChk" data-act="chk" aria-label="Include this entry">' + (r.include ? '✓' : '') + '</button>' +
+      '<div class="bMid">' +
+        '<div class="bTop">' +
+          '<button class="bType ' + TYPE_CLASS[r.type] + '" data-act="type">' + TYPE_LABEL[r.type] + '</button>' +
+          '<span class="bCat">' + r.cat + '</span>' +
+          (r.matched ? '' : '<span class="bWarn" title="No category recognised">?</span>') +
+        '</div>' +
+        '<div class="bHeard">' + r.heard.slice(0, 46) + (r.heard.length > 46 ? '…' : '') +
+          ' · ' + r.date.toLocaleDateString(LOCALE, { day: 'numeric', month: 'short' }) + '</div>' +
+      '</div>' +
+      '<span class="bAmt ' + TYPE_CLASS[r.type] + '">' + money(r.amount) + '</span>' +
+    '</div>').join('');
+
+  $('bList').querySelectorAll('.bRow').forEach(row => {
+    const i = +row.dataset.i;
+    row.querySelector('[data-act="chk"]').onclick = () => { batchRows[i].include = !batchRows[i].include; drawBatch(); };
+    row.querySelector('[data-act="type"]').onclick = () => {
+      const r = batchRows[i];
+      r.type = TYPE_CYCLE[(TYPE_CYCLE.indexOf(r.type) + 1) % 3];
+      if (!CATS[r.type].some(c => c[0] === r.cat)) r.cat = r.type === 'income' ? 'Income' : 'Other';
+      if (!PAYS[r.type].includes(r.pay)) r.pay = PAYS[r.type][0];
+      drawBatch();
+    };
+  });
+}
+
+function openBatch(rows) {
+  batchRows = rows;
+  $('vResult').hidden = true;
+  $('vBatch').hidden = false;
+  $('vState').textContent = rows.length + ' entries found — check them over';
+  $('vHint').textContent = 'Tap the type to change it, or the tick to leave one out.';
+  drawBatch();
+}
+
+$('bSaveAll').onclick = () => {
+  const chosen = batchRows.filter(r => r.include);
+  if (!chosen.length) return;
+  const now = new Date();
+  chosen.forEach((r, k) => {
+    const at = new Date(r.date);
+    at.setHours(now.getHours(), Math.max(0, now.getMinutes() - (chosen.length - k)), 0, 0);
+    const id = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random() + k));
+    state.entries.push({ id, type: r.type, cat: r.cat, amt: r.amount, pay: r.pay, at });
+    markDirty(id);
+  });
+  saveEntries();
+  closeVoice();
+  render(true);
+  toast(chosen.length + ' entries added');
+};
+
 /* ---------- microphone ---------- */
 let recog = null, listening = false, pending = null;
 
 function openVoice() {
+  $('vBatch').hidden = true;
   if (!voiceSupported()) {
     toast('This browser has no voice input — try Safari or Chrome');
     return;
@@ -943,8 +1076,14 @@ function handleHeard(text) {
 $('vRead').onclick = () => {
   const text = $('vText').value.trim();
   if (!text) { $('vState').textContent = 'Say or type an amount first'; return; }
-  $('vHeard').textContent = text;
-  handleHeard(text);
+  const rows = parseBatch(text);
+  if (!rows.length) {
+    $('vState').textContent = 'No amounts found in that';
+    $('vHint').textContent = 'Each line needs a number, for example "35 fuel".';
+    return;
+  }
+  if (rows.length === 1) { $('vHeard').textContent = text; handleHeard(text); }
+  else openBatch(rows);
 };
 $('vText').addEventListener('keydown', e => { if (e.key === 'Enter') $('vRead').click(); });
 
