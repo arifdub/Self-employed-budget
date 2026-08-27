@@ -303,6 +303,10 @@
       </div>
 
       <div class="sec">Preferences</div>
+      <div class="card"><div class="crow"><span class="clab">Categories</span>
+        <span class="cval" id="catSummary" style="font-size:13px"></span></div>
+        <div class="crange">Add your own income sources and expense types, with an icon and colour.</div>
+        <button class="save ghost" style="margin:12px 0 0;width:100%" id="openCats">Manage categories</button></div>
       <div class="card"><div class="crow"><span class="clab">Targets</span><span class="cval" id="tSummary"></span></div>
         <button class="save ghost" style="margin:12px 0 0;width:100%" id="editT2">Edit targets</button></div>
       <div class="card"><div class="crow"><span class="clab">Appearance</span>
@@ -455,6 +459,59 @@
       </ol>
       <p id="iosNote"></p>
       <button class="save" style="margin:14px 0 0;width:100%" id="iosClose">Got it</button>
+    </div>
+  </div>
+
+  <!-- categories -->
+  <section class="sheet" id="cats" aria-hidden="true">
+    <div class="rhead"><h2>Categories</h2><button class="x" id="closeCats" aria-label="Close">✕</button></div>
+    <div class="body">
+      <div class="tabs" id="catTabs">
+        <button data-t="income" aria-pressed="true">Income</button>
+        <button data-t="business" aria-pressed="false">Business</button>
+        <button data-t="personal" aria-pressed="false">Home</button>
+      </div>
+      <div id="catList"></div>
+      <button class="save" style="margin:14px 0 0;width:100%" id="catAdd">Add a category</button>
+      <div style="height:20px"></div>
+    </div>
+  </section>
+
+  <!-- add / edit a category -->
+  <div class="modal" id="catEditModal" aria-hidden="true">
+    <div class="mbox">
+      <h4 id="catEditTitle">New category</h4>
+      <div class="catPrev" id="cPreview"></div>
+
+      <div class="field" style="margin-top:12px">
+        <label for="cName">Name</label>
+        <input id="cName" type="text" autocomplete="off" placeholder="e.g. Tap, Callout, Tools">
+      </div>
+
+      <div class="mlab2">Icon</div>
+      <div class="icGrid" id="cIcons"></div>
+      <input type="hidden" id="cIcon" value="car">
+
+      <div class="mlab2">Colour</div>
+      <div class="colRow" id="cColours"></div>
+      <input type="hidden" id="cColour" value="blue">
+
+      <p id="cErr"></p>
+      <button class="save" style="margin:12px 0 0;width:100%" id="cSave">Save</button>
+      <button class="save ghost" style="margin:8px 0 0;width:100%" id="cHideBtn" hidden>Hide from the entry screen</button>
+      <button class="save ghost danger" style="margin:8px 0 0;width:100%" id="cDelBtn" hidden>Delete</button>
+      <p id="cDelNote"></p>
+      <button class="save ghost" style="margin:8px 0 0;width:100%" id="cCancel">Cancel</button>
+    </div>
+  </div>
+
+  <!-- where should the entries go -->
+  <div class="modal" id="moveModal" aria-hidden="true">
+    <div class="mbox">
+      <h4 id="mvTitle">Delete category?</h4>
+      <p id="mvNote"></p>
+      <div class="mvList" id="mvList"></div>
+      <button class="save ghost" style="margin:12px 0 0;width:100%" id="mvCancel">Keep the category</button>
     </div>
   </div>
 

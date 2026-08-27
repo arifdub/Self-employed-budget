@@ -27,50 +27,128 @@ window.addEventListener('error', ev => {
   if (document.body) document.body.appendChild(bar);
 }, true);
 
-const APP_VERSION = '1.0.0';
+const APP_VERSION = '1.1.1';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
 const LOCALE = 'en-IE';
 
-const SOURCES = [['Income', ''], ['Free Now', 'FN'], ['Uber', 'U'], ['Others', '⋯']];
-const CATS = {
-  income: SOURCES,
-  business: [['Fuel', '⛽'], ['Insurance', '🛡'], ['Repairs', '🔧'], ['Car wash', '🫧'],
-             ['Licence', '📄'], ['Phone', '📱'], ['Parking', '🅿️'], ['Tolls', '🛣'], ['Other', '➕']],
-  personal: [['Groceries', '🧺'], ['Rent', '🏠'], ['Utilities', '💡'], ['Kids', '🎒'],
-             ['Eating out', '🍽'], ['Transport', '🚌'], ['Health', '⚕️'], ['Other', '➕']]
+/* ---------- categories ----------
+   Categories are data, not code. The built-in set below is only a starting
+   point — everything is editable in Settings, so a plumber can have "Callout"
+   where a driver has "Uber". Custom categories are stored per user and synced,
+   which is why entries record the category NAME rather than an id: renaming a
+   category should not silently rewrite history.
+
+   Each category is { name, icon, colour, hidden }. Colour is a token from
+   PALETTE, so a category always matches the theme rather than carrying a raw
+   hex value that looks wrong in the light skin. */
+
+const TAXI_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">' +
+  '<path d="M10 2.6h4v1.9h-4z"/>' +
+  '<path d="M5 11l1.5-4.4A2.2 2.2 0 018.6 5h6.8a2.2 2.2 0 012.1 1.6L19 11h.4A1.6 1.6 0 0121 12.6V17a1 1 0 01-1 1h-1v.4a1.5 1.5 0 01-3 0V18H8v.4a1.5 1.5 0 01-3 0V18H4a1 1 0 01-1-1v-4.4A1.6 1.6 0 014.6 11H5zm2.3-.6h9.4l-1.1-3.1a.6.6 0 00-.6-.4H9a.6.6 0 00-.6.4L7.3 10.4zM6.6 15.2a1.2 1.2 0 100-2.4 1.2 1.2 0 000 2.4zm10.8 0a1.2 1.2 0 100-2.4 1.2 1.2 0 000 2.4z"/></svg>';
+
+/* Icons available when creating a category. "car" renders the taxi glyph so it
+   can be recoloured; the rest are emoji, which cannot be. */
+const ICON_SET = [
+  ['car', 'car'], ['€', 'euro'], ['💶', 'notes'], ['💳', 'card'], ['🏦', 'bank'],
+  ['📲', 'app'], ['⋯', 'other'], ['⛽', 'fuel'], ['🔧', 'spanner'], ['🛠', 'tools'],
+  ['🚗', 'car2'], ['🛞', 'tyre'], ['🅿️', 'parking'], ['🛣', 'road'], ['🛡', 'shield'],
+  ['📄', 'document'], ['📱', 'phone'], ['💻', 'laptop'], ['🫧', 'wash'], ['🧾', 'receipt'],
+  ['🏠', 'house'], ['🧺', 'basket'], ['💡', 'bulb'], ['🎒', 'school'], ['🍽', 'meal'],
+  ['☕', 'coffee'], ['🚌', 'bus'], ['⚕️', 'health'], ['🐾', 'pet'], ['🎁', 'gift'],
+  ['✈️', 'travel'], ['📚', 'books'], ['🏋️', 'gym'], ['✂️', 'haircut'], ['➕', 'plus']
+];
+
+/* Named colours rather than hex, so both themes stay legible. */
+const PALETTE = {
+  green:  { bg: 'rgba(52,211,153,.22)',  fg: '#34D399' },
+  amber:  { bg: 'rgba(255,176,32,.22)',  fg: '#FFB020' },
+  red:    { bg: '#E8362D',               fg: '#ffffff' },
+  black:  { bg: '#0B0B0B',               fg: '#ffffff' },
+  blue:   { bg: '#5AC8FA',               fg: '#0B1B2B' },
+  purple: { bg: '#8B5CF6',               fg: '#ffffff' },
+  pink:   { bg: 'rgba(251,113,133,.22)', fg: '#FB7185' },
+  teal:   { bg: 'rgba(45,212,191,.22)',  fg: '#2DD4BF' },
+  grey:   { bg: 'var(--surf2)',          fg: 'var(--mut)' }
 };
+
+const DEFAULT_CATS = {
+  income: [
+    { name: 'Income',   icon: '€',   colour: 'green'  },
+    { name: 'Free Now', icon: 'car', colour: 'red'    },
+    { name: 'Uber',     icon: 'car', colour: 'black'  },
+    { name: 'Tap',      icon: 'car', colour: 'blue'   },
+    { name: 'Cabi',     icon: 'car', colour: 'purple' },
+    { name: 'Others',   icon: '⋯',   colour: 'grey'   }
+  ],
+  business: [
+    { name: 'Fuel',      icon: '⛽',  colour: 'amber' },
+    { name: 'App costs', icon: '📲', colour: 'pink'  },
+    { name: 'Insurance', icon: '🛡',  colour: 'blue'  },
+    { name: 'Repairs',   icon: '🔧', colour: 'grey'  },
+    { name: 'Car wash',  icon: '🫧', colour: 'teal'  },
+    { name: 'Licence',   icon: '📄', colour: 'grey'  },
+    { name: 'Phone',     icon: '📱', colour: 'grey'  },
+    { name: 'Parking',   icon: '🅿️', colour: 'grey'  },
+    { name: 'Tolls',     icon: '🛣',  colour: 'grey'  },
+    { name: 'Other',     icon: '➕', colour: 'grey'  }
+  ],
+  personal: [
+    { name: 'Groceries',  icon: '🧺', colour: 'green' },
+    { name: 'Rent',       icon: '🏠', colour: 'amber' },
+    { name: 'Utilities',  icon: '💡', colour: 'amber' },
+    { name: 'Kids',       icon: '🎒', colour: 'blue'  },
+    { name: 'Eating out', icon: '🍽',  colour: 'pink'  },
+    { name: 'Transport',  icon: '🚌', colour: 'grey'  },
+    { name: 'Health',     icon: '⚕️', colour: 'teal'  },
+    { name: 'Other',      icon: '➕', colour: 'grey'  }
+  ]
+};
+
+/* The live set. Replaced by the user's own on load. */
+let categories = JSON.parse(JSON.stringify(DEFAULT_CATS));
+
+const visibleCats = type => categories[type].filter(c => !c.hidden);
+
+/* CATS keeps the old [name, icon] shape so existing render code is untouched. */
+const CATS = {
+  get income()   { return visibleCats('income').map(c => [c.name, c.icon]); },
+  get business() { return visibleCats('business').map(c => [c.name, c.icon]); },
+  get personal() { return visibleCats('personal').map(c => [c.name, c.icon]); }
+};
+
 const PAYS = {
   income: ['Cash', 'Card in car', 'App payout', 'Bank transfer', 'Invoice — unpaid'],
   business: ['Cash', 'Card', 'Direct debit', 'On account'],
   personal: ['Cash', 'Card', 'Direct debit']
 };
-const ICON = Object.fromEntries(Object.values(CATS).flat());
 
+function findCat(name) {
+  for (const t of ['income', 'business', 'personal']) {
+    const hit = categories[t].find(c => c.name === name);
+    if (hit) return hit;
+  }
+  return null;
+}
 
-/* ---------- source and payment icons ----------
-   Emoji cannot be recoloured, so the branded sources use an inline taxi glyph on
-   a coloured chip instead: FREENOW red, Uber black. Uber's mark is black, which
-   would disappear against a navy background, so the chip carries the black and
-   the glyph sits on it in white. */
-const TAXI_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">' +
-  '<path d="M10 2.6h4v1.9h-4z"/>' +
-  '<path d="M5 11l1.5-4.4A2.2 2.2 0 018.6 5h6.8a2.2 2.2 0 012.1 1.6L19 11h.4A1.6 1.6 0 0121 12.6V17a1 1 0 01-1 1h-1v.4a1.5 1.5 0 01-3 0V18H8v.4a1.5 1.5 0 01-3 0V18H4a1 1 0 01-1-1v-4.4A1.6 1.6 0 014.6 11H5zm2.3-.6h9.4l-1.1-3.1a.6.6 0 00-.6-.4H9a.6.6 0 00-.6.4L7.3 10.4zM6.6 15.2a1.2 1.2 0 100-2.4 1.2 1.2 0 000 2.4zm10.8 0a1.2 1.2 0 100-2.4 1.2 1.2 0 000 2.4z"/></svg>';
-
-const CHIP = {
-  'Income':   '<span class="chip c-income">€</span>',
-  'Free Now': '<span class="chip c-freenow">' + TAXI_SVG + '</span>',
-  'Uber':     '<span class="chip c-uber">' + TAXI_SVG + '</span>',
-  'Others':   '<span class="chip c-others">⋯</span>'
-};
+/* One renderer for every category badge in the app. */
+function chipHTML(cat) {
+  const c = findCat(cat);
+  if (!c) return '<span class="chip" style="background:var(--surf2);color:var(--mut)">•</span>';
+  const p = PALETTE[c.colour] || PALETTE.grey;
+  const inner = c.icon === 'car' ? TAXI_SVG : c.icon;
+  const ring = c.colour === 'black' ? ';box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)' : '';
+  return '<span class="chip" style="background:' + p.bg + ';color:' + p.fg + ring + '">' + inner + '</span>';
+}
 
 const PAY_ICON = {
   'Cash': '💵', 'Card in car': '💳', 'App payout': '📲', 'Bank transfer': '🏦',
   'Invoice — unpaid': '🧾', 'Card': '💳', 'Direct debit': '🔁', 'On account': '📄'
 };
 
-const iconHTML = cat => CHIP[cat] || (ICON[cat] || '•');
+const iconHTML = cat => chipHTML(cat);
+const ICON = new Proxy({}, { get: (_, k) => { const c = findCat(String(k)); return c ? c.icon : '•'; } });
 
 /* ---------- state ---------- */
 const state = {
@@ -124,7 +202,7 @@ function loadEntries() {
 function saveSettings() {
   try {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify({
-      targets: state.targets, skin: state.skin
+      targets: state.targets, skin: state.skin, categories
     }));
   } catch (err) { /* non-fatal */ }
 }
@@ -136,6 +214,16 @@ function loadSettings() {
     const s = JSON.parse(raw);
     if (s.targets && s.targets.day > 0) state.targets = s.targets;
     if (s.skin === 'day' || s.skin === 'night') state.skin = s.skin;
+    if (s.categories && s.categories.income && s.categories.business && s.categories.personal) {
+      // Merge rather than replace: a category added to the defaults in a later
+      // release should appear for people who already have saved settings.
+      categories = s.categories;
+      ['income','business','personal'].forEach(t => {
+        DEFAULT_CATS[t].forEach(d => {
+          if (!categories[t].some(c => c.name === d.name)) categories[t].push({ ...d });
+        });
+      });
+    }
   } catch (err) { /* defaults stand */ }
 }
 
@@ -1221,7 +1309,7 @@ function drawDraft() {
 
   $('tiles').innerHTML = CATS[d.type].map(([n, i]) =>
     '<button type="button" class="tile" data-c="' + n + '" aria-pressed="' + (n === d.cat) + '">' +
-    '<span class="ic">' + (CHIP[n] || i) + '</span><span class="tl">' + n + '</span></button>').join('');
+    '<span class="ic">' + chipHTML(n) + '</span><span class="tl">' + n + '</span></button>').join('');
   $('tiles').querySelectorAll('.tile').forEach(b => b.onclick = () => { d.cat = b.dataset.c; drawDraft(); });
 
   $('pays').innerHTML = PAYS[d.type].map(p =>
@@ -1388,6 +1476,8 @@ document.querySelectorAll('.nb').forEach(b => b.onclick = () => {
   else if (go === 'more') {
     const n = state.entries.length;
     $('resetCount').textContent = n + ' entr' + (n === 1 ? 'y' : 'ies');
+    const cc = ['income','business','personal'].reduce((a,t) => a + visibleCats(t).length, 0);
+    $('catSummary').textContent = cc + ' in use';
     openSheet('more');
   }
   else { closeSheet('rep'); closeSheet('more'); closeSheet('ent'); }
@@ -1519,6 +1609,224 @@ $('rGo').onclick = () => {
   if (typeof renderEntries === 'function') renderEntries();
   toast(n + ' entr' + (n === 1 ? 'y' : 'ies') + ' deleted — starting fresh');
 };
+
+
+/* ---------- category manager ----------
+   Categories live in Settings so the app fits the trade, not the other way
+   round. Deleting is deliberately restricted: a category that has entries
+   against it cannot simply vanish, because those entries would be left pointing
+   at a name that no longer exists. It can be hidden instead — it disappears from
+   the entry screen while history stays intact and readable. */
+
+let catType = 'income';
+let editingCat = null;          // the category being edited, or null when adding
+
+const catCount = name => state.entries.filter(e => e.cat === name).length;
+
+const TYPE_TITLE = { income: 'Income', business: 'Business expenses', personal: 'Home expenses' };
+
+function openCats() {
+  document.querySelectorAll('#catTabs button')
+    .forEach(b => b.setAttribute('aria-pressed', b.dataset.t === catType));
+  drawCats();
+  openSheet('cats');
+}
+
+function drawCats() {
+  const list = categories[catType];
+  $('catList').innerHTML = list.map((c, i) => {
+    const used = catCount(c.name);
+    return '<div class="catRow' + (c.hidden ? ' hidden' : '') + '" data-i="' + i + '">' +
+      chipHTML(c.name) +
+      '<div class="catInfo"><div class="catName">' + c.name + (c.custom ? '' : '') + '</div>' +
+      '<div class="catMeta">' + (used ? used + (used === 1 ? ' entry' : ' entries') : 'Not used yet') +
+        (c.hidden ? ' · hidden' : '') + '</div></div>' +
+      '<button class="catEdit" data-act="edit" aria-label="Edit ' + c.name + '">Edit</button>' +
+    '</div>';
+  }).join('');
+
+  $('catList').querySelectorAll('.catRow').forEach(row => {
+    row.querySelector('[data-act="edit"]').onclick = () => openCatEdit(categories[catType][+row.dataset.i]);
+  });
+}
+
+function openCatEdit(cat) {
+  editingCat = cat || null;
+  const c = cat || { name: '', icon: 'car', colour: 'blue' };
+
+  $('catEditTitle').textContent = cat ? 'Edit category' : 'New ' + TYPE_TITLE[catType].toLowerCase() + ' category';
+  $('cName').value = c.name;
+  $('cIcon').value = c.icon;
+  $('cColour').value = c.colour;
+
+  $('cIcons').innerHTML = ICON_SET.map(([ic, label]) =>
+    '<button type="button" class="icPick" data-ic="' + ic + '" aria-pressed="' + (ic === c.icon) + '" ' +
+    'aria-label="' + label + '">' + (ic === 'car' ? TAXI_SVG : ic) + '</button>').join('');
+  $('cIcons').querySelectorAll('.icPick').forEach(b => b.onclick = () => {
+    $('cIcon').value = b.dataset.ic;
+    $('cIcons').querySelectorAll('.icPick').forEach(x => x.setAttribute('aria-pressed', x === b));
+    paintCatPreview();
+  });
+
+  $('cColours').innerHTML = Object.entries(PALETTE).map(([key, p]) =>
+    '<button type="button" class="colPick" data-col="' + key + '" aria-pressed="' + (key === c.colour) + '" ' +
+    'aria-label="' + key + '" style="background:' + p.bg + ';color:' + p.fg + '">A</button>').join('');
+  $('cColours').querySelectorAll('.colPick').forEach(b => b.onclick = () => {
+    $('cColour').value = b.dataset.col;
+    $('cColours').querySelectorAll('.colPick').forEach(x => x.setAttribute('aria-pressed', x === b));
+    paintCatPreview();
+  });
+
+  const used = cat ? catCount(cat.name) : 0;
+  $('cHideBtn').hidden = !cat;
+  $('cHideBtn').textContent = cat && cat.hidden ? 'Show on the entry screen' : 'Hide from the entry screen';
+  $('cDelBtn').hidden = !cat;
+  $('cDelBtn').disabled = false;
+  $('cDelBtn').textContent = used > 0 ? 'Delete and move ' + used + (used === 1 ? ' entry' : ' entries') : 'Delete';
+  $('cDelNote').textContent = !cat ? ''
+    : used > 0
+      ? 'You will be asked where to move its ' + used + (used === 1 ? ' entry' : ' entries') + ' first.'
+      : '';
+  $('cErr').textContent = '';
+  paintCatPreview();
+
+  $('catEditModal').classList.add('on');
+  $('catEditModal').setAttribute('aria-hidden', 'false');
+}
+
+function paintCatPreview() {
+  const p = PALETTE[$('cColour').value] || PALETTE.grey;
+  const ic = $('cIcon').value;
+  const ring = $('cColour').value === 'black' ? ';box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)' : '';
+  $('cPreview').innerHTML =
+    '<span class="chip" style="background:' + p.bg + ';color:' + p.fg + ring + '">' +
+    (ic === 'car' ? TAXI_SVG : ic) + '</span>' +
+    '<span class="prevName">' + ($('cName').value.trim() || 'Name') + '</span>';
+}
+
+function closeCatEdit() {
+  $('catEditModal').classList.remove('on');
+  $('catEditModal').setAttribute('aria-hidden', 'true');
+  editingCat = null;
+}
+
+$('cSave').onclick = () => {
+  const name = $('cName').value.trim();
+  if (!name) { $('cErr').textContent = 'Give it a name.'; return; }
+
+  const clash = categories[catType].some(c => c !== editingCat &&
+    c.name.toLowerCase() === name.toLowerCase());
+  if (clash) { $('cErr').textContent = 'You already have a category with that name.'; return; }
+
+  if (editingCat) {
+    const oldName = editingCat.name;
+    editingCat.name = name;
+    editingCat.icon = $('cIcon').value;
+    editingCat.colour = $('cColour').value;
+    // Entries store the category name, so a rename has to carry through or the
+    // old entries would point at a category that no longer exists.
+    if (oldName !== name) {
+      state.entries.forEach(e => {
+        if (e.cat === oldName) { e.cat = name; markDirty(e.id); }
+      });
+      saveEntries();
+    }
+  } else {
+    categories[catType].push({
+      name, icon: $('cIcon').value, colour: $('cColour').value, custom: true
+    });
+  }
+
+  saveSettings(); pushSettings();
+  closeCatEdit(); drawCats(); drawDraft(); render();
+  toast(editingCat ? 'Category updated' : name + ' added');
+};
+
+$('cHideBtn').onclick = () => {
+  if (!editingCat) return;
+  editingCat.hidden = !editingCat.hidden;
+  saveSettings(); pushSettings();
+  closeCatEdit(); drawCats(); drawDraft();
+  toast(editingCat && editingCat.hidden ? 'Hidden' : 'Shown again');
+};
+
+/* Deleting a category that has entries would leave them pointing at a name that
+   no longer exists, so the entries are moved somewhere first. The user chooses
+   where — silently dumping a month of fuel costs into "Other" is the kind of
+   thing you only notice at tax time. */
+let pendingDelete = null;
+
+$('cDelBtn').onclick = () => {
+  if (!editingCat) return;
+  const used = catCount(editingCat.name);
+
+  if (used === 0) {
+    const name = editingCat.name;
+    categories[catType] = categories[catType].filter(c => c !== editingCat);
+    saveSettings(); pushSettings();
+    closeCatEdit(); drawCats(); drawDraft(); render();
+    toast(name + ' deleted');
+    return;
+  }
+
+  pendingDelete = { cat: editingCat, type: catType, used };
+  const others = categories[catType].filter(c => c !== editingCat);
+
+  $('mvTitle').textContent = 'Delete ' + editingCat.name + '?';
+  $('mvNote').textContent = 'It has ' + used + (used === 1 ? ' entry' : ' entries') +
+    ' worth ' + money(state.entries.filter(e => e.cat === editingCat.name)
+      .reduce((a, e) => a + e.amt, 0)) + '. Choose where they should go.';
+
+  $('mvList').innerHTML = others.length
+    ? others.map((c, i) =>
+        '<button class="mvOpt" data-i="' + i + '">' + chipHTML(c.name) +
+        '<span class="mvName">' + c.name + '</span></button>').join('')
+    : '<div class="empty">There is no other category to move them to. Add one first.</div>';
+
+  $('mvList').querySelectorAll('.mvOpt').forEach(b => b.onclick = () => finishDelete(others[+b.dataset.i].name));
+
+  $('moveModal').classList.add('on');
+  $('moveModal').setAttribute('aria-hidden', 'false');
+};
+
+function finishDelete(intoName) {
+  if (!pendingDelete) return;
+  const { cat, type, used } = pendingDelete;
+  const from = cat.name;
+
+  state.entries.forEach(e => {
+    if (e.cat === from) { e.cat = intoName; markDirty(e.id); }
+  });
+  saveEntries();
+
+  categories[type] = categories[type].filter(c => c !== cat);
+  saveSettings(); pushSettings();
+
+  pendingDelete = null;
+  closeMove(); closeCatEdit(); drawCats(); drawDraft(); render();
+  toast(from + ' deleted — ' + used + (used === 1 ? ' entry' : ' entries') + ' moved to ' + intoName);
+}
+
+function closeMove() {
+  $('moveModal').classList.remove('on');
+  $('moveModal').setAttribute('aria-hidden', 'true');
+}
+$('mvCancel').onclick = () => { pendingDelete = null; closeMove(); };
+$('moveModal').onclick = e => { if (e.target === $('moveModal')) { pendingDelete = null; closeMove(); } };
+
+$('cName').addEventListener('input', paintCatPreview);
+$('catAdd').onclick = () => openCatEdit(null);
+$('closeCats').onclick = () => closeSheet('cats');
+$('catEditModal').onclick = e => { if (e.target === $('catEditModal')) closeCatEdit(); };
+$('cCancel').onclick = closeCatEdit;
+$('openCats').onclick = openCats;
+
+$('catTabs').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  catType = b.dataset.t;
+  document.querySelectorAll('#catTabs button').forEach(x => x.setAttribute('aria-pressed', x === b));
+  drawCats();
+});
 
 /* ---------- theme ---------- */
 function setSkin(s) {
@@ -1768,7 +2076,8 @@ async function pushSettings() {
     target_day: state.targets.day,
     target_week: state.targets.week,
     target_month: state.targets.month,
-    skin: state.skin
+    skin: state.skin,
+    categories
   }, { onConflict: 'user_id' });
 }
 
@@ -1777,6 +2086,7 @@ async function pullSettings() {
   const { data } = await sb.from('settings').select('*').eq('user_id', session.user.id).maybeSingle();
   if (data) {
     state.targets = { day: Number(data.target_day), week: Number(data.target_week), month: Number(data.target_month) };
+    if (data.categories && data.categories.income) categories = data.categories;
     saveSettings();
   }
 }
@@ -2066,6 +2376,8 @@ $('avatar').onclick = () => {
     document.querySelectorAll('.nb').forEach(x => x.classList.toggle('on', x.dataset.go === 'more'));
     const n = state.entries.length;
     $('resetCount').textContent = n + ' entr' + (n === 1 ? 'y' : 'ies');
+    const cc = ['income','business','personal'].reduce((a,t) => a + visibleCats(t).length, 0);
+    $('catSummary').textContent = cc + ' in use';
     openSheet('more');
   } else if (sb) {
     openAuth('signin');
