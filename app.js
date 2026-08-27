@@ -27,7 +27,7 @@ window.addEventListener('error', ev => {
   if (document.body) document.body.appendChild(bar);
 }, true);
 
-const APP_VERSION = '1.3.0';
+const APP_VERSION = '1.3.1';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -1648,7 +1648,12 @@ function drawCats() {
   $('catList').innerHTML = list.map((c, i) => {
     const used = catCount(c.name);
     return '<div class="catRow' + (c.hidden ? ' hidden' : '') + '" data-i="' + i + '">' +
-      '<span class="grip" aria-hidden="true">⠿</span>' +
+      '<button class="grip" aria-label="Hold and drag to reorder">' +
+        '<svg viewBox="0 0 18 12" aria-hidden="true">' +
+          '<rect x="0" y="0"  width="18" height="2" rx="1"/>' +
+          '<rect x="0" y="5"  width="18" height="2" rx="1"/>' +
+          '<rect x="0" y="10" width="18" height="2" rx="1"/>' +
+        '</svg></button>' +
       chipHTML(c.name) +
       '<div class="catInfo"><div class="catName">' + c.name + '</div>' +
       '<div class="catMeta">' + (used ? used + (used === 1 ? ' entry' : ' entries') : 'Not used yet') +
@@ -1666,7 +1671,12 @@ function drawCats() {
 let dragRow = null, dragFrom = -1, dragY = 0, holdTimer = null, rowH = 0;
 
 function wireDrag(row) {
-  row.addEventListener('touchstart', ev => {
+  /* The drag starts on the handle rather than the whole row. Holding anywhere
+     on a row is easy to do by accident while scrolling; the handle makes the
+     gesture deliberate, and leaves the rest of the row free to be tapped. */
+  const handle = row.querySelector('.grip');
+
+  handle.addEventListener('touchstart', ev => {
     const t = ev.touches[0];
     dragY = t.clientY;
     holdTimer = setTimeout(() => {
@@ -1678,7 +1688,7 @@ function wireDrag(row) {
     }, 320);
   }, { passive: true });
 
-  row.addEventListener('touchmove', ev => {
+  handle.addEventListener('touchmove', ev => {
     if (!dragRow) { clearTimeout(holdTimer); return; }
     ev.preventDefault();                              // the list must not scroll mid-drag
     const dy = ev.touches[0].clientY - dragY;
@@ -1710,8 +1720,8 @@ function wireDrag(row) {
       drawCats(); drawDraft();
     }
   };
-  row.addEventListener('touchend', end);
-  row.addEventListener('touchcancel', end);
+  handle.addEventListener('touchend', end);
+  handle.addEventListener('touchcancel', end);
 
   /* Desktop has no long-press, so the arrows in the edit sheet cover it there. */
 }
