@@ -17,5 +17,5 @@ window.SEB_CONFIG = {
 
   // Google Analytics measurement ID, e.g. 'G-XXXXXXXXXX'.
   // Leave empty and no analytics code loads at all.
-  gaMeasurementId: 'G-FBLBZ5VV9Q'
+  // gaMeasurementId: 'G-FBLBZ5VV9Q'
 };
