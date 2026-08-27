@@ -27,7 +27,7 @@ window.addEventListener('error', ev => {
   if (document.body) document.body.appendChild(bar);
 }, true);
 
-const APP_VERSION = '1.3.1';
+const APP_VERSION = '1.3.2';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -1560,7 +1560,9 @@ function enablePullToDismiss(id) {
   sheet.addEventListener('touchcancel', release);
 }
 
-['sheet', 'rep', 'ent', 'more'].forEach(enablePullToDismiss);
+/* Every sheet in the app, so a new one cannot be added without the gesture —
+   the categories sheet was missed exactly that way. */
+['sheet', 'rep', 'ent', 'more', 'cats'].forEach(enablePullToDismiss);
 
 /* ---------- targets ---------- */
 function openTargets() {
