@@ -27,7 +27,7 @@ window.addEventListener('error', ev => {
   if (document.body) document.body.appendChild(bar);
 }, true);
 
-const APP_VERSION = '1.2.0';
+const APP_VERSION = '1.3.0';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -1637,13 +1637,20 @@ function openCats() {
   openSheet('cats');
 }
 
+/* ---------- category list, with drag to reorder ----------
+   Long-press a row and drag it up or down. The order is the order they appear
+   on the entry screen, so the sources you use most can sit first.
+
+   The drag deliberately needs a hold rather than starting immediately: the list
+   scrolls, and a drag that engaged on contact would fight every scroll gesture. */
 function drawCats() {
   const list = categories[catType];
   $('catList').innerHTML = list.map((c, i) => {
     const used = catCount(c.name);
     return '<div class="catRow' + (c.hidden ? ' hidden' : '') + '" data-i="' + i + '">' +
+      '<span class="grip" aria-hidden="true">⠿</span>' +
       chipHTML(c.name) +
-      '<div class="catInfo"><div class="catName">' + c.name + (c.custom ? '' : '') + '</div>' +
+      '<div class="catInfo"><div class="catName">' + c.name + '</div>' +
       '<div class="catMeta">' + (used ? used + (used === 1 ? ' entry' : ' entries') : 'Not used yet') +
         (c.hidden ? ' · hidden' : '') + '</div></div>' +
       '<button class="catEdit" data-act="edit" aria-label="Edit ' + c.name + '">Edit</button>' +
@@ -1652,7 +1659,74 @@ function drawCats() {
 
   $('catList').querySelectorAll('.catRow').forEach(row => {
     row.querySelector('[data-act="edit"]').onclick = () => openCatEdit(categories[catType][+row.dataset.i]);
+    wireDrag(row);
   });
+}
+
+let dragRow = null, dragFrom = -1, dragY = 0, holdTimer = null, rowH = 0;
+
+function wireDrag(row) {
+  row.addEventListener('touchstart', ev => {
+    const t = ev.touches[0];
+    dragY = t.clientY;
+    holdTimer = setTimeout(() => {
+      dragRow = row;
+      dragFrom = +row.dataset.i;
+      rowH = row.getBoundingClientRect().height;
+      row.classList.add('dragging');
+      if (navigator.vibrate) navigator.vibrate(12);   // confirms the hold took
+    }, 320);
+  }, { passive: true });
+
+  row.addEventListener('touchmove', ev => {
+    if (!dragRow) { clearTimeout(holdTimer); return; }
+    ev.preventDefault();                              // the list must not scroll mid-drag
+    const dy = ev.touches[0].clientY - dragY;
+    dragRow.style.transform = 'translateY(' + dy + 'px)';
+
+    const steps = Math.round(dy / (rowH || 1));
+    const target = Math.max(0, Math.min(categories[catType].length - 1, dragFrom + steps));
+    if (target !== +dragRow.dataset.i) {
+      // Move the item, then redraw once the finger lifts. Reordering the DOM
+      // mid-gesture would pull the row out from under the touch.
+      dragRow.dataset.pending = target;
+    }
+  }, { passive: false });
+
+  const end = () => {
+    clearTimeout(holdTimer);
+    if (!dragRow) return;
+    const to = dragRow.dataset.pending !== undefined ? +dragRow.dataset.pending : dragFrom;
+    dragRow.classList.remove('dragging');
+    dragRow.style.transform = '';
+    delete dragRow.dataset.pending;
+    dragRow = null;
+
+    if (to !== dragFrom) {
+      const arr = categories[catType];
+      const [moved] = arr.splice(dragFrom, 1);
+      arr.splice(to, 0, moved);
+      saveSettings(); pushSettings();
+      drawCats(); drawDraft();
+    }
+  };
+  row.addEventListener('touchend', end);
+  row.addEventListener('touchcancel', end);
+
+  /* Desktop has no long-press, so the arrows in the edit sheet cover it there. */
+}
+
+/* Move up / down, for anyone who finds dragging fiddly — and the only route on
+   a desktop browser. */
+function moveCat(cat, delta) {
+  const arr = categories[catType];
+  const i = arr.indexOf(cat);
+  const to = i + delta;
+  if (i < 0 || to < 0 || to >= arr.length) return;
+  arr.splice(i, 1);
+  arr.splice(to, 0, cat);
+  saveSettings(); pushSettings();
+  drawCats(); drawDraft();
 }
 
 function openCatEdit(cat) {
@@ -1683,6 +1757,14 @@ function openCatEdit(cat) {
   });
 
   const used = cat ? catCount(cat.name) : 0;
+  $('cMoveRow').hidden = !cat;
+  if (cat) {
+    const arr = categories[catType], i = arr.indexOf(cat);
+    $('cUp').disabled = i <= 0;
+    $('cDown').disabled = i >= arr.length - 1;
+    $('cUp').onclick = () => { moveCat(cat, -1); closeCatEdit(); };
+    $('cDown').onclick = () => { moveCat(cat, 1); closeCatEdit(); };
+  }
   $('cHideBtn').hidden = !cat;
   $('cHideBtn').textContent = cat && cat.hidden ? 'Show on the entry screen' : 'Hide from the entry screen';
   $('cDelBtn').hidden = !cat;

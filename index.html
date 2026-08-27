@@ -471,6 +471,7 @@
         <button data-t="business" aria-pressed="false">Business</button>
         <button data-t="personal" aria-pressed="false">Home</button>
       </div>
+      <div class="catHint">Press and hold a category to drag it up or down.</div>
       <div id="catList"></div>
       <button class="save" style="margin:14px 0 0;width:100%" id="catAdd">Add a category</button>
       <div style="height:20px"></div>
@@ -486,6 +487,11 @@
       <div class="field" style="margin-top:12px">
         <label for="cName">Name</label>
         <input id="cName" type="text" autocomplete="off" placeholder="e.g. Tap, Callout, Tools">
+      </div>
+
+      <div class="cMoveRow" id="cMoveRow" hidden>
+        <button class="cMove" id="cUp">↑ Move up</button>
+        <button class="cMove" id="cDown">↓ Move down</button>
       </div>
 
       <div class="mlab2">Icon</div>
