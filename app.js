@@ -27,7 +27,7 @@ window.addEventListener('error', ev => {
   if (document.body) document.body.appendChild(bar);
 }, true);
 
-const APP_VERSION = '1.3.2';
+const APP_VERSION = '1.4.0';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -195,7 +195,10 @@ function loadEntries() {
       .map(e => (e.cat === 'Fare' ? { ...e, cat: 'Income' } : e))
       // v0.13.0 moved to whole euros; older entries are rounded so totals and
       // rows always agree.
-      .map(e => (e.amt % 1 ? { ...e, amt: roundEuro(e.amt) } : e));
+      .map(e => (e.amt % 1 ? { ...e, amt: roundEuro(e.amt) } : e))
+      // Belt and braces: anything with a tombstone is deleted, whatever the
+      // stored list still says.
+      .filter(e => !tombstones[e.id]);
   } catch (err) {
     return [];
   }
@@ -305,6 +308,9 @@ function wireSwipeRows(container) {
     const id = wrap.dataset.eid;
     let startX = 0, startY = 0, dx = 0, dragging = false, horizontal = null;
 
+    const WIDTH = () => wrap.getBoundingClientRect().width || 320;
+    const FULL = () => Math.max(WIDTH() * 0.55, 180);   // past this, a release deletes
+
     row.addEventListener('touchstart', ev => {
       const t = ev.touches[0];
       startX = t.clientX; startY = t.clientY; dx = 0; dragging = true; horizontal = null;
@@ -318,21 +324,37 @@ function wireSwipeRows(container) {
       if (horizontal === null && (Math.abs(mx) > 8 || Math.abs(my) > 8))
         horizontal = Math.abs(mx) > Math.abs(my);
       if (!horizontal) return;
-      dx = Math.min(0, Math.max(-140, mx));
+
+      dx = Math.min(0, Math.max(-WIDTH(), mx));
       row.style.transform = 'translateX(' + dx + 'px)';
+
+      /* Past the threshold the whole row turns red and the action panel reads
+         "Release to delete", so a full swipe never deletes as a surprise. */
+      const armed = dx < -FULL();
+      if (armed !== wrap.classList.contains('armed')) {
+        wrap.classList.toggle('armed', armed);
+        if (armed && navigator.vibrate) navigator.vibrate(10);
+      }
     }, { passive: true });
 
     row.addEventListener('touchend', () => {
       dragging = false;
       row.style.transition = '';
-      if (dx < -60) {
+
+      if (dx < -FULL()) {                       // full swipe: delete straight away
+        wrap.classList.remove('armed');
+        row.style.transform = 'translateX(-100%)';
+        wrap.style.maxHeight = wrap.scrollHeight + 'px';
+        requestAnimationFrame(() => wrap.classList.add('collapsing'));
+        setTimeout(() => deleteEntry(id, true), 180);
+      } else if (dx < -60) {                    // part swipe: reveal the buttons
         closeOpenSwipe();
         row.style.transform = 'translateX(-132px)';
         wrap.classList.add('swiped');
         openSwipe = row;
       } else {
         row.style.transform = '';
-        wrap.classList.remove('swiped');
+        wrap.classList.remove('swiped', 'armed');
         if (openSwipe === row) openSwipe = null;
       }
       dx = 0;
@@ -348,6 +370,54 @@ function wireSwipeRows(container) {
     }));
   });
 }
+
+/* ---------- delete, with a way back ----------
+   A full swipe skips the confirmation, so the safety net moves to an Undo that
+   sits on screen for six seconds. Deleting income records with no route back
+   would be the wrong trade: fast is only worth having if a mistake is cheap. */
+let lastDeleted = null, undoTimer = null;
+
+function deleteEntry(id, withUndo) {
+  const i = state.entries.findIndex(e => e.id === id);
+  if (i < 0) return;
+  const gone = state.entries[i];
+
+  state.entries.splice(i, 1);
+  saveEntries(); markDeleted(gone.id);
+  render();
+  if ($('ent').classList.contains('up')) renderEntries();
+
+  if (!withUndo) { toast(money(gone.amt) + ' ' + gone.cat + ' deleted'); return; }
+
+  lastDeleted = gone;
+  clearTimeout(undoTimer);
+  showUndo(money(gone.amt) + ' ' + gone.cat + ' deleted');
+  undoTimer = setTimeout(hideUndo, 6000);
+}
+
+function showUndo(msg) {
+  $('undoText').textContent = msg;
+  $('undoBar').classList.add('on');
+}
+function hideUndo() {
+  $('undoBar').classList.remove('on');
+  lastDeleted = null;
+}
+
+$('undoBtn').onclick = () => {
+  if (!lastDeleted) return;
+  const e = lastDeleted;
+  // Bringing it back means clearing the tombstone, or the next sync would
+  // dutifully delete it again on the server.
+  delete tombstones[e.id];
+  dirty.add(e.id);
+  state.entries.push(e);
+  saveEntries(); saveQueue(); scheduleFlush();
+  hideUndo(); render();
+  if ($('ent').classList.contains('up')) renderEntries();
+  toast(money(e.amt) + ' ' + e.cat + ' restored');
+};
+
 document.addEventListener('touchstart', ev => {
   if (openSwipe && !ev.target.closest('.swipe-wrap')) closeOpenSwipe();
 }, { passive: true });
@@ -1436,13 +1506,9 @@ $('eSave').onclick = () => {
 };
 
 $('eDel').onclick = () => {
-  const i = state.entries.findIndex(x => x.id === editingId);
-  if (i < 0) return;
-  const gone = state.entries[i];
-  state.entries.splice(i, 1);
-  saveEntries(); markDeleted(gone.id); closeEdit(); render();
-  if ($('ent').classList.contains('up')) renderEntries();
-  toast(money(gone.amt) + ' ' + gone.cat + ' deleted');
+  const id = editingId;
+  closeEdit();
+  deleteEntry(id, true);
 };
 
 $('etabs').addEventListener('click', e => {
@@ -2125,34 +2191,66 @@ async function syncNow(full) {
   syncing = true;
   setAcctState('Syncing…');
   try {
-    // 1. push everything queued
+    /* 1. push everything queued.
+       Snapshot the queue first. Anything added while this runs must survive to
+       the next sync, so only the ids actually pushed are cleared afterwards —
+       clearing the whole set would silently drop a delete made mid-sync. */
+    const queued = [...dirty];
     const rows = [], deletes = [];
-    dirty.forEach(id => {
+    queued.forEach(id => {
       const e = state.entries.find(x => x.id === id);
-      if (e) rows.push(toRow(e));
-      else if (tombstones[id]) deletes.push({ id, user_id: session.user.id, deleted_at: tombstones[id] });
+      if (tombstones[id]) deletes.push({ id, deleted_at: tombstones[id] });
+      else if (e) rows.push(toRow(e));
     });
 
     if (rows.length) {
       const { error } = await sb.from('entries').upsert(rows, { onConflict: 'id' });
       if (error) throw error;
     }
+
+    /* Deletes are upserted, not updated. An update matches nothing when the row
+       was created offline and never reached the server, so the tombstone would
+       be dropped, the row would later be pushed by some other path, and the
+       entry would reappear. Upsert writes the row as already-deleted either way. */
+    const confirmed = [];
     for (const d of deletes) {
-      const { error } = await sb.from('entries')
-        .update({ deleted_at: d.deleted_at }).eq('id', d.id);
+      const { error } = await sb.from('entries').upsert({
+        id: d.id,
+        user_id: session.user.id,
+        type: 'business', category: 'deleted', amount: 0.01,
+        occurred_at: d.deleted_at, deleted_at: d.deleted_at
+      }, { onConflict: 'id' });
       if (error) throw error;
+      confirmed.push(d.id);
     }
-    dirty.clear(); saveQueue();
+
+    queued.forEach(id => dirty.delete(id));
+    saveQueue();
 
     // 2. pull the authoritative copy
     if (full) {
       const { data, error } = await sb.from('entries')
         .select('*').is('deleted_at', null).order('occurred_at', { ascending: false });
       if (error) throw error;
-      state.entries = (data || []).map(fromRow);
+
+      /* Never accept a row we have a tombstone for. If a delete has not reached
+         the server yet — offline, or a failure mid-push — the pull would
+         otherwise hand the entry straight back, which is exactly the "deleted
+         entries come back" symptom. */
+      state.entries = (data || [])
+        .filter(r => !tombstones[r.id])
+        .map(fromRow);
+
       saveEntries();
       render();
       if ($('ent').classList.contains('up')) renderEntries();
+
+      /* A tombstone is only safe to forget once the server has confirmed the
+         delete AND the pull no longer returns that row. Keeping them forever
+         would grow without limit; dropping them early lets rows return. */
+      const live = new Set((data || []).map(r => r.id));
+      confirmed.forEach(id => { if (!live.has(id)) delete tombstones[id]; });
+      saveQueue();
     }
 
     // 3. settings
@@ -2564,6 +2662,7 @@ $('avatar').onclick = () => {
 })();
 
 /* ---------- go ---------- */
+loadQueue();          // tombstones must exist before entries are filtered against them
 loadSettings();
 state.entries = loadEntries();
 // Anything relabelled from Fare needs re-uploading so the database matches.
