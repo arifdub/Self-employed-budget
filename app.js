@@ -27,7 +27,7 @@ window.addEventListener('error', ev => {
   if (document.body) document.body.appendChild(bar);
 }, true);
 
-const APP_VERSION = '1.5.1';
+const APP_VERSION = '1.5.2';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -624,10 +624,13 @@ function periodTitle(p, ref) {
 /* ---------- custom date range ----------
    Any two dates. Useful for a tax year that does not line up with the calendar,
    or for pulling the exact period an accountant has asked for. */
-/* Deliberately short. Last 7 days, last 30 days and last year all duplicate the
-   Week, Month and Year tabs, and a list of shortcuts that repeat the tabs above
-   them just adds noise. What is left is the span the tabs cannot express. */
+/* These are rolling windows, not the calendar periods the tabs above show.
+   "Last 7 days" counts back from today; "This week" runs Monday to Sunday. On a
+   Tuesday those are entirely different figures, which is the point of having
+   both. */
 const QUICK_RANGES = [
+  ['Last 7 days',  () => [addDays(new Date(), -6),  new Date()]],
+  ['Last 30 days', () => [addDays(new Date(), -29), new Date()]],
   ['Last 90 days', () => [addDays(new Date(), -89), new Date()]],
   ['All time', () => {
     if (!state.entries.length) return [new Date(), new Date()];
