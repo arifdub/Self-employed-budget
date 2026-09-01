@@ -27,7 +27,7 @@ window.addEventListener('error', ev => {
   if (document.body) document.body.appendChild(bar);
 }, true);
 
-const APP_VERSION = '1.5.2';
+const APP_VERSION = '1.6.0';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -848,66 +848,124 @@ function monthlyRows(year) {
   return out;
 }
 
-function buildPDF() {
+/* Two documents, not one with a flag bolted on.
+
+   The accountant's copy is a business record: gross income, business expenses
+   itemised, and net income. Household spending is deliberately absent — it is
+   not deductible, it is nobody else's business, and including it invites
+   questions that have nothing to do with the return.
+
+   The full summary is for you, and shows everything down to disposable income. */
+function buildPDF(mode) {
   if (!window.jspdf || !window.jspdf.jsPDF) return null;
+  const forAccountant = mode === 'accountant';
+
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: 'pt', format: 'a4' });
   const W = doc.internal.pageSize.getWidth();
+  const H = doc.internal.pageSize.getHeight();
   const M = 42;
   const eur = n => '\u20AC' + roundEuro(n).toLocaleString('en-IE', { maximumFractionDigits: 0 });
   let y = M;
 
   const ref = refDate(), p = state.rperiod;
-  const year = ref.getFullYear();
 
+  const room = need => { if (y + need > H - 60) { doc.addPage(); y = M; } };
+
+  const line = (label, value, opts = {}) => {
+    room(20);
+    doc.setFont('helvetica', opts.bold ? 'bold' : 'normal');
+    doc.setFontSize(opts.size || 10.5);
+    doc.setTextColor(opts.muted ? 110 : 0);
+    doc.text(label, M + (opts.indent || 0), y);
+    doc.text(value, W - M, y, { align: 'right' });
+    doc.setTextColor(0);
+    y += opts.gap || 16;
+  };
+
+  const heading = text => {
+    room(40);
+    y += 8;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
+    doc.text(text, M, y); y += 6;
+    doc.setDrawColor(210); doc.line(M, y, W - M, y); y += 16;
+  };
+
+  const rule = () => { doc.setDrawColor(180); doc.line(M, y - 11, W - M, y - 11); };
+
+  /* itemise a category bucket, biggest first */
+  const items = (obj, totalLabel) => {
+    const rows = Object.entries(obj).sort((a, b) => b[1] - a[1]);
+    if (!rows.length) { line('None recorded', eur(0), { muted: true }); return 0; }
+    let sum = 0;
+    rows.forEach(([name, v]) => { sum += v; line(name, eur(v), { indent: 12 }); });
+    y += 4; rule();
+    line(totalLabel, eur(sum), { bold: true });
+    return sum;
+  };
+
+  /* ---------- header ---------- */
   doc.setFont('helvetica', 'bold'); doc.setFontSize(18);
-  doc.text('SE Budget — income summary', M, y); y += 20;
+  doc.text(forAccountant ? 'Business income and expenses' : 'Income summary', M, y);
+  y += 20;
 
   doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(110);
-  doc.text((currentName() || 'Self-employed') + '   ·   ' + rangeLabel(p, ref), M, y); y += 13;
-  doc.text('Generated ' + new Date().toLocaleDateString(LOCALE, { day: 'numeric', month: 'long', year: 'numeric' }), M, y);
-  y += 24;
-  doc.setTextColor(0);
+  doc.text((currentName() || 'Self-employed') + '   \u00B7   ' + rangeLabel(p, ref), M, y); y += 13;
+  doc.text('Generated ' + new Date().toLocaleDateString(LOCALE,
+    { day: 'numeric', month: 'long', year: 'numeric' }), M, y);
+  y += 10; doc.setTextColor(0);
 
-  /* selected period */
-  const I = total(bucket('income', p, ref));
-  const B = total(bucket('business', p, ref));
-  const H = total(bucket('personal', p, ref));
+  const inc  = bucket('income', p, ref);
+  const biz  = bucket('business', p, ref);
+  const home = bucket('personal', p, ref);
+  const I = total(inc), B = total(biz), Hm = total(home);
 
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
-  doc.text(rangeLabel(p, ref), M, y); y += 6;
-  doc.setDrawColor(210); doc.line(M, y, W - M, y); y += 16;
+  /* ---------- income ---------- */
+  heading('Income');
+  items(inc, 'Gross income');
 
-  doc.setFontSize(10.5);
-  [['Gross income', I, false], ['Business expenses', -B, false], ['Net income', I - B, true],
-   ['Personal & home expenses', -H, false], ['Disposable income', I - B - H, true]
-  ].forEach(([label, val, bold]) => {
-    doc.setFont('helvetica', bold ? 'bold' : 'normal');
-    doc.text(label, M, y);
-    doc.text(eur(val), W - M, y, { align: 'right' });
-    y += 16;
-  });
-  y += 12;
+  /* ---------- business expenses ---------- */
+  heading('Business expenses');
+  items(biz, 'Total business expenses');
 
-  /* month by month */
-  const months = monthlyRows(year);
+  /* ---------- net ---------- */
+  y += 8; room(30);
+  doc.setDrawColor(120); doc.line(M, y - 6, W - M, y - 6);
+  line('Net income', eur(I - B), { bold: true, size: 13, gap: 20 });
+
+  /* ---------- household, own copy only ---------- */
+  if (!forAccountant) {
+    heading('Personal and household expenses');
+    items(home, 'Total personal and household');
+
+    y += 8; room(30);
+    doc.setDrawColor(120); doc.line(M, y - 6, W - M, y - 6);
+    line('Disposable income', eur(I - B - Hm), { bold: true, size: 13, gap: 20 });
+  }
+
+  /* ---------- month by month ---------- */
+  const months = monthlyRows(ref.getFullYear());
   if (months.length) {
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
-    doc.text('Month by month — ' + year, M, y); y += 6;
-    doc.setDrawColor(210); doc.line(M, y, W - M, y); y += 15;
+    heading('Month by month \u2014 ' + ref.getFullYear());
 
-    const cols = [M, M + 140, M + 240, M + 330, M + 415, W - M];
-    const head = ['Month', 'Gross', 'Business', 'Net', 'Personal', 'Disposable'];
+    const cols = forAccountant
+      ? [M, M + 200, M + 340, W - M]
+      : [M, M + 130, M + 235, M + 330, M + 425, W - M];
+    const head = forAccountant
+      ? ['Month', 'Gross income', 'Business', 'Net']
+      : ['Month', 'Gross', 'Business', 'Net', 'Personal', 'Disposable'];
+
     doc.setFontSize(9); doc.setTextColor(110);
-    head.forEach((t, i) => doc.text(t, cols[i], y, { align: i === 0 ? 'left' : (i === 5 ? 'right' : 'right') }));
+    head.forEach((t, i) => doc.text(t, cols[i], y, { align: i === 0 ? 'left' : 'right' }));
     doc.setTextColor(0); y += 12;
 
     doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5);
     const tot = { inc: 0, biz: 0, net: 0, per: 0, disp: 0 };
     months.forEach(m => {
-      if (y > doc.internal.pageSize.getHeight() - 90) { doc.addPage(); y = M; }
+      room(24);
       doc.text(m.name, cols[0], y);
-      [m.inc, m.biz, m.net, m.per, m.disp].forEach((v, i) => doc.text(eur(v), cols[i + 1], y, { align: 'right' }));
+      const vals = forAccountant ? [m.inc, m.biz, m.net] : [m.inc, m.biz, m.net, m.per, m.disp];
+      vals.forEach((v, i) => doc.text(eur(v), cols[i + 1], y, { align: 'right' }));
       tot.inc += m.inc; tot.biz += m.biz; tot.net += m.net; tot.per += m.per; tot.disp += m.disp;
       y += 14;
     });
@@ -915,24 +973,30 @@ function buildPDF() {
     y += 2; doc.setDrawColor(180); doc.line(M, y, W - M, y); y += 14;
     doc.setFont('helvetica', 'bold');
     doc.text('Year to date', cols[0], y);
-    [tot.inc, tot.biz, tot.net, tot.per, tot.disp].forEach((v, i) =>
-      doc.text(eur(v), cols[i + 1], y, { align: 'right' }));
+    const totals = forAccountant ? [tot.inc, tot.biz, tot.net] : [tot.inc, tot.biz, tot.net, tot.per, tot.disp];
+    totals.forEach((v, i) => doc.text(eur(v), cols[i + 1], y, { align: 'right' }));
     y += 26;
   }
 
+  /* ---------- footnotes ---------- */
+  room(50);
   doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(130);
-  doc.text('Net income is gross income less business expenses — the figure used for tax.', M, y); y += 11;
-  doc.text('Disposable income is what remains after personal and household costs.', M, y); y += 11;
+  doc.text('Net income is gross income less business expenses.', M, y); y += 11;
+  if (forAccountant) {
+    doc.text('Personal and household spending is excluded from this report.', M, y); y += 11;
+  } else {
+    doc.text('Disposable income is what remains after personal and household costs.', M, y); y += 11;
+  }
   doc.text('Prepared from records kept in SE Budget. Not a substitute for professional advice.', M, y);
 
   return doc;
 }
 
 async function exportPDF(forAccountant) {
-  const doc = buildPDF();
+  const doc = buildPDF(forAccountant ? 'accountant' : 'full');
   if (!doc) { toast('PDF tool did not load — check your connection'); return; }
   const ref = refDate();
-  const name = 'SE-Budget-summary-' + isoDay(ref) + '.pdf';
+  const name = (forAccountant ? 'SE-Budget-business-' : 'SE-Budget-summary-') + isoDay(ref) + '.pdf';
   const how = await shareOrDownload(doc.output('blob'), name, 'SE Budget summary');
   if (how === 'cancelled') return;
   toast(forAccountant
