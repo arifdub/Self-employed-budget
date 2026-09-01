@@ -27,7 +27,7 @@ window.addEventListener('error', ev => {
   if (document.body) document.body.appendChild(bar);
 }, true);
 
-const APP_VERSION = '1.5.0';
+const APP_VERSION = '1.5.1';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -157,7 +157,7 @@ const state = {
   targets: { day: 200, week: 1200, month: 4800 },
   entries: [],
   period: 'day',
-  rperiod: 'day',
+  rperiod: 'week',
   rOffset: 0,
   // Inline rather than calling addDays(): the helpers are declared further down
   // and a const cannot be read before its own definition runs.
@@ -624,19 +624,11 @@ function periodTitle(p, ref) {
 /* ---------- custom date range ----------
    Any two dates. Useful for a tax year that does not line up with the calendar,
    or for pulling the exact period an accountant has asked for. */
+/* Deliberately short. Last 7 days, last 30 days and last year all duplicate the
+   Week, Month and Year tabs, and a list of shortcuts that repeat the tabs above
+   them just adds noise. What is left is the span the tabs cannot express. */
 const QUICK_RANGES = [
-  ['Last 7 days',   () => [addDays(new Date(), -6), new Date()]],
-  ['Last 30 days',  () => [addDays(new Date(), -29), new Date()]],
-  ['Last 90 days',  () => [addDays(new Date(), -89), new Date()]],
-  ['This tax year', () => {
-    // Ireland's tax year is the calendar year, so this is Jan 1 to today.
-    const n = new Date();
-    return [new Date(n.getFullYear(), 0, 1), n];
-  }],
-  ['Last tax year', () => {
-    const y = new Date().getFullYear() - 1;
-    return [new Date(y, 0, 1), new Date(y, 11, 31)];
-  }],
+  ['Last 90 days', () => [addDays(new Date(), -89), new Date()]],
   ['All time', () => {
     if (!state.entries.length) return [new Date(), new Date()];
     const oldest = state.entries.reduce((a, e) => (e.at < a ? e.at : a), state.entries[0].at);
@@ -714,7 +706,7 @@ function renderReport() {
   $('pHome').textContent = I ? Math.round(H / I * 100) + '% of gross income' : '';
   $('pTake').textContent = I ? 'What you kept after everything' : 'Nothing recorded for this period';
 
-  breakdown('srcBrk', inc, I, false, 'No income recorded in this period');
+  breakdown('srcBrk', inc, I, false, 'No income recorded in this period', countsFor('income', p, ref));
   breakdown('bizBrk', biz, B, true, 'No business costs in this period');
   breakdown('homeBrk', home, H, true, 'No home costs in this period');
 }
@@ -736,13 +728,31 @@ $('rDate').addEventListener('change', () => {
   renderReport();
 });
 
-function breakdown(id, obj, tot, isCost, emptyMsg) {
+function breakdown(id, obj, tot, isCost, emptyMsg, counts) {
   const rows = Object.entries(obj).sort((a, b) => b[1] - a[1]);
-  $(id).innerHTML = rows.length ? rows.map(([k, v]) =>
-    '<div class="br"><div class="brt"><span class="l">' + k + '</span>' +
-    '<span><span class="n">' + money(v) + '</span><span class="s">' + (tot ? Math.round(v / tot * 100) : 0) + '%</span></span></div>' +
-    '<div class="brb' + (isCost ? ' cost' : '') + '"><i style="width:' + (tot ? v / tot * 100 : 0) + '%"></i></div></div>'
-  ).join('') : '<div class="br"><div class="brt"><span class="l" style="color:var(--mut);font-weight:400">' + emptyMsg + '</span></div></div>';
+  $(id).innerHTML = rows.length ? rows.map(([k, v]) => {
+    // Income sources carry a job count: knowing Uber brought in €400 is one
+    // thing, knowing it took 22 jobs to get there is what tells you whether it
+    // was worth driving for.
+    const n = counts ? (counts[k] || 0) : 0;
+    const sub = counts
+      ? '<span class="jobs">' + n + (n === 1 ? ' job' : ' jobs') +
+        (n ? ' · ' + money(v / n) + ' each' : '') + '</span>'
+      : '';
+    return '<div class="br"><div class="brt"><span class="l">' + k + '</span>' +
+      '<span><span class="n">' + money(v) + '</span><span class="s">' +
+      (tot ? Math.round(v / tot * 100) : 0) + '%</span></span></div>' + sub +
+      '<div class="brb' + (isCost ? ' cost' : '') + '"><i style="width:' +
+      (tot ? v / tot * 100 : 0) + '%"></i></div></div>';
+  }).join('') : '<div class="br"><div class="brt"><span class="l" style="color:var(--mut);font-weight:400">' + emptyMsg + '</span></div></div>';
+}
+
+/* How many entries each category has in the period. */
+function countsFor(type, p, ref) {
+  const r = periodRange(p, ref || new Date()), out = {};
+  state.entries.filter(e => e.type === type && inRange(e, r))
+    .forEach(e => { out[e.cat] = (out[e.cat] || 0) + 1; });
+  return out;
 }
 
 
@@ -2593,9 +2603,11 @@ $('qacts').querySelectorAll('.qact').forEach(b => b.onclick = () => {
 
 $('toReports').onclick = () => {
   document.querySelectorAll('.nb').forEach(x => x.classList.toggle('on', x.dataset.go === 'reports'));
-  state.rperiod = state.period;
+  // Reports has no Day tab, so a jump from the home Day view lands on Week.
+  state.rperiod = state.period === 'day' ? 'week' : state.period;
+  state.rOffset = 0;
   document.querySelectorAll('#rtabs button').forEach(x =>
-    x.setAttribute('aria-pressed', x.dataset.p === state.period));
+    x.setAttribute('aria-pressed', x.dataset.p === state.rperiod));
   renderReport();
   openSheet('rep');
 };
