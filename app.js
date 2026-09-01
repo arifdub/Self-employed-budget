@@ -27,7 +27,7 @@ window.addEventListener('error', ev => {
   if (document.body) document.body.appendChild(bar);
 }, true);
 
-const APP_VERSION = '1.4.0';
+const APP_VERSION = '1.5.0';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -159,6 +159,10 @@ const state = {
   period: 'day',
   rperiod: 'day',
   rOffset: 0,
+  // Inline rather than calling addDays(): the helpers are declared further down
+  // and a const cannot be read before its own definition runs.
+  rFrom: (() => { const d = new Date(); d.setDate(d.getDate() - 29); d.setHours(0,0,0,0); return d; })(),
+  rTo: (() => { const d = new Date(); d.setHours(0,0,0,0); return d; })(),
   skin: 'night',
   draft: { type: 'income', cat: 'Income', pay: 'Cash', val: '',
     // Inline rather than calling startOfDay(): that helper is declared further
@@ -251,12 +255,18 @@ const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); r
 const fmtDay = d => d.toLocaleDateString(LOCALE, { weekday: 'short', day: 'numeric', month: 'short' });
 
 function periodRange(p, now = new Date()) {
+  // A custom range ignores the reference date entirely — it has its own two ends.
+  if (p === 'custom') return { from: startOfDay(state.rFrom), to: addDays(startOfDay(state.rTo), 1) };
   if (p === 'day')   return { from: startOfDay(now),   to: addDays(startOfDay(now), 1) };
   if (p === 'week')  return { from: startOfWeek(now),  to: addDays(startOfWeek(now), 7) };
   if (p === 'month') return { from: startOfMonth(now), to: new Date(now.getFullYear(), now.getMonth() + 1, 1) };
   return { from: startOfYear(now), to: new Date(now.getFullYear() + 1, 0, 1) };
 }
 function rangeLabel(p, now = new Date()) {
+  if (p === 'custom') {
+    const a = startOfDay(state.rFrom), b = startOfDay(state.rTo);
+    return a.getTime() === b.getTime() ? fmtDay(a) : fmtDay(a) + ' – ' + fmtDay(b);
+  }
   const { from } = periodRange(p, now);
   if (p === 'day')   return now.toLocaleDateString(LOCALE, { weekday: 'long', day: 'numeric', month: 'long' });
   if (p === 'week')  return fmtDay(from) + ' – ' + fmtDay(addDays(from, 6));
@@ -610,17 +620,84 @@ function periodTitle(p, ref) {
   return rangeLabel(p, ref);
 }
 
+
+/* ---------- custom date range ----------
+   Any two dates. Useful for a tax year that does not line up with the calendar,
+   or for pulling the exact period an accountant has asked for. */
+const QUICK_RANGES = [
+  ['Last 7 days',   () => [addDays(new Date(), -6), new Date()]],
+  ['Last 30 days',  () => [addDays(new Date(), -29), new Date()]],
+  ['Last 90 days',  () => [addDays(new Date(), -89), new Date()]],
+  ['This tax year', () => {
+    // Ireland's tax year is the calendar year, so this is Jan 1 to today.
+    const n = new Date();
+    return [new Date(n.getFullYear(), 0, 1), n];
+  }],
+  ['Last tax year', () => {
+    const y = new Date().getFullYear() - 1;
+    return [new Date(y, 0, 1), new Date(y, 11, 31)];
+  }],
+  ['All time', () => {
+    if (!state.entries.length) return [new Date(), new Date()];
+    const oldest = state.entries.reduce((a, e) => (e.at < a ? e.at : a), state.entries[0].at);
+    return [oldest, new Date()];
+  }]
+];
+
+function drawQuickRanges() {
+  $('rQuick').innerHTML = QUICK_RANGES.map((r, i) =>
+    '<button class="rq" data-i="' + i + '">' + r[0] + '</button>').join('');
+  $('rQuick').querySelectorAll('.rq').forEach(b => b.onclick = () => {
+    const [from, to] = QUICK_RANGES[+b.dataset.i][1]();
+    setCustomRange(from, to);
+  });
+}
+
+function setCustomRange(from, to) {
+  // Accept them either way round rather than complaining about the order.
+  if (from > to) { const t = from; from = to; to = t; }
+  state.rFrom = startOfDay(from);
+  state.rTo = startOfDay(to);
+  $('rFrom').value = isoDay(state.rFrom);
+  $('rTo').value = isoDay(state.rTo);
+  renderReport();
+}
+
+$('rFrom').addEventListener('change', () => {
+  if (!$('rFrom').value) return;
+  const [y, m, d] = $('rFrom').value.split('-').map(Number);
+  setCustomRange(new Date(y, m - 1, d), state.rTo);
+});
+$('rTo').addEventListener('change', () => {
+  if (!$('rTo').value) return;
+  const [y, m, d] = $('rTo').value.split('-').map(Number);
+  setCustomRange(state.rFrom, new Date(y, m - 1, d));
+});
+
 function renderReport() {
   const p = state.rperiod, ref = refDate();
   const inc = bucket('income', p, ref), biz = bucket('business', p, ref), home = bucket('personal', p, ref);
   const I = total(inc), B = total(biz), H = total(home), net = I - B, take = net - H;
 
-  $('rWhen').textContent = periodTitle(p, ref);
-  $('rDate').value = isoDay(ref);
-  $('rDate').max = isoDay(new Date());
-  $('rNext').disabled = (state.rOffset || 0) <= 0;
-  $('rToday').hidden = (state.rOffset || 0) === 0;
-  $('rSub').textContent = rangeLabel(p, ref);
+  const custom = p === 'custom';
+  $('rCustom').hidden = !custom;
+  document.querySelector('.rnav').hidden = custom;   // stepping back has no meaning here
+  $('rToday').hidden = custom || (state.rOffset || 0) === 0;
+
+  if (custom) {
+    $('rFrom').value = isoDay(state.rFrom);
+    $('rTo').value = isoDay(state.rTo);
+    $('rFrom').max = isoDay(new Date());
+    $('rTo').max = isoDay(new Date());
+    const days = Math.round((startOfDay(state.rTo) - startOfDay(state.rFrom)) / 864e5) + 1;
+    $('rSub').textContent = rangeLabel(p) + ' · ' + days + (days === 1 ? ' day' : ' days');
+  } else {
+    $('rWhen').textContent = periodTitle(p, ref);
+    $('rDate').value = isoDay(ref);
+    $('rDate').max = isoDay(new Date());
+    $('rNext').disabled = (state.rOffset || 0) <= 0;
+    $('rSub').textContent = rangeLabel(p, ref);
+  }
 
   $('fIncome').textContent = money(I);
   $('fBiz').textContent = '−' + money(B);
@@ -1564,6 +1641,7 @@ $('rtabs').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   state.rperiod = b.dataset.p;
   state.rOffset = 0;
+  if (b.dataset.p === 'custom' && !$('rQuick').children.length) drawQuickRanges();
   document.querySelectorAll('#rtabs button').forEach(x => x.setAttribute('aria-pressed', x === b));
   renderReport();
 });
