@@ -27,7 +27,7 @@ window.addEventListener('error', ev => {
   if (document.body) document.body.appendChild(bar);
 }, true);
 
-const APP_VERSION = '1.7.1';
+const APP_VERSION = '1.7.2';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -2155,29 +2155,28 @@ $('catTabs').addEventListener('click', e => {
    table, so hiding the button is presentation rather than the security itself. */
 let adminData = null;
 
+/* Admin status comes from the edge function, not from reading the admins table
+   in the browser. The function already checks the caller against that table
+   using the service role, so asking it is authoritative — and it sidesteps the
+   row-level security policy on admins, which is what was quietly returning
+   nothing here and leaving the panel hidden for a genuine admin. */
 async function checkAdmin() {
-  const hide = () => { $('adminSec').hidden = true; $('adminCard').hidden = true; };
-  if (!sb || !session) { hide(); return; }
-
-  try {
-    const { data, error } = await sb.from('admins')
-      .select('user_id').eq('user_id', session.user.id).maybeSingle();
-
-    if (error) {
-      /* Almost always means the admins table does not exist yet. Saying so beats
-         hiding the card and leaving you to guess which of four setup steps
-         failed. */
-      console.warn('admin check failed:', error.message);
-      hide();
-      return;
-    }
-
-    const yes = !!data;
+  const show = yes => {
     $('adminSec').hidden = !yes;
     $('adminCard').hidden = !yes;
-    if (yes) loadAdmin(true);
+    $('adminBtn').hidden = !yes;
+  };
+
+  if (!sb || !session) { show(false); return; }
+
+  try {
+    const { data, error } = await sb.functions.invoke('admin-stats');
+    if (error || !data || !data.ok) { show(false); return; }
+    adminData = data;
+    show(true);
+    $('adminPeek').textContent = data.users.total + ' users';
   } catch (err) {
-    hide();
+    show(false);
   }
 }
 
@@ -2190,9 +2189,9 @@ async function loadAdmin(quiet) {
     if (!data || !data.ok) throw new Error(data && data.message || 'Could not load');
     adminData = data;
     $('adminPeek').textContent = data.users.total + ' users';
-    if (!quiet) drawAdmin();
+    drawAdmin();
   } catch (err) {
-    if (!quiet) $('adminBody').innerHTML =
+    $('adminBody').innerHTML =
       '<div class="empty">Could not load the figures.<br>' + (err.message || '') + '</div>';
   }
 }
@@ -2252,7 +2251,9 @@ function drawAdmin() {
   }
 }
 
-$('openAdmin').onclick = () => { openSheet('admin'); loadAdmin(false); };
+const openAdminPanel = () => { openSheet('admin'); loadAdmin(false); };
+$('openAdmin').onclick = openAdminPanel;
+$('adminBtn').onclick = openAdminPanel;
 $('closeAdmin').onclick = () => closeSheet('admin');
 $('adminRefresh').onclick = () => loadAdmin(false);
 
