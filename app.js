@@ -27,7 +27,7 @@ window.addEventListener('error', ev => {
   if (document.body) document.body.appendChild(bar);
 }, true);
 
-const APP_VERSION = '1.7.0';
+const APP_VERSION = '1.7.1';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -2156,12 +2156,29 @@ $('catTabs').addEventListener('click', e => {
 let adminData = null;
 
 async function checkAdmin() {
-  if (!sb || !session) { $('adminSec').hidden = true; $('adminCard').hidden = true; return; }
-  const { data } = await sb.from('admins').select('user_id').eq('user_id', session.user.id).maybeSingle();
-  const yes = !!data;
-  $('adminSec').hidden = !yes;
-  $('adminCard').hidden = !yes;
-  if (yes) loadAdmin(true);
+  const hide = () => { $('adminSec').hidden = true; $('adminCard').hidden = true; };
+  if (!sb || !session) { hide(); return; }
+
+  try {
+    const { data, error } = await sb.from('admins')
+      .select('user_id').eq('user_id', session.user.id).maybeSingle();
+
+    if (error) {
+      /* Almost always means the admins table does not exist yet. Saying so beats
+         hiding the card and leaving you to guess which of four setup steps
+         failed. */
+      console.warn('admin check failed:', error.message);
+      hide();
+      return;
+    }
+
+    const yes = !!data;
+    $('adminSec').hidden = !yes;
+    $('adminCard').hidden = !yes;
+    if (yes) loadAdmin(true);
+  } catch (err) {
+    hide();
+  }
 }
 
 async function loadAdmin(quiet) {

@@ -9,7 +9,7 @@
   --body:'Plus Jakarta Sans',system-ui,sans-serif;
   --mono:'Plus Jakarta Sans',system-ui,sans-serif;
   --r:14px;
-  --css-version:'1.7.0';
+  --css-version:'1.7.1';
   --safe-t:env(safe-area-inset-top,0px);
   --safe-b:env(safe-area-inset-bottom,0px);
 }
@@ -25,6 +25,10 @@ html[data-skin="day"]{
 }
 
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+/* The hidden attribute only sets display:none at the lowest priority, so any
+   rule that sets display — .sec uses flex — silently overrides it. This makes
+   hidden mean hidden, which is what every use of it in the app assumes. */
+[hidden]{display:none!important}
 html{background:var(--bg)}
 html,body{margin:0;padding:0;min-height:100%;overscroll-behavior-y:none}
 body{background:var(--bg);color:var(--txt);font-family:var(--body);
