@@ -27,7 +27,7 @@ window.addEventListener('error', ev => {
   if (document.body) document.body.appendChild(bar);
 }, true);
 
-const APP_VERSION = '1.7.2';
+const APP_VERSION = '1.7.3';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -2155,11 +2155,13 @@ $('catTabs').addEventListener('click', e => {
    table, so hiding the button is presentation rather than the security itself. */
 let adminData = null;
 
-/* Admin status comes from the edge function, not from reading the admins table
-   in the browser. The function already checks the caller against that table
-   using the service role, so asking it is authoritative — and it sidesteps the
-   row-level security policy on admins, which is what was quietly returning
-   nothing here and leaving the panel hidden for a genuine admin. */
+/* Admin status is checked two ways, because either can fail on its own:
+   the table read is blocked if the row-level policy does not match, and the
+   function call fails if it is not deployed or errors at startup. Whichever
+   succeeds is enough. The reason for a failure is kept so it can be shown
+   rather than left as a blank space. */
+let adminWhy = 'not checked yet';
+
 async function checkAdmin() {
   const show = yes => {
     $('adminSec').hidden = !yes;
@@ -2167,17 +2169,34 @@ async function checkAdmin() {
     $('adminBtn').hidden = !yes;
   };
 
-  if (!sb || !session) { show(false); return; }
+  if (!sb)      { adminWhy = 'No connection to the account service'; show(false); return; }
+  if (!session) { adminWhy = 'Not signed in'; show(false); return; }
 
+  let viaTable = false, tableErr = '';
+  try {
+    const { data, error } = await sb.from('admins')
+      .select('user_id').eq('user_id', session.user.id).maybeSingle();
+    if (error) tableErr = error.message;
+    else if (data) viaTable = true;
+    else tableErr = 'your account is not in the admins table';
+  } catch (e) { tableErr = e.message || 'table read failed'; }
+
+  let viaFn = false, fnErr = '';
   try {
     const { data, error } = await sb.functions.invoke('admin-stats');
-    if (error || !data || !data.ok) { show(false); return; }
-    adminData = data;
-    show(true);
-    $('adminPeek').textContent = data.users.total + ' users';
-  } catch (err) {
-    show(false);
-  }
+    if (error) fnErr = error.message || 'function call failed';
+    else if (data && data.ok) { viaFn = true; adminData = data; }
+    else fnErr = (data && data.message) || 'function returned no data';
+  } catch (e) { fnErr = e.message || 'function call failed'; }
+
+  adminWhy = 'signed in as ' + session.user.email +
+    '\nuid ' + session.user.id +
+    '\ntable check: ' + (viaTable ? 'ok' : 'failed — ' + tableErr) +
+    '\nfunction check: ' + (viaFn ? 'ok' : 'failed — ' + fnErr);
+
+  const yes = viaTable || viaFn;
+  show(yes);
+  if (yes && adminData) $('adminPeek').textContent = adminData.users.total + ' users';
 }
 
 async function loadAdmin(quiet) {
@@ -2186,15 +2205,33 @@ async function loadAdmin(quiet) {
   try {
     const { data, error } = await sb.functions.invoke('admin-stats');
     if (error) throw error;
-    if (!data || !data.ok) throw new Error(data && data.message || 'Could not load');
+    if (!data || !data.ok) throw new Error((data && data.message) || 'Could not load');
     adminData = data;
     $('adminPeek').textContent = data.users.total + ' users';
     drawAdmin();
   } catch (err) {
     $('adminBody').innerHTML =
-      '<div class="empty">Could not load the figures.<br>' + (err.message || '') + '</div>';
+      '<div class="empty">Could not load the figures.<br><br>' +
+      (err.message || '') + '</div>';
   }
 }
+
+/* Tap the version number five times to see why the admin check decided what it
+   did. Hidden rather than absent, because a blank space tells you nothing when
+   something is misconfigured. */
+(function () {
+  let taps = 0, timer = null;
+  $('verOut').style.cursor = 'pointer';
+  $('verOut').onclick = () => {
+    taps++;
+    clearTimeout(timer);
+    timer = setTimeout(() => { taps = 0; }, 1200);
+    if (taps >= 5) {
+      taps = 0;
+      alert('Admin check\n\n' + adminWhy);
+    }
+  };
+})();
 
 function drawAdmin() {
   if (!adminData) return;
