@@ -335,6 +335,14 @@
         <button class="save ghost danger" style="margin:12px 0 0;width:100%" id="resetBtn">Delete all entries…</button>
       </div>
 
+      <div class="sec" id="adminSec" hidden>Admin</div>
+      <div class="card" id="adminCard" hidden>
+        <div class="crow"><span class="clab">Usage</span>
+          <span class="cval" id="adminPeek" style="font-size:13px">—</span></div>
+        <div class="crange">Sign-ups, active users and entry volume across everyone using the app.</div>
+        <button class="save ghost" style="margin:12px 0 0;width:100%" id="openAdmin">Open dashboard</button>
+      </div>
+
       <div class="sec">About</div>
       <div class="card">
         <div class="crow"><span class="clab">App version</span><span class="cval" id="verOut">—</span></div>
@@ -474,6 +482,16 @@
       <button class="save" style="margin:14px 0 0;width:100%" id="iosClose">Got it</button>
     </div>
   </div>
+
+  <!-- admin dashboard -->
+  <section class="sheet" id="admin" aria-hidden="true">
+    <div class="rhead"><h2>Usage</h2><button class="x" id="closeAdmin" aria-label="Close">✕</button></div>
+    <div class="body">
+      <div id="adminBody"><div class="empty">Loading…</div></div>
+      <button class="save ghost" style="margin:14px 0 0;width:100%" id="adminRefresh">Refresh</button>
+      <div style="height:20px"></div>
+    </div>
+  </section>
 
   <!-- categories -->
   <section class="sheet" id="cats" aria-hidden="true">

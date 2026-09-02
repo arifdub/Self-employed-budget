@@ -9,7 +9,7 @@
   --body:'Plus Jakarta Sans',system-ui,sans-serif;
   --mono:'Plus Jakarta Sans',system-ui,sans-serif;
   --r:14px;
-  --css-version:'1.6.0';
+  --css-version:'1.7.0';
   --safe-t:env(safe-area-inset-top,0px);
   --safe-b:env(safe-area-inset-bottom,0px);
 }
@@ -789,3 +789,19 @@ html[data-skin="day"] .c-income{background:rgba(5,150,105,.16);color:#059669}
 #rtabs button{font-size:11.5px;padding:10px 1px}
 
 .jobs{display:block;font-size:10.5px;font-weight:700;color:var(--dim);margin-top:3px}
+
+
+/* admin dashboard */
+.aGrid{display:flex;gap:8px;margin-bottom:8px}
+.aStat{flex:1 1 0;min-width:0;background:var(--surf);border:1px solid var(--line);
+  border-radius:14px;padding:12px 8px;text-align:center}
+.aVal{font-size:22px;font-weight:800;letter-spacing:-.03em;color:var(--acc);
+  font-variant-numeric:tabular-nums;line-height:1.1}
+.aLab{font-size:11px;font-weight:700;color:var(--txt);opacity:.8;margin-top:4px;line-height:1.2}
+.aNote{font-size:9.5px;font-weight:600;color:var(--dim);margin-top:2px}
+.aRow{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+.aRow:last-child{border-bottom:0}
+.aRowL{flex:1;min-width:0;font-size:13px;font-weight:600;color:var(--txt);opacity:.85}
+.aRowV{font-size:14px;font-weight:800;font-variant-numeric:tabular-nums}
+.aRowV.good{color:var(--c-inc)}
+.aRowX{font-size:11px;font-weight:700;color:var(--dim);width:44px;text-align:right}

@@ -27,7 +27,7 @@ window.addEventListener('error', ev => {
   if (document.body) document.body.appendChild(bar);
 }, true);
 
-const APP_VERSION = '1.6.0';
+const APP_VERSION = '1.7.0';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -1783,7 +1783,7 @@ function enablePullToDismiss(id) {
 
 /* Every sheet in the app, so a new one cannot be added without the gesture —
    the categories sheet was missed exactly that way. */
-['sheet', 'rep', 'ent', 'more', 'cats'].forEach(enablePullToDismiss);
+['sheet', 'rep', 'ent', 'more', 'cats', 'admin'].forEach(enablePullToDismiss);
 
 /* ---------- targets ---------- */
 function openTargets() {
@@ -2148,6 +2148,97 @@ $('catTabs').addEventListener('click', e => {
   drawCats();
 });
 
+
+/* ---------- admin dashboard ----------
+   Reads aggregate figures from the admin-stats function. The card stays hidden
+   for everyone else, and the function refuses anyone not listed in the admins
+   table, so hiding the button is presentation rather than the security itself. */
+let adminData = null;
+
+async function checkAdmin() {
+  if (!sb || !session) { $('adminSec').hidden = true; $('adminCard').hidden = true; return; }
+  const { data } = await sb.from('admins').select('user_id').eq('user_id', session.user.id).maybeSingle();
+  const yes = !!data;
+  $('adminSec').hidden = !yes;
+  $('adminCard').hidden = !yes;
+  if (yes) loadAdmin(true);
+}
+
+async function loadAdmin(quiet) {
+  if (!sb || !session) return;
+  if (!quiet) $('adminBody').innerHTML = '<div class="empty">Loading…</div>';
+  try {
+    const { data, error } = await sb.functions.invoke('admin-stats');
+    if (error) throw error;
+    if (!data || !data.ok) throw new Error(data && data.message || 'Could not load');
+    adminData = data;
+    $('adminPeek').textContent = data.users.total + ' users';
+    if (!quiet) drawAdmin();
+  } catch (err) {
+    if (!quiet) $('adminBody').innerHTML =
+      '<div class="empty">Could not load the figures.<br>' + (err.message || '') + '</div>';
+  }
+}
+
+function drawAdmin() {
+  if (!adminData) return;
+  const d = adminData;
+
+  const stat = (label, value, note) =>
+    '<div class="aStat"><div class="aVal">' + value + '</div>' +
+    '<div class="aLab">' + label + '</div>' +
+    (note ? '<div class="aNote">' + note + '</div>' : '') + '</div>';
+
+  const pct = (a, b) => b ? Math.round(a / b * 100) + '%' : '0%';
+
+  $('adminBody').innerHTML =
+    '<div class="sec">People</div>' +
+    '<div class="aGrid">' +
+      stat('Signed up', d.users.total, '+' + d.users.new_7d + ' this week') +
+      stat('Opened it', d.users.signed_in_7d, 'last 7 days') +
+      stat('Logged something', d.users.active_7d, 'last 7 days') +
+    '</div>' +
+
+    '<div class="sec">Did they stay</div>' +
+    '<div class="card">' +
+      row('Ever logged an entry', d.users.ever_logged + ' of ' + d.users.total,
+          pct(d.users.ever_logged, d.users.total)) +
+      row('Tried once, never again', d.retention.one_day_only, '') +
+      row('Used it a few days', d.retention.few_days, '') +
+      row('Logged on 7+ days', d.retention.seven_plus, '', true) +
+    '</div>' +
+
+    '<div class="sec">Entries</div>' +
+    '<div class="aGrid">' +
+      stat('Total', d.entries.total.toLocaleString(LOCALE), '+' + d.entries.added_7d + ' this week') +
+      stat('Per user', d.entries.per_user, 'average') +
+      stat('Active 30d', d.users.active_30d, 'people') +
+    '</div>' +
+    '<div class="card">' +
+      row('Income', d.entries.income, pct(d.entries.income, d.entries.total)) +
+      row('Business costs', d.entries.business, pct(d.entries.business, d.entries.total)) +
+      row('Home costs', d.entries.personal, pct(d.entries.personal, d.entries.total)) +
+    '</div>' +
+
+    '<div class="sec">Sign-ups by week</div>' +
+    '<div class="card">' +
+      (d.signups_by_week.length
+        ? d.signups_by_week.map(([wk, n]) =>
+            row(new Date(wk).toLocaleDateString(LOCALE, { day: 'numeric', month: 'short' }), n, '')).join('')
+        : '<div class="empty">Nothing yet</div>') +
+    '</div>';
+
+  function row(label, value, extra, strong) {
+    return '<div class="aRow"><span class="aRowL">' + label + '</span>' +
+      '<span class="aRowV' + (strong ? ' good' : '') + '">' + value + '</span>' +
+      (extra ? '<span class="aRowX">' + extra + '</span>' : '') + '</div>';
+  }
+}
+
+$('openAdmin').onclick = () => { openSheet('admin'); loadAdmin(false); };
+$('closeAdmin').onclick = () => closeSheet('admin');
+$('adminRefresh').onclick = () => loadAdmin(false);
+
 /* ---------- theme ---------- */
 function setSkin(s) {
   state.skin = s;
@@ -2461,6 +2552,7 @@ function refreshAccountCard() {
     return;
   }
   refreshIdentity();
+  checkAdmin();
   if (signedIn) {
     setAcctState('Signed in');
     $('acctHelp').textContent = session.user.email +
