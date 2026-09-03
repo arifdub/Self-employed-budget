@@ -16,7 +16,7 @@
   --body:'Plus Jakarta Sans',system-ui,sans-serif;
   --mono:'Plus Jakarta Sans',system-ui,sans-serif;
   --r:14px;
-  --css-version:'1.10.2';
+  --css-version:'1.10.3';
   --safe-t:env(safe-area-inset-top,0px);
   --safe-b:env(safe-area-inset-bottom,0px);
 }
@@ -897,3 +897,28 @@ html[data-skin="day"] .brb{background:var(--surf2)}
 /* the heading wraps less now, but keep the date from crowding it */
 .sec{gap:10px}
 .secWhen{flex:0 0 auto}
+
+
+/* ============================================================
+   Breakdown cards — a faint wash so each section reads as its own block
+   ------------------------------------------------------------
+   Kept very low: these sit behind coloured text and bars that must stay
+   legible, so the tint is enough to separate the sections without competing
+   with what is on top of them. The left edge does most of the work.
+   ============================================================ */
+.brk{position:relative;overflow:hidden}
+.brk::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px}
+
+.brk-inc{background:rgba(52,211,153,.055);  border-color:rgba(52,211,153,.20)}
+.brk-biz{background:rgba(251,113,133,.055); border-color:rgba(251,113,133,.20)}
+.brk-per{background:rgba(96,165,250,.055);  border-color:rgba(96,165,250,.20)}
+.brk-inc::before{background:var(--c-inc)}
+.brk-biz::before{background:var(--c-biz)}
+.brk-per::before{background:var(--c-per)}
+
+html[data-skin="day"] .brk-inc{background:rgba(5,150,105,.05);  border-color:rgba(5,150,105,.18)}
+html[data-skin="day"] .brk-biz{background:rgba(225,29,72,.05);  border-color:rgba(225,29,72,.18)}
+html[data-skin="day"] .brk-per{background:rgba(37,99,235,.05);  border-color:rgba(37,99,235,.18)}
+
+/* the coloured edge needs room, and the total row should clear it too */
+.brk{padding-left:16px}
