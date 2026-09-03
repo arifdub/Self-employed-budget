@@ -27,7 +27,7 @@ window.addEventListener('error', ev => {
   if (document.body) document.body.appendChild(bar);
 }, true);
 
-const APP_VERSION = '1.9.3';
+const APP_VERSION = '1.10.0';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -716,9 +716,20 @@ function renderReport() {
   $('pHome').textContent = I ? Math.round(H / I * 100) + '% of gross income' : '';
   $('pTake').textContent = I ? 'What you kept after everything' : 'Nothing recorded for this period';
 
-  breakdown('srcBrk', inc, I, false, 'No income recorded in this period', countsFor('income', p, ref));
-  breakdown('bizBrk', biz, B, true, 'No business costs in this period');
-  breakdown('homeBrk', home, H, true, 'No home costs in this period');
+  /* Every section carries the dates it covers. Once you can step back through
+     periods and pick custom ranges, a bare list of figures is ambiguous — the
+     heading at the top scrolls away long before the numbers do. */
+  const when = rangeLabel(p, ref);
+  $('wSrc').textContent = when;
+  $('wBiz').textContent = when;
+  $('wHome').textContent = when;
+
+  breakdown('srcBrk', inc, I, false, 'No income recorded in this period',
+            countsFor('income', p, ref), 'Gross income');
+  breakdown('bizBrk', biz, B, true, 'No business costs in this period',
+            null, 'Total business expenses');
+  breakdown('homeBrk', home, H, true, 'No home costs in this period',
+            null, 'Total home & personal');
 }
 
 function stepReport(delta) {
@@ -738,7 +749,7 @@ $('rDate').addEventListener('change', () => {
   renderReport();
 });
 
-function breakdown(id, obj, tot, isCost, emptyMsg, counts) {
+function breakdown(id, obj, tot, isCost, emptyMsg, counts, totalLabel) {
   const rows = Object.entries(obj).sort((a, b) => b[1] - a[1]);
   $(id).innerHTML = rows.length ? rows.map(([k, v]) => {
     const cat = findCat(k);
@@ -760,6 +771,16 @@ function breakdown(id, obj, tot, isCost, emptyMsg, counts) {
       '<span class="s">' + (tot ? Math.round(v / tot * 100) : 0) + '%</span></span></div>' + sub +
       '<div class="brb"><i style="width:' + (tot ? v / tot * 100 : 0) + '%;background:' + pal.ink + '"></i></div></div>';
   }).join('') : '<div class="br"><div class="brt"><span class="l" style="color:var(--mut);font-weight:400">' + emptyMsg + '</span></div></div>';
+
+  /* A total under each list, so the section closes on the figure that matters
+     rather than leaving the reader to add the rows up. */
+  if (rows.length) {
+    const jobs = counts ? Object.values(counts).reduce((a, b) => a + b, 0) : 0;
+    $(id).insertAdjacentHTML('beforeend',
+      '<div class="brTotal"><span class="l">' + (totalLabel || 'Total') + '</span>' +
+      (jobs ? '<span class="brJobs">' + jobs + (jobs === 1 ? ' job' : ' jobs') + '</span>' : '') +
+      '<span class="n' + (isCost ? ' cost' : '') + '">' + money(tot) + '</span></div>');
+  }
 }
 
 /* How many entries each category has in the period. */
