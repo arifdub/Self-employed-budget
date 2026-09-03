@@ -27,7 +27,7 @@ window.addEventListener('error', ev => {
   if (document.body) document.body.appendChild(bar);
 }, true);
 
-const APP_VERSION = '1.10.1';
+const APP_VERSION = '1.10.2';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -648,10 +648,27 @@ const QUICK_RANGES = [
 
 function drawQuickRanges() {
   $('rQuick').innerHTML = QUICK_RANGES.map((r, i) =>
-    '<button class="rq" data-i="' + i + '">' + r[0] + '</button>').join('');
+    '<button class="rq" data-i="' + i + '" aria-pressed="false">' + r[0] + '</button>').join('');
   $('rQuick').querySelectorAll('.rq').forEach(b => b.onclick = () => {
     const [from, to] = QUICK_RANGES[+b.dataset.i][1]();
     setCustomRange(from, to);
+  });
+  markActiveRange();
+}
+
+/* Highlight whichever shortcut matches the dates currently showing, rather than
+   whichever was last tapped. That way picking dates by hand clears the
+   highlight instead of leaving a button lit that no longer describes the range. */
+function markActiveRange() {
+  const buttons = $('rQuick').querySelectorAll('.rq');
+  if (!buttons.length) return;
+  const a = startOfDay(state.rFrom).getTime();
+  const b = startOfDay(state.rTo).getTime();
+
+  buttons.forEach(btn => {
+    const [f, t] = QUICK_RANGES[+btn.dataset.i][1]();
+    const match = startOfDay(f).getTime() === a && startOfDay(t).getTime() === b;
+    btn.setAttribute('aria-pressed', match);
   });
 }
 
@@ -662,6 +679,7 @@ function setCustomRange(from, to) {
   state.rTo = startOfDay(to);
   $('rFrom').value = isoDay(state.rFrom);
   $('rTo').value = isoDay(state.rTo);
+  markActiveRange();
   renderReport();
 }
 
@@ -687,6 +705,7 @@ function renderReport() {
   $('rToday').hidden = custom || (state.rOffset || 0) === 0;
 
   if (custom) {
+    if (!$('rQuick').children.length) drawQuickRanges(); else markActiveRange();
     $('rFrom').value = isoDay(state.rFrom);
     $('rTo').value = isoDay(state.rTo);
     $('rFrom').max = isoDay(new Date());
