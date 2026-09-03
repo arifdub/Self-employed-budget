@@ -27,7 +27,7 @@ window.addEventListener('error', ev => {
   if (document.body) document.body.appendChild(bar);
 }, true);
 
-const APP_VERSION = '1.10.0';
+const APP_VERSION = '1.10.1';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -776,9 +776,13 @@ function breakdown(id, obj, tot, isCost, emptyMsg, counts, totalLabel) {
      rather than leaving the reader to add the rows up. */
   if (rows.length) {
     const jobs = counts ? Object.values(counts).reduce((a, b) => a + b, 0) : 0;
+    /* The dividers are written into the markup rather than left to CSS spacing.
+       If the stylesheet is ever stale, the row still reads as
+       "Gross income · 80 jobs · €1,783" instead of running together. */
     $(id).insertAdjacentHTML('beforeend',
       '<div class="brTotal"><span class="l">' + (totalLabel || 'Total') + '</span>' +
-      (jobs ? '<span class="brJobs">' + jobs + (jobs === 1 ? ' job' : ' jobs') + '</span>' : '') +
+      (jobs ? '<span class="brJobs">&nbsp;·&nbsp;' + jobs + (jobs === 1 ? ' job' : ' jobs') + '</span>' : '') +
+      '<span class="brSpacer">&nbsp;·&nbsp;</span>' +
       '<span class="n' + (isCost ? ' cost' : '') + '">' + money(tot) + '</span></div>');
   }
 }

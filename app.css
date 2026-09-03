@@ -16,7 +16,7 @@
   --body:'Plus Jakarta Sans',system-ui,sans-serif;
   --mono:'Plus Jakarta Sans',system-ui,sans-serif;
   --r:14px;
-  --css-version:'1.9.3';
+  --css-version:'1.10.0';
   --safe-t:env(safe-area-inset-top,0px);
   --safe-b:env(safe-area-inset-bottom,0px);
 }
@@ -879,3 +879,15 @@ html[data-skin="day"] .brb{background:var(--surf2)}
 .entHint{display:flex;flex-direction:column;gap:3px;margin:2px 0 10px;
   font-size:11.5px;font-weight:600;color:var(--dim);line-height:1.45}
 .entHint b{color:var(--mut);font-weight:800}
+
+
+/* section date + closing total */
+.secWhen{font-family:var(--body);font-size:11px;font-weight:700;color:var(--dim);
+  letter-spacing:0;text-transform:none;white-space:nowrap;margin-left:10px}
+.brTotal{display:flex;align-items:baseline;gap:9px;margin-top:4px;padding:11px 0 3px;
+  border-top:1.5px solid var(--line)}
+.brTotal .l{flex:1;min-width:0;font-size:12.5px;font-weight:800;color:var(--txt);opacity:.9}
+.brJobs{font-size:11px;font-weight:700;color:var(--dim);flex:0 0 auto}
+.brTotal .n{font-size:16px;font-weight:800;font-variant-numeric:tabular-nums;
+  color:var(--c-inc);flex:0 0 auto}
+.brTotal .n.cost{color:var(--c-biz)}
