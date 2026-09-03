@@ -5,11 +5,18 @@
   --txt:#FFFFFF; --mut:#9AA6C4; --dim:#6E7A9C;
   --acc:#FFB020; --on-acc:#121A2F; --good:#FFC24D; --bad:#FB7185;
   --c-inc:#34D399; --c-biz:#FB7185; --c-per:#60A5FA; --c-pkt:#A78BFA;
+  /* Text and bar colours for category brands, tuned to read on the dark page.
+     Uber's black and Lynk's yellow cannot be used literally here — black would
+     vanish and yellow at full strength is glaring, so each gets a legible
+     stand-in that still reads as that brand. */
+  --ink-green:#34D399; --ink-amber:#FFC24D; --ink-red:#FF7A6E;
+  --ink-black:#C7D2E5;  --ink-blue:#5AC8FA;  --ink-purple:#A78BFA;
+  --ink-pink:#FB7185;   --ink-teal:#2DD4BF;  --ink-yellow:#FFD400;
   --dspl:'Plus Jakarta Sans',system-ui,sans-serif;
   --body:'Plus Jakarta Sans',system-ui,sans-serif;
   --mono:'Plus Jakarta Sans',system-ui,sans-serif;
   --r:14px;
-  --css-version:'1.9.1';
+  --css-version:'1.9.3';
   --safe-t:env(safe-area-inset-top,0px);
   --safe-b:env(safe-area-inset-bottom,0px);
 }
@@ -18,6 +25,12 @@ html[data-skin="day"]{
   --txt:#1C1027; --mut:#8C7FA6; --dim:#A99CC4;
   --acc:#6D28D9; --on-acc:#FFFFFF; --good:#3F7A2E; --bad:#E11D48;
   --c-inc:#059669; --c-biz:#E11D48; --c-per:#2563EB; --c-pkt:#7C3AED;
+  /* Darkened from the obvious mid-tones: green, blue and teal at their usual
+     brightness only reached 3.7–4.1:1 on white, which is below the readable
+     threshold. These clear it with room to spare. */
+  --ink-green:#047857; --ink-amber:#B45309; --ink-red:#DC2626;
+  --ink-black:#1F2937;  --ink-blue:#0369A1;  --ink-purple:#7C3AED;
+  --ink-pink:#BE123C;   --ink-teal:#0F766E;  --ink-yellow:#A16207;
   --dspl:'Plus Jakarta Sans',system-ui,sans-serif;
   --body:'Plus Jakarta Sans',system-ui,sans-serif;
   --mono:'Plus Jakarta Sans',system-ui,sans-serif;

@@ -27,7 +27,7 @@ window.addEventListener('error', ev => {
   if (document.body) document.body.appendChild(bar);
 }, true);
 
-const APP_VERSION = '1.9.1';
+const APP_VERSION = '1.9.3';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -61,17 +61,26 @@ const ICON_SET = [
 ];
 
 /* Named colours rather than hex, so both themes stay legible. */
+/* Three values per colour, because they do different jobs:
+     bg  — the chip's circle
+     fg  — the glyph sitting ON that circle
+     ink — text and bars on the page itself
+
+   fg and ink are not interchangeable. Blue's fg is near-black so the car reads
+   on a light blue circle; using that same value for text on the dark page made
+   TapTaxi and Finance invisible. ink is a CSS variable so it can flip between
+   the night and day themes rather than being a fixed hex that only suits one. */
 const PALETTE = {
-  green:  { bg: 'rgba(52,211,153,.22)',  fg: '#34D399' },
-  amber:  { bg: 'rgba(255,176,32,.22)',  fg: '#FFB020' },
-  red:    { bg: '#E8362D',               fg: '#ffffff' },
-  black:  { bg: '#0B0B0B',               fg: '#ffffff' },
-  blue:   { bg: '#5AC8FA',               fg: '#0B1B2B' },
-  purple: { bg: '#8B5CF6',               fg: '#ffffff' },
-  pink:   { bg: 'rgba(251,113,133,.22)', fg: '#FB7185' },
-  teal:   { bg: 'rgba(45,212,191,.22)',  fg: '#2DD4BF' },
-  yellow: { bg: '#FFD400',               fg: '#2A2200' },
-  grey:   { bg: 'var(--surf2)',          fg: 'var(--mut)' }
+  green:  { bg: 'rgba(52,211,153,.22)',  fg: '#34D399',  ink: 'var(--ink-green)'  },
+  amber:  { bg: 'rgba(255,176,32,.22)',  fg: '#FFB020',  ink: 'var(--ink-amber)'  },
+  red:    { bg: '#E8362D',               fg: '#ffffff',  ink: 'var(--ink-red)'    },
+  black:  { bg: '#0B0B0B',               fg: '#ffffff',  ink: 'var(--ink-black)'  },
+  blue:   { bg: '#5AC8FA',               fg: '#0B1B2B',  ink: 'var(--ink-blue)'   },
+  purple: { bg: '#8B5CF6',               fg: '#ffffff',  ink: 'var(--ink-purple)' },
+  pink:   { bg: 'rgba(251,113,133,.22)', fg: '#FB7185',  ink: 'var(--ink-pink)'   },
+  teal:   { bg: 'rgba(45,212,191,.22)',  fg: '#2DD4BF',  ink: 'var(--ink-teal)'   },
+  yellow: { bg: '#FFD400',               fg: '#2A2200',  ink: 'var(--ink-yellow)' },
+  grey:   { bg: 'var(--surf2)',          fg: 'var(--mut)', ink: 'var(--mut)'      }
 };
 
 const DEFAULT_CATS = {
@@ -747,9 +756,9 @@ function breakdown(id, obj, tot, isCost, emptyMsg, counts) {
        source across the whole app means the eye learns them once. */
     return '<div class="br"><div class="brHead">' + chipHTML(k) +
       '<span class="l">' + k + '</span>' +
-      '<span class="brRight"><span class="n" style="color:' + pal.fg + '">' + money(v) + '</span>' +
+      '<span class="brRight"><span class="n" style="color:' + pal.ink + '">' + money(v) + '</span>' +
       '<span class="s">' + (tot ? Math.round(v / tot * 100) : 0) + '%</span></span></div>' + sub +
-      '<div class="brb"><i style="width:' + (tot ? v / tot * 100 : 0) + '%;background:' + pal.fg + '"></i></div></div>';
+      '<div class="brb"><i style="width:' + (tot ? v / tot * 100 : 0) + '%;background:' + pal.ink + '"></i></div></div>';
   }).join('') : '<div class="br"><div class="brt"><span class="l" style="color:var(--mut);font-weight:400">' + emptyMsg + '</span></div></div>';
 }
 
