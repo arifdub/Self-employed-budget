@@ -27,7 +27,7 @@ window.addEventListener('error', ev => {
   if (document.body) document.body.appendChild(bar);
 }, true);
 
-const APP_VERSION = '1.7.3';
+const APP_VERSION = '1.9.1';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -157,7 +157,7 @@ const state = {
   targets: { day: 200, week: 1200, month: 4800 },
   entries: [],
   period: 'day',
-  rperiod: 'week',
+  rperiod: 'day',
   rOffset: 0,
   // Inline rather than calling addDays(): the helpers are declared further down
   // and a const cannot be read before its own definition runs.
@@ -629,14 +629,12 @@ function periodTitle(p, ref) {
    Tuesday those are entirely different figures, which is the point of having
    both. */
 const QUICK_RANGES = [
-  ['Last 7 days',  () => [addDays(new Date(), -6),  new Date()]],
-  ['Last 30 days', () => [addDays(new Date(), -29), new Date()]],
-  ['Last 90 days', () => [addDays(new Date(), -89), new Date()]],
-  ['All time', () => {
-    if (!state.entries.length) return [new Date(), new Date()];
-    const oldest = state.entries.reduce((a, e) => (e.at < a ? e.at : a), state.entries[0].at);
-    return [oldest, new Date()];
-  }]
+  ['Yesterday',    () => [addDays(new Date(), -1),   addDays(new Date(), -1)]],
+  ['Last 7 days',  () => [addDays(new Date(), -6),   new Date()]],
+  ['Last 30 days', () => [addDays(new Date(), -29),  new Date()]],
+  // A rolling 365 days, not the calendar year — the Year tab already covers that,
+  // and the rest of this list is rolling windows.
+  ['Last year',    () => [addDays(new Date(), -364), new Date()]]
 ];
 
 function drawQuickRanges() {
@@ -734,6 +732,8 @@ $('rDate').addEventListener('change', () => {
 function breakdown(id, obj, tot, isCost, emptyMsg, counts) {
   const rows = Object.entries(obj).sort((a, b) => b[1] - a[1]);
   $(id).innerHTML = rows.length ? rows.map(([k, v]) => {
+    const cat = findCat(k);
+    const pal = cat ? (PALETTE[cat.colour] || PALETTE.grey) : PALETTE.grey;
     // Income sources carry a job count: knowing Uber brought in €400 is one
     // thing, knowing it took 22 jobs to get there is what tells you whether it
     // was worth driving for.
@@ -742,11 +742,14 @@ function breakdown(id, obj, tot, isCost, emptyMsg, counts) {
       ? '<span class="jobs">' + n + (n === 1 ? ' job' : ' jobs') +
         (n ? ' · ' + money(v / n) + ' each' : '') + '</span>'
       : '';
-    return '<div class="br"><div class="brt"><span class="l">' + k + '</span>' +
-      '<span><span class="n">' + money(v) + '</span><span class="s">' +
-      (tot ? Math.round(v / tot * 100) : 0) + '%</span></span></div>' + sub +
-      '<div class="brb' + (isCost ? ' cost' : '') + '"><i style="width:' +
-      (tot ? v / tot * 100 : 0) + '%"></i></div></div>';
+    /* Each row is tinted with its own category colour, so FREENOW reads red and
+       Cabbi purple here exactly as they do on the entry screen. One colour per
+       source across the whole app means the eye learns them once. */
+    return '<div class="br"><div class="brHead">' + chipHTML(k) +
+      '<span class="l">' + k + '</span>' +
+      '<span class="brRight"><span class="n" style="color:' + pal.fg + '">' + money(v) + '</span>' +
+      '<span class="s">' + (tot ? Math.round(v / tot * 100) : 0) + '%</span></span></div>' + sub +
+      '<div class="brb"><i style="width:' + (tot ? v / tot * 100 : 0) + '%;background:' + pal.fg + '"></i></div></div>';
   }).join('') : '<div class="br"><div class="brt"><span class="l" style="color:var(--mut);font-weight:400">' + emptyMsg + '</span></div></div>';
 }
 
@@ -2817,8 +2820,7 @@ $('qacts').querySelectorAll('.qact').forEach(b => b.onclick = () => {
 
 $('toReports').onclick = () => {
   document.querySelectorAll('.nb').forEach(x => x.classList.toggle('on', x.dataset.go === 'reports'));
-  // Reports has no Day tab, so a jump from the home Day view lands on Week.
-  state.rperiod = state.period === 'day' ? 'week' : state.period;
+  state.rperiod = state.period;
   state.rOffset = 0;
   document.querySelectorAll('#rtabs button').forEach(x =>
     x.setAttribute('aria-pressed', x.dataset.p === state.rperiod));

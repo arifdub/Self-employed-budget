@@ -232,7 +232,8 @@
     <div class="rhead"><h2>Reports</h2><button class="x" id="closeRep" aria-label="Close">✕</button></div>
     <div class="body">
       <div class="tabs" id="rtabs">
-        <button data-p="week" aria-pressed="true">Week</button>
+        <button data-p="day" aria-pressed="true">Day</button>
+        <button data-p="week" aria-pressed="false">Week</button>
         <button data-p="month" aria-pressed="false">Month</button>
         <button data-p="year" aria-pressed="false">Year</button>
         <button data-p="custom" aria-pressed="false">Custom</button>
@@ -257,28 +258,28 @@
       <button class="rToday" id="rToday" hidden>Back to now</button>
 
       <div class="flow">
-        <div class="fl">
-          <div class="flt"><span class="l">Total income</span><span class="n" id="fIncome">€0</span></div>
+        <div class="fl inc">
+          <div class="flt"><span class="l">Gross income</span><span class="n" id="fIncome">€0</span></div>
           <div class="flb" id="bIncome" style="width:100%"></div>
         </div>
-        <div class="fl">
+        <div class="fl biz">
           <div class="flt"><span class="l">Business expenses</span><span class="n" id="fBiz">−€0</span></div>
-          <div class="flb cost" id="bBiz"></div>
+          <div class="flb" id="bBiz"></div>
           <div class="pctag" id="pBiz"></div>
         </div>
-        <div class="fl key">
+        <div class="fl key net">
           <div class="flt"><span class="l">Net income</span><span class="n" id="fNet">€0</span></div>
-          <div class="flb mid2" id="bNet"></div>
-          <div class="pctag">What the business made — this is your taxable figure</div>
+          <div class="flb" id="bNet"></div>
+          <div class="pctag">What the business made — your taxable figure</div>
         </div>
-        <div class="fl">
+        <div class="fl per">
           <div class="flt"><span class="l">Home &amp; personal</span><span class="n" id="fHome">−€0</span></div>
-          <div class="flb cost" id="bHome"></div>
+          <div class="flb" id="bHome"></div>
           <div class="pctag" id="pHome"></div>
         </div>
-        <div class="fl key final">
+        <div class="fl key final pkt">
           <div class="flt"><span class="l">Disposable income</span><span class="n" id="fTake">€0</span></div>
-          <div class="flb take" id="bTake"></div>
+          <div class="flb" id="bTake"></div>
           <div class="pctag" id="pTake"></div>
         </div>
       </div>
@@ -366,6 +367,10 @@
         <button data-f="income" aria-pressed="false">Income</button>
         <button data-f="business" aria-pressed="false">Business</button>
         <button data-f="personal" aria-pressed="false">Home</button>
+      </div>
+      <div class="entHint">
+        <span><b>Swipe left</b> on an entry for Edit and Delete</span>
+        <span><b>Swipe all the way</b> to delete it straight away</span>
       </div>
       <div id="entList"></div>
       <div style="height:16px"></div>
