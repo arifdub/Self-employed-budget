@@ -27,7 +27,11 @@ window.addEventListener('error', ev => {
   if (document.body) document.body.appendChild(bar);
 }, true);
 
-const APP_VERSION = '1.11.0';
+/* Read the address the moment the script runs. The Supabase client cleans the
+   URL as soon as it is created, so anything checked later has already gone. */
+const LANDED_ON = (typeof location !== 'undefined' ? location.href : '');
+
+const APP_VERSION = '1.11.1';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -2850,8 +2854,11 @@ $('resetSend').onclick = async () => {
   $('resetSend').disabled = true;
   $('resetSend').textContent = 'Sending…';
   try {
+    /* The PKCE reset link returns as ?code=… which looks identical to a normal
+       sign-in, so the app could not tell the two apart and simply signed the
+       user in. Adding our own marker to the redirect makes it unambiguous. */
     const { error } = await sb.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin + window.location.pathname
+      redirectTo: window.location.origin + window.location.pathname + '?reset=1'
     });
     if (error) throw error;
     closeReset();
@@ -2921,16 +2928,31 @@ async function initAuth() {
   }
 
   // Clean the OAuth fragment out of the address bar so a refresh does not re-trigger it.
-  if (window.location.hash && window.location.hash.indexOf('access_token') > -1) {
+  if ((window.location.hash && window.location.hash.indexOf('access_token') > -1) ||
+      /[?&]code=/.test(window.location.search)) {
     history.replaceState(null, '', window.location.pathname);
   }
 
-  /* A recovery link returns with #type=recovery in the address, and Supabase
-     also emits a PASSWORD_RECOVERY event. Either one opens the new password
-     screen; checking both covers the case where the event fires before this
-     listener is attached. */
-  if (window.location.hash && window.location.hash.indexOf('type=recovery') > -1) {
-    setTimeout(openNewPass, 400);
+  /* Three ways in, because each can fail on its own:
+       - our own ?reset=1 marker, which survives the PKCE exchange
+       - the older #type=recovery fragment
+       - Supabase's PASSWORD_RECOVERY event, handled in the listener below
+     The screen only opens once a session exists, since changing a password
+     without one would fail. */
+  const wantsReset = /[?&]reset=1/.test(LANDED_ON) || /type=recovery/.test(LANDED_ON);
+  if (wantsReset) {
+    let tries = 0;
+    const waitForSession = setInterval(() => {
+      tries++;
+      if (session) {
+        clearInterval(waitForSession);
+        history.replaceState(null, '', window.location.pathname);
+        openNewPass();
+      } else if (tries > 20) {              // roughly 5 seconds
+        clearInterval(waitForSession);
+        toast('That reset link has expired — request a new one');
+      }
+    }, 250);
   }
 
   sb.auth.onAuthStateChange(async (evt, s) => {
