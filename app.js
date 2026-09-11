@@ -27,7 +27,7 @@ window.addEventListener('error', ev => {
   if (document.body) document.body.appendChild(bar);
 }, true);
 
-const APP_VERSION = '1.10.3';
+const APP_VERSION = '1.11.0';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -2696,6 +2696,8 @@ function paintAuth() {
     ? 'Your entries back up automatically and appear on every device you sign in on.'
     : 'Sign in and your entries come straight back.';
   $('nameField').style.display = signup ? '' : 'none';
+  $('confirmField').hidden = !signup;
+  $('forgotBtn').hidden = signup;
   $('authGo').textContent = signup ? 'Create account' : 'Sign in';
   $('authSwitch').textContent = signup ? 'I already have an account' : 'Create a new account instead';
   $('authPass').setAttribute('autocomplete', signup ? 'new-password' : 'current-password');
@@ -2714,7 +2716,13 @@ $('authGo').onclick = async () => {
 
   if (!email || email.indexOf('@') < 0) { $('authErr').textContent = 'Enter a valid email address.'; return; }
   if (pass.length < 8) { $('authErr').textContent = 'Password must be at least 8 characters.'; return; }
-  if (authMode === 'signup' && !name) { $('authErr').textContent = 'Enter your name.'; return; }
+  if (authMode === 'signup') {
+    if (!name) { $('authErr').textContent = 'Enter your name.'; return; }
+    if (pass !== $('authPass2').value) {
+      $('authErr').textContent = 'The two passwords do not match.';
+      return;
+    }
+  }
 
   $('authGo').disabled = true;
   $('authGo').textContent = authMode === 'signup' ? 'Creating…' : 'Signing in…';
@@ -2804,6 +2812,95 @@ $('googleBtn').onclick = async () => {
   }
 };
 
+
+/* ---------- password visibility ----------
+   Typing a password blind on a phone keyboard is where most sign-in failures
+   come from, so every password field can be revealed. */
+document.querySelectorAll('.pwEye').forEach(btn => {
+  btn.onclick = () => {
+    const input = $(btn.dataset.for);
+    const showing = input.type === 'text';
+    input.type = showing ? 'password' : 'text';
+    btn.textContent = showing ? 'Show' : 'Hide';
+    btn.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+  };
+});
+
+/* ---------- forgotten password ---------- */
+function openReset() {
+  $('resetEmail').value = $('authEmail').value.trim();
+  $('resetErr').textContent = '';
+  closeAuth();
+  $('resetAskModal').classList.add('on');
+  $('resetAskModal').setAttribute('aria-hidden', 'false');
+}
+function closeReset() {
+  $('resetAskModal').classList.remove('on');
+  $('resetAskModal').setAttribute('aria-hidden', 'true');
+}
+$('forgotBtn').onclick = openReset;
+$('resetCancel').onclick = () => { closeReset(); openAuth('signin'); };
+$('resetAskModal').onclick = e => { if (e.target === $('resetAskModal')) closeReset(); };
+
+$('resetSend').onclick = async () => {
+  const email = $('resetEmail').value.trim();
+  if (!email || email.indexOf('@') < 0) { $('resetErr').textContent = 'Enter a valid email address.'; return; }
+  if (!sb) { $('resetErr').textContent = 'No connection to the account service.'; return; }
+
+  $('resetSend').disabled = true;
+  $('resetSend').textContent = 'Sending…';
+  try {
+    const { error } = await sb.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + window.location.pathname
+    });
+    if (error) throw error;
+    closeReset();
+    /* Deliberately does not say whether the address exists. Confirming which
+       emails have accounts would let anyone test addresses against the app. */
+    toast('If that address has an account, the link is on its way');
+  } catch (err) {
+    $('resetErr').textContent = err.message || 'Could not send the email. Try again.';
+  } finally {
+    $('resetSend').disabled = false;
+    $('resetSend').textContent = 'Send the link';
+  }
+};
+
+/* ---------- choosing the new password ----------
+   Arriving back from the email link puts the app in a recovery session, which
+   is the only moment updateUser can change the password without the old one. */
+function openNewPass() {
+  $('newPass').value = '';
+  $('newPass2').value = '';
+  $('newPassErr').textContent = '';
+  $('newPassModal').classList.add('on');
+  $('newPassModal').setAttribute('aria-hidden', 'false');
+}
+function closeNewPass() {
+  $('newPassModal').classList.remove('on');
+  $('newPassModal').setAttribute('aria-hidden', 'true');
+}
+
+$('newPassSave').onclick = async () => {
+  const a = $('newPass').value, b = $('newPass2').value;
+  if (a.length < 8) { $('newPassErr').textContent = 'Password must be at least 8 characters.'; return; }
+  if (a !== b)      { $('newPassErr').textContent = 'The two passwords do not match.'; return; }
+
+  $('newPassSave').disabled = true;
+  $('newPassSave').textContent = 'Saving…';
+  try {
+    const { error } = await sb.auth.updateUser({ password: a });
+    if (error) throw error;
+    closeNewPass();
+    toast('Password changed — you are signed in');
+  } catch (err) {
+    $('newPassErr').textContent = err.message || 'Could not change the password.';
+  } finally {
+    $('newPassSave').disabled = false;
+    $('newPassSave').textContent = 'Save new password';
+  }
+};
+
 /* ---------- start ---------- */
 async function initAuth() {
   loadQueue();
@@ -2828,7 +2925,16 @@ async function initAuth() {
     history.replaceState(null, '', window.location.pathname);
   }
 
+  /* A recovery link returns with #type=recovery in the address, and Supabase
+     also emits a PASSWORD_RECOVERY event. Either one opens the new password
+     screen; checking both covers the case where the event fires before this
+     listener is attached. */
+  if (window.location.hash && window.location.hash.indexOf('type=recovery') > -1) {
+    setTimeout(openNewPass, 400);
+  }
+
   sb.auth.onAuthStateChange(async (evt, s) => {
+    if (evt === 'PASSWORD_RECOVERY') { openNewPass(); return; }
     const wasSignedOut = !session;
     session = s;
     refreshAccountCard();

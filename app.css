@@ -16,7 +16,7 @@
   --body:'Plus Jakarta Sans',system-ui,sans-serif;
   --mono:'Plus Jakarta Sans',system-ui,sans-serif;
   --r:14px;
-  --css-version:'1.10.3';
+  --css-version:'1.11.0';
   --safe-t:env(safe-area-inset-top,0px);
   --safe-b:env(safe-area-inset-bottom,0px);
 }
@@ -922,3 +922,13 @@ html[data-skin="day"] .brk-per{background:rgba(37,99,235,.05);  border-color:rgb
 
 /* the coloured edge needs room, and the total row should clear it too */
 .brk{padding-left:16px}
+
+
+/* password fields */
+.pwWrap{position:relative;display:flex;align-items:center}
+.pwWrap input{padding-right:64px}
+.pwEye{position:absolute;right:8px;background:none;border:0;color:var(--acc);
+  font-family:var(--body);font-size:12.5px;font-weight:800;cursor:pointer;padding:8px 6px}
+.linkBtn{background:none;border:0;color:var(--acc);font-family:var(--body);
+  font-size:12.5px;font-weight:700;cursor:pointer;padding:2px 0;margin:-4px 0 8px;text-align:left}
+#resetErr,#newPassErr{margin:8px 0 0;font-size:12.5px;color:var(--bad);font-weight:700;min-height:16px}

@@ -463,13 +463,66 @@
       </div>
       <div class="field">
         <label for="authPass">Password</label>
-        <input id="authPass" type="password" autocomplete="current-password" placeholder="At least 8 characters">
+        <div class="pwWrap">
+          <input id="authPass" type="password" autocomplete="current-password" placeholder="At least 8 characters">
+          <button type="button" class="pwEye" data-for="authPass" aria-label="Show password">Show</button>
+        </div>
       </div>
+
+      <div class="field" id="confirmField" hidden>
+        <label for="authPass2">Confirm password</label>
+        <div class="pwWrap">
+          <input id="authPass2" type="password" autocomplete="new-password" placeholder="Type it again">
+          <button type="button" class="pwEye" data-for="authPass2" aria-label="Show password">Show</button>
+        </div>
+      </div>
+
+      <button class="linkBtn" id="forgotBtn" hidden>Forgot your password?</button>
 
       <p id="authErr"></p>
       <button class="save" style="margin:12px 0 0;width:100%" id="authGo">Create account</button>
       <button class="save ghost" style="margin:8px 0 0;width:100%" id="authSwitch">I already have an account</button>
       <button class="save ghost" style="margin:8px 0 0;width:100%" id="authClose">Not now</button>
+    </div>
+  </div>
+
+  <!-- reset: ask for the email -->
+  <div class="modal" id="resetAskModal" aria-hidden="true">
+    <div class="mbox">
+      <h4>Reset your password</h4>
+      <p>We will email you a link. Open it on this phone and you can choose a new password.</p>
+      <div class="field">
+        <label for="resetEmail">Email</label>
+        <input id="resetEmail" type="email" autocomplete="email" autocapitalize="none"
+               spellcheck="false" placeholder="you@example.com">
+      </div>
+      <p id="resetErr"></p>
+      <button class="save" style="margin:12px 0 0;width:100%" id="resetSend">Send the link</button>
+      <button class="save ghost" style="margin:8px 0 0;width:100%" id="resetCancel">Back</button>
+    </div>
+  </div>
+
+  <!-- reset: choose the new password -->
+  <div class="modal" id="newPassModal" aria-hidden="true">
+    <div class="mbox">
+      <h4>Choose a new password</h4>
+      <p>Almost done — pick something you will remember.</p>
+      <div class="field">
+        <label for="newPass">New password</label>
+        <div class="pwWrap">
+          <input id="newPass" type="password" autocomplete="new-password" placeholder="At least 8 characters">
+          <button type="button" class="pwEye" data-for="newPass" aria-label="Show password">Show</button>
+        </div>
+      </div>
+      <div class="field">
+        <label for="newPass2">Confirm new password</label>
+        <div class="pwWrap">
+          <input id="newPass2" type="password" autocomplete="new-password" placeholder="Type it again">
+          <button type="button" class="pwEye" data-for="newPass2" aria-label="Show password">Show</button>
+        </div>
+      </div>
+      <p id="newPassErr"></p>
+      <button class="save" style="margin:12px 0 0;width:100%" id="newPassSave">Save new password</button>
     </div>
   </div>
 
