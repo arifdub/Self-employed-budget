@@ -16,7 +16,7 @@
   --body:'Plus Jakarta Sans',system-ui,sans-serif;
   --mono:'Plus Jakarta Sans',system-ui,sans-serif;
   --r:14px;
-  --css-version:'1.11.1';
+  --css-version:'1.12.0';
   --safe-t:env(safe-area-inset-top,0px);
   --safe-b:env(safe-area-inset-bottom,0px);
 }
@@ -932,3 +932,14 @@ html[data-skin="day"] .brk-per{background:rgba(37,99,235,.05);  border-color:rgb
 .linkBtn{background:none;border:0;color:var(--acc);font-family:var(--body);
   font-size:12.5px;font-weight:700;cursor:pointer;padding:2px 0;margin:-4px 0 8px;text-align:left}
 #resetErr,#newPassErr{margin:8px 0 0;font-size:12.5px;color:var(--bad);font-weight:700;min-height:16px}
+
+
+/* recurring list */
+.recRow{display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid var(--line)}
+.recRow:last-child{border-bottom:0}
+.recRow.off{opacity:.45}
+.recMid{flex:1;min-width:0}
+.recName{display:flex;align-items:baseline;gap:8px;font-size:14px;font-weight:700;color:var(--txt)}
+.recAmt{font-size:13px;font-weight:800;font-variant-numeric:tabular-nums}
+.recMeta{font-size:11px;font-weight:600;color:var(--dim);margin-top:2px}
+#recErr{margin:10px 0 0;font-size:12.5px;color:var(--bad);font-weight:700;min-height:16px}

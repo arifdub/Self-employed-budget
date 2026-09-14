@@ -31,7 +31,7 @@ window.addEventListener('error', ev => {
    URL as soon as it is created, so anything checked later has already gone. */
 const LANDED_ON = (typeof location !== 'undefined' ? location.href : '');
 
-const APP_VERSION = '1.11.1';
+const APP_VERSION = '1.12.0';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -224,7 +224,7 @@ function loadEntries() {
 function saveSettings() {
   try {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify({
-      targets: state.targets, skin: state.skin, categories
+      targets: state.targets, skin: state.skin, categories, recurring
     }));
   } catch (err) { /* non-fatal */ }
 }
@@ -236,6 +236,7 @@ function loadSettings() {
     const s = JSON.parse(raw);
     if (s.targets && s.targets.day > 0) state.targets = s.targets;
     if (s.skin === 'day' || s.skin === 'night') state.skin = s.skin;
+    if (Array.isArray(s.recurring)) recurring = s.recurring;
     if (s.categories && s.categories.income && s.categories.business && s.categories.personal) {
       // Merge rather than replace: a category added to the defaults in a later
       // release should appear for people who already have saved settings.
@@ -1843,7 +1844,7 @@ function enablePullToDismiss(id) {
 
 /* Every sheet in the app, so a new one cannot be added without the gesture —
    the categories sheet was missed exactly that way. */
-['sheet', 'rep', 'ent', 'more', 'cats', 'admin'].forEach(enablePullToDismiss);
+['sheet', 'rep', 'ent', 'more', 'cats', 'admin', 'rec'].forEach(enablePullToDismiss);
 
 /* ---------- targets ---------- */
 function openTargets() {
@@ -1898,6 +1899,260 @@ $('rGo').onclick = () => {
   toast(n + ' entr' + (n === 1 ? 'y' : 'ies') + ' deleted — starting fresh');
 };
 
+
+
+/* ============================================================
+   RECURRING ENTRIES
+   ------------------------------------------------------------
+   Rent, insurance, finance payments — the fixed amounts that leave the account
+   whether or not anyone remembers to log them.
+
+   A rule records what to create and when. On every app open, any occurrence
+   that has fallen due since the last check is created. Three things this has to
+   get right:
+
+   1. No duplicates. Each rule remembers the last date it generated, so opening
+      the app five times in a day creates nothing extra.
+   2. Catch up on missed dates. Away for two months and the rule fires twice,
+      each dated correctly, rather than once dated today.
+   3. Month ends. A rule set for the 31st falls on the 28th in February rather
+      than silently skipping the month.
+   ============================================================ */
+
+let recurring = [];
+
+const RECUR_FREQ = {
+  weekly:  { label: 'Every week' },
+  monthly: { label: 'Every month' },
+  yearly:  { label: 'Every year' }
+};
+
+/* Clamp to the last day of the month: a rule for the 31st must still fire in
+   a 30-day month, or it would quietly skip. */
+function onDay(year, month, day) {
+  const last = new Date(year, month + 1, 0).getDate();
+  return startOfDay(new Date(year, month, Math.min(day, last)));
+}
+
+/* Every date this rule should have fired on, up to today. */
+function dueDates(rule, upTo) {
+  const out = [];
+  const start = startOfDay(new Date(rule.start));
+  const end = rule.end ? startOfDay(new Date(rule.end)) : null;
+  const from = rule.lastRun ? addDays(startOfDay(new Date(rule.lastRun)), 1) : start;
+
+  let cursor = startOfDay(new Date(start));
+  let guard = 0;
+
+  while (cursor <= upTo && guard++ < 400) {      // guard against a malformed rule looping forever
+    if (cursor >= from && (!end || cursor <= end)) out.push(new Date(cursor));
+
+    if (rule.freq === 'weekly') {
+      cursor = addDays(cursor, 7);
+    } else if (rule.freq === 'yearly') {
+      cursor = onDay(cursor.getFullYear() + 1, start.getMonth(), start.getDate());
+    } else {
+      const m = cursor.getMonth() + 1;
+      cursor = onDay(cursor.getFullYear() + Math.floor(m / 12), m % 12, start.getDate());
+    }
+  }
+  return out;
+}
+
+function runRecurring() {
+  if (!recurring.length) return 0;
+  const today = startOfDay(new Date());
+  let made = 0;
+
+  recurring.forEach(rule => {
+    if (rule.paused) return;
+    const dates = dueDates(rule, today);
+    dates.forEach(d => {
+      const id = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()));
+      const at = new Date(d);
+      at.setHours(9, 0, 0, 0);                  // a fixed hour, so ordering is stable
+      state.entries.push({
+        id, type: rule.type, cat: rule.cat,
+        amt: roundEuro(rule.amount), pay: rule.pay, at, auto: true
+      });
+      markDirty(id);
+      made++;
+    });
+    if (dates.length) rule.lastRun = isoDay(dates[dates.length - 1]);
+  });
+
+  if (made) { saveEntries(); saveSettings(); pushSettings(); }
+  return made;
+}
+
+/* ---------- the list in Settings ---------- */
+function drawRecurring() {
+  $('recCount').textContent = recurring.length
+    ? recurring.filter(r => !r.paused).length + ' active'
+    : 'None yet';
+
+  if (!recurring.length) {
+    $('recList').innerHTML =
+      '<div class="empty">Nothing set up yet. Add rent, insurance, a finance payment — ' +
+      'anything that happens on the same date every month.</div>';
+    return;
+  }
+
+  $('recList').innerHTML = recurring.map((r, i) => {
+    const next = nextDue(r);
+    return '<div class="recRow' + (r.paused ? ' off' : '') + '" data-i="' + i + '">' +
+      chipHTML(r.cat) +
+      '<div class="recMid"><div class="recName">' + r.cat +
+        '<span class="recAmt ' + (r.type === 'income' ? 'c-inc' : 'c-biz') + '">' +
+        (r.type === 'income' ? '+' : '−') + money(r.amount) + '</span></div>' +
+      '<div class="recMeta">' + RECUR_FREQ[r.freq].label +
+        (r.paused ? ' · paused' : next ? ' · next ' + next.toLocaleDateString(LOCALE,
+          { day: 'numeric', month: 'short' }) : '') + '</div></div>' +
+      '<button class="catEdit" data-act="edit">Edit</button>' +
+    '</div>';
+  }).join('');
+
+  $('recList').querySelectorAll('.recRow').forEach(row => {
+    row.querySelector('[data-act="edit"]').onclick = () => openRecEdit(recurring[+row.dataset.i]);
+  });
+}
+
+function nextDue(rule) {
+  if (rule.paused) return null;
+  const start = startOfDay(new Date(rule.start));
+  const end = rule.end ? startOfDay(new Date(rule.end)) : null;
+  let cursor = rule.lastRun ? startOfDay(new Date(rule.lastRun)) : addDays(start, -1);
+  let guard = 0;
+  while (guard++ < 400) {
+    if (rule.freq === 'weekly') cursor = addDays(cursor, 7);
+    else if (rule.freq === 'yearly') cursor = onDay(cursor.getFullYear() + 1, start.getMonth(), start.getDate());
+    else {
+      const m = cursor.getMonth() + 1;
+      cursor = onDay(cursor.getFullYear() + Math.floor(m / 12), m % 12, start.getDate());
+    }
+    if (cursor >= startOfDay(new Date())) return (!end || cursor <= end) ? cursor : null;
+    if (end && cursor > end) return null;
+  }
+  return null;
+}
+
+
+/* ---------- recurring: add and edit ---------- */
+let editingRule = null;
+let recDraft = { type: 'business', cat: '', freq: 'monthly' };
+
+function openRec() { drawRecurring(); openSheet('rec'); }
+$('openRec').onclick = openRec;
+$('closeRec').onclick = () => closeSheet('rec');
+$('recAdd').onclick = () => openRecEdit(null);
+$('recCancel').onclick = () => closeRecEdit();
+$('recEditModal').onclick = e => { if (e.target === $('recEditModal')) closeRecEdit(); };
+
+function closeRecEdit() {
+  $('recEditModal').classList.remove('on');
+  $('recEditModal').setAttribute('aria-hidden', 'true');
+  editingRule = null;
+}
+
+function openRecEdit(rule) {
+  editingRule = rule || null;
+  recDraft = rule
+    ? { type: rule.type, cat: rule.cat, freq: rule.freq }
+    : { type: 'business', cat: visibleCats('business')[0].name, freq: 'monthly' };
+
+  $('recEditTitle').textContent = rule ? 'Edit repeating entry' : 'New repeating entry';
+  $('recAmt').value = rule ? rule.amount : '';
+  $('recStart').value = rule ? rule.start : isoDay(new Date());
+  $('recEnd').value = rule && rule.end ? rule.end : '';
+  $('recErr').textContent = '';
+
+  $('recPause').hidden = !rule;
+  $('recPause').textContent = rule && rule.paused ? 'Resume' : 'Pause';
+  $('recDel').hidden = !rule;
+
+  paintRecSeg();
+  $('recEditModal').classList.add('on');
+  $('recEditModal').setAttribute('aria-hidden', 'false');
+}
+
+function paintRecSeg() {
+  document.querySelectorAll('#recSeg button').forEach(b =>
+    b.setAttribute('aria-pressed', b.dataset.t === recDraft.type));
+  document.querySelectorAll('#recFreq button').forEach(b =>
+    b.setAttribute('aria-pressed', b.dataset.f === recDraft.freq));
+
+  const cats = visibleCats(recDraft.type);
+  if (!cats.some(c => c.name === recDraft.cat)) recDraft.cat = cats[0].name;
+
+  $('recCats').innerHTML = cats.map(c =>
+    '<button type="button" class="pill" data-c="' + c.name + '" aria-pressed="' +
+    (c.name === recDraft.cat) + '">' + c.name + '</button>').join('');
+  $('recCats').querySelectorAll('.pill').forEach(b => b.onclick = () => {
+    recDraft.cat = b.dataset.c; paintRecSeg();
+  });
+}
+
+$('recSeg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  recDraft.type = b.dataset.t; paintRecSeg();
+});
+$('recFreq').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  recDraft.freq = b.dataset.f; paintRecSeg();
+});
+
+$('recSave').onclick = () => {
+  const amount = parseFloat($('recAmt').value);
+  const start = $('recStart').value;
+  const end = $('recEnd').value || null;
+
+  if (!amount || amount <= 0) { $('recErr').textContent = 'Enter an amount.'; return; }
+  if (!start) { $('recErr').textContent = 'Choose a starting date.'; return; }
+  if (end && end < start) { $('recErr').textContent = 'The end date is before the start date.'; return; }
+
+  const pay = PAYS[recDraft.type].includes('Direct debit') ? 'Direct debit' : PAYS[recDraft.type][0];
+
+  if (editingRule) {
+    Object.assign(editingRule, {
+      type: recDraft.type, cat: recDraft.cat, freq: recDraft.freq,
+      amount: roundEuro(amount), start, end
+    });
+  } else {
+    recurring.push({
+      id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())),
+      type: recDraft.type, cat: recDraft.cat, freq: recDraft.freq,
+      amount: roundEuro(amount), pay, start, end, lastRun: null, paused: false
+    });
+  }
+
+  saveSettings(); pushSettings();
+  closeRecEdit();
+
+  /* Run immediately so a rule dated today or in the past takes effect now
+     rather than waiting for the next launch. */
+  const made = runRecurring();
+  drawRecurring(); render();
+  toast(made ? 'Saved — ' + made + (made === 1 ? ' entry added' : ' entries added') : 'Saved');
+};
+
+$('recPause').onclick = () => {
+  if (!editingRule) return;
+  editingRule.paused = !editingRule.paused;
+  saveSettings(); pushSettings();
+  const was = editingRule.paused;
+  closeRecEdit(); drawRecurring();
+  toast(was ? 'Paused' : 'Running again');
+};
+
+$('recDel').onclick = () => {
+  if (!editingRule) return;
+  /* Entries already created stay. They record money that actually moved;
+     deleting the rule only stops future ones. */
+  recurring = recurring.filter(r => r !== editingRule);
+  saveSettings(); pushSettings();
+  closeRecEdit(); drawRecurring();
+  toast('Stopped — entries already added are kept');
+};
 
 /* ---------- category manager ----------
    Categories live in Settings so the app fits the trade, not the other way
@@ -2635,7 +2890,8 @@ async function pushSettings() {
     target_week: state.targets.week,
     target_month: state.targets.month,
     skin: state.skin,
-    categories
+    categories,
+    recurring
   }, { onConflict: 'user_id' });
 }
 
@@ -2645,6 +2901,7 @@ async function pullSettings() {
   if (data) {
     state.targets = { day: Number(data.target_day), week: Number(data.target_week), month: Number(data.target_month) };
     if (data.categories && data.categories.income) categories = data.categories;
+    if (Array.isArray(data.recurring)) recurring = data.recurring;
     saveSettings();
   }
 }
@@ -3156,5 +3413,20 @@ state.entries = loadEntries();
 state.entries.forEach(e => { if (e.cat === 'Income') dirty.add(e.id); });
 setSkin(state.skin);
 drawDraft();
+
+/* Catch up any repeating entries that fell due while the app was closed. */
+const autoMade = runRecurring();
 render();
+if (autoMade) {
+  setTimeout(() => toast(autoMade + (autoMade === 1 ? ' repeating entry added' : ' repeating entries added')), 900);
+}
+
+/* And again when the app is reopened after being left in the background —
+   a phone can sit for days without the script ever restarting. */
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible') return;
+  const n = runRecurring();
+  if (n) { render(); toast(n + (n === 1 ? ' repeating entry added' : ' repeating entries added')); }
+});
+
 initAuth();

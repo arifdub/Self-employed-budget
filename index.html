@@ -341,6 +341,15 @@
         <button class="save ghost danger" style="margin:12px 0 0;width:100%" id="resetBtn">Delete all entries…</button>
       </div>
 
+      <div class="sec">Recurring</div>
+      <div class="card">
+        <div class="crow"><span class="clab">Repeating entries</span>
+          <span class="cval" id="recCount" style="font-size:13px">None yet</span></div>
+        <div class="crange">Rent, insurance, a finance payment — anything on the same date every month.
+          They are added for you when the date comes round.</div>
+        <button class="save ghost" style="margin:12px 0 0;width:100%" id="openRec">Manage recurring</button>
+      </div>
+
       <div class="sec" id="adminSec" hidden>Admin</div>
       <div class="card" id="adminCard" hidden>
         <div class="crow"><span class="clab">Usage</span>
@@ -555,6 +564,56 @@
       <div style="height:20px"></div>
     </div>
   </section>
+
+  <!-- recurring -->
+  <section class="sheet" id="rec" aria-hidden="true">
+    <div class="rhead"><h2>Recurring</h2><button class="x" id="closeRec" aria-label="Close">✕</button></div>
+    <div class="body">
+      <div class="catHint">Added automatically when the date comes round, even if the app was closed.</div>
+      <div id="recList"></div>
+      <button class="save" style="margin:14px 0 0;width:100%" id="recAdd">Add a repeating entry</button>
+      <div style="height:20px"></div>
+    </div>
+  </section>
+
+  <!-- add / edit a recurring rule -->
+  <div class="modal" id="recEditModal" aria-hidden="true">
+    <div class="mbox">
+      <h4 id="recEditTitle">New repeating entry</h4>
+
+      <div class="seg" id="recSeg" style="margin:10px 0 0">
+        <button data-t="business" aria-pressed="true">Business</button>
+        <button data-t="personal" aria-pressed="false">Home</button>
+        <button data-t="income" aria-pressed="false">Income</button>
+      </div>
+
+      <div class="mlab2">Category</div>
+      <div class="pills" id="recCats" style="padding:0"></div>
+
+      <div class="field" style="margin-top:14px">
+        <label for="recAmt">Amount</label>
+        <input id="recAmt" type="number" inputmode="numeric" step="1" placeholder="0">
+      </div>
+
+      <div class="mlab2">How often</div>
+      <div class="seg" id="recFreq" style="margin:0">
+        <button data-f="weekly" aria-pressed="false">Weekly</button>
+        <button data-f="monthly" aria-pressed="true">Monthly</button>
+        <button data-f="yearly" aria-pressed="false">Yearly</button>
+      </div>
+
+      <div class="rDates" style="margin-top:14px">
+        <label class="rDate"><span>Starting</span><input type="date" id="recStart"></label>
+        <label class="rDate"><span>Ending (optional)</span><input type="date" id="recEnd"></label>
+      </div>
+
+      <p id="recErr"></p>
+      <button class="save" style="margin:12px 0 0;width:100%" id="recSave">Save</button>
+      <button class="save ghost" style="margin:8px 0 0;width:100%" id="recPause" hidden>Pause</button>
+      <button class="save ghost danger" style="margin:8px 0 0;width:100%" id="recDel" hidden>Delete</button>
+      <button class="save ghost" style="margin:8px 0 0;width:100%" id="recCancel">Cancel</button>
+    </div>
+  </div>
 
   <!-- categories -->
   <section class="sheet" id="cats" aria-hidden="true">
