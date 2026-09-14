@@ -31,7 +31,7 @@ window.addEventListener('error', ev => {
    URL as soon as it is created, so anything checked later has already gone. */
 const LANDED_ON = (typeof location !== 'undefined' ? location.href : '');
 
-const APP_VERSION = '1.12.1';
+const APP_VERSION = '1.12.2';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
