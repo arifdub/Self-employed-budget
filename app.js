@@ -2991,12 +2991,24 @@ async function pullSettings() {
        the server's list, but keep whichever lastRun is further along, or the
        old marker comes back and the same days get posted all over again. */
     if (Array.isArray(data.recurring)) {
+      const cloudIds = new Set(data.recurring.map(r => r.id).filter(Boolean));
       const mine = {};
       recurring.forEach(r => { if (r.id) mine[r.id] = r.lastRun; });
-      recurring = data.recurring.map(r => {
+      const merged = data.recurring.map(r => {
         const local = r.id ? mine[r.id] : null;
         return (local && (!r.lastRun || local > r.lastRun)) ? { ...r, lastRun: local } : r;
       });
+
+      /* A rule added on this phone may not have reached the server yet —
+         the push after adding it is fire-and-forget, so it can lose the
+         race against this pull (or never have gone out at all if it ran
+         offline). Taking the server's list as-is would silently delete it
+         here and then, worse, persist that loss on the next save. Keep any
+         rule this phone has that the server doesn't know about yet, and
+         push again so the two sides catch up. */
+      const notYetSynced = recurring.filter(r => r.id && !cloudIds.has(r.id));
+      recurring = merged.concat(notYetSynced);
+      if (notYetSynced.length) pushSettings();
     }
 
     saveSettings();
