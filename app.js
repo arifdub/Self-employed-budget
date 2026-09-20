@@ -31,7 +31,7 @@ window.addEventListener('error', ev => {
    URL as soon as it is created, so anything checked later has already gone. */
 const LANDED_ON = (typeof location !== 'undefined' ? location.href : '');
 
-const APP_VERSION = '1.12.2';
+const APP_VERSION = '1.12.3';
 
 /* ---------- config ---------- */
 const CURRENCY = '€';
@@ -1959,30 +1959,113 @@ function dueDates(rule, upTo) {
   return out;
 }
 
-function runRecurring() {
-  if (!recurring.length) return 0;
-  const today = startOfDay(new Date());
-  let made = 0;
+/* Two entries on the same calendar day, ignoring the clock. */
+const sameDay = (a, b) =>
+  a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 
-  recurring.forEach(rule => {
-    if (rule.paused) return;
-    const dates = dueDates(rule, today);
-    dates.forEach(d => {
-      const id = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()));
-      const at = new Date(d);
-      at.setHours(9, 0, 0, 0);                  // a fixed hour, so ordering is stable
-      state.entries.push({
-        id, type: rule.type, cat: rule.cat,
-        amt: roundEuro(rule.amount), pay: rule.pay, at, auto: true
+/* The id an occurrence gets is worked out from the rule and the date, not from
+   a random draw. Run the same rule for the same day twice and you land on the
+   same id, so the second run has nothing new to add — which is what stops the
+   duplicates at source. The database column is a uuid, so the hash is dressed
+   up in uuid clothing: 8-4-4-4-12, version nibble 5, variant nibble 8. */
+function autoId(rule, d) {
+  const seed = 'seb-auto|' +
+    (rule.id || [rule.type, rule.cat, rule.amount, rule.freq, rule.start].join('~')) +
+    '|' + isoDay(d);
+
+  // Four independent FNV-1a passes give the 128 bits a uuid needs.
+  const hex = [0x811c9dc5, 0x01000193, 0x9e3779b9, 0x85ebca6b].map(seedVal => {
+    let h = seedVal >>> 0;
+    for (let i = 0; i < seed.length; i++) {
+      h ^= seed.charCodeAt(i);
+      h = Math.imul(h, 0x01000193) >>> 0;
+    }
+    return ('00000000' + h.toString(16)).slice(-8);
+  }).join('');
+
+  return hex.slice(0, 8) + '-' + hex.slice(8, 12) + '-' +
+         '5' + hex.slice(13, 16) + '-' +
+         '8' + hex.slice(17, 20) + '-' + hex.slice(20, 32);
+}
+
+/* Entries made by an earlier version carry random ids, so a match on id alone
+   would miss them and post the day a second time. */
+function dayAlreadyHas(rule, d) {
+  const amt = roundEuro(rule.amount);
+  return state.entries.some(e =>
+    e.auto && e.type === rule.type && e.cat === rule.cat && e.amt === amt && sameDay(e.at, d));
+}
+
+let recurringRunning = false;       // iOS can fire visibilitychange twice in a row
+
+function runRecurring() {
+  if (recurringRunning || !recurring.length) return 0;
+  recurringRunning = true;
+
+  try {
+    const today = startOfDay(new Date());
+    let made = 0;
+
+    recurring.forEach(rule => {
+      if (rule.paused) return;
+      const dates = dueDates(rule, today);
+      dates.forEach(d => {
+        const id = autoId(rule, d);
+
+        // Deleted by hand once, so it stays deleted.
+        if (tombstones[id]) return;
+        // Already posted — by this run, an earlier run, or another device.
+        if (state.entries.some(e => e.id === id)) return;
+        if (dayAlreadyHas(rule, d)) return;
+
+        const at = new Date(d);
+        at.setHours(9, 0, 0, 0);                // a fixed hour, so ordering is stable
+        state.entries.push({
+          id, type: rule.type, cat: rule.cat,
+          amt: roundEuro(rule.amount), pay: rule.pay, at, auto: true
+        });
+        markDirty(id);
+        made++;
       });
-      markDirty(id);
-      made++;
+      if (dates.length) {
+        const reached = isoDay(dates[dates.length - 1]);
+        if (!rule.lastRun || reached > rule.lastRun) rule.lastRun = reached;
+      }
     });
-    if (dates.length) rule.lastRun = isoDay(dates[dates.length - 1]);
+
+    if (made) { saveEntries(); saveSettings(); pushSettings(); }
+    return made;
+  } finally {
+    recurringRunning = false;
+  }
+}
+
+/* One-off tidy-up for the duplicates v1.12.0 to v1.12.2 already created: keep
+   the first automatic entry of each kind on each day, delete the rest. They go
+   through the tombstone path, so the cloud copies go with them and the next
+   sync cannot bring them back. Entries added by hand are never touched, even
+   if they look identical. */
+function dedupeAuto() {
+  const autos = state.entries.filter(e => e.auto === true && e.id);
+  if (autos.length < 2) return 0;
+
+  const keep = Object.create(null);
+  const drop = Object.create(null);
+
+  autos.slice().sort((a, b) => a.at - b.at).forEach(e => {
+    const k = [e.type, e.cat, e.amt, e.pay || '', isoDay(e.at)].join('|');
+    if (keep[k]) drop[e.id] = true; else keep[k] = e.id;
   });
 
-  if (made) { saveEntries(); saveSettings(); pushSettings(); }
-  return made;
+  const ids = Object.keys(drop);
+  if (!ids.length) return 0;
+
+  for (let i = state.entries.length - 1; i >= 0; i--) {
+    if (drop[state.entries[i].id]) state.entries.splice(i, 1);
+  }
+  ids.forEach(id => markDeleted(id));
+  saveEntries();
+  return ids.length;
 }
 
 /* ---------- the list in Settings ---------- */
@@ -2901,8 +2984,26 @@ async function pullSettings() {
   if (data) {
     state.targets = { day: Number(data.target_day), week: Number(data.target_week), month: Number(data.target_month) };
     if (data.categories && data.categories.income) categories = data.categories;
-    if (Array.isArray(data.recurring)) recurring = data.recurring;
+
+    /* The server's copy of a rule can be older than this phone's — it was the
+       phone that last ran the rule, and the push may not have landed yet. Take
+       the server's list, but keep whichever lastRun is further along, or the
+       old marker comes back and the same days get posted all over again. */
+    if (Array.isArray(data.recurring)) {
+      const mine = {};
+      recurring.forEach(r => { if (r.id) mine[r.id] = r.lastRun; });
+      recurring = data.recurring.map(r => {
+        const local = r.id ? mine[r.id] : null;
+        return (local && (!r.lastRun || local > r.lastRun)) ? { ...r, lastRun: local } : r;
+      });
+    }
+
     saveSettings();
+
+    /* A rule added on another device should take effect here straight away.
+       Safe to call repeatedly now that occurrences have fixed ids. */
+    const made = runRecurring();
+    if (made) { render(); drawRecurring(); }
   }
 }
 
@@ -3414,9 +3515,15 @@ state.entries.forEach(e => { if (e.cat === 'Income') dirty.add(e.id); });
 setSkin(state.skin);
 drawDraft();
 
+/* Clear out anything the old recurring code duplicated before catching up. */
+const autoCleaned = dedupeAuto();
+
 /* Catch up any repeating entries that fell due while the app was closed. */
 const autoMade = runRecurring();
 render();
+if (autoCleaned) {
+  setTimeout(() => toast(autoCleaned + (autoCleaned === 1 ? ' duplicate removed' : ' duplicates removed')), 1600);
+}
 if (autoMade) {
   setTimeout(() => toast(autoMade + (autoMade === 1 ? ' repeating entry added' : ' repeating entries added')), 900);
 }
