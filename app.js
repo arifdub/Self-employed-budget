@@ -1764,6 +1764,7 @@ document.querySelectorAll('.nb').forEach(b => b.onclick = () => {
     $('resetCount').textContent = n + ' entr' + (n === 1 ? 'y' : 'ies');
     const cc = ['income','business','personal'].reduce((a,t) => a + visibleCats(t).length, 0);
     $('catSummary').textContent = cc + ' in use';
+    drawRecurring();
     openSheet('more');
   }
   else { closeSheet('rep'); closeSheet('more'); closeSheet('ent'); }
@@ -3003,7 +3004,8 @@ async function pullSettings() {
     /* A rule added on another device should take effect here straight away.
        Safe to call repeatedly now that occurrences have fixed ids. */
     const made = runRecurring();
-    if (made) { render(); drawRecurring(); }
+    if (made) render();
+    drawRecurring();
   }
 }
 
@@ -3520,6 +3522,7 @@ const autoCleaned = dedupeAuto();
 
 /* Catch up any repeating entries that fell due while the app was closed. */
 const autoMade = runRecurring();
+drawRecurring();
 render();
 if (autoCleaned) {
   setTimeout(() => toast(autoCleaned + (autoCleaned === 1 ? ' duplicate removed' : ' duplicates removed')), 1600);
