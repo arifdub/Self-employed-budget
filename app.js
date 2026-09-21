@@ -3583,6 +3583,14 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState !== 'visible') return;
   const n = runRecurring();
   if (n) { render(); toast(n + (n === 1 ? ' repeating entry added' : ' repeating entries added')); }
+
+  /* A delete (or anything else) queued right before the app was backgrounded
+     may never have reached the server — the timer that pushes it 800ms later
+     can be killed by backgrounding before it fires. Coming back to the app is
+     the next safe moment to retry, and a partial sync only pushes; it never
+     pulls, so it cannot undo a delete that has not synced yet by pulling the
+     server's still-live copy back down. */
+  if (dirty.size) syncNow(false);
 });
 
 initAuth();
