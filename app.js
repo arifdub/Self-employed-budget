@@ -3325,9 +3325,15 @@ async function initAuth() {
   refreshAccountCard();
 
   if (session) {
-    // Anything logged on this phone before signing in belongs to this account.
-    state.entries.forEach(e => dirty.add(e.id));
-    saveQueue();
+    /* Do NOT re-mark every entry dirty here. That belongs only to the one-time
+       moment guest entries get attached to a brand-new account — already
+       handled in afterSignIn() and the SIGNED_IN branch below. Doing it on
+       every ordinary restart meant this phone re-pushed its whole entries
+       list on every launch, and toRow() always sends deleted_at explicitly
+       (null unless *this* phone's tombstones say otherwise) — so a phone
+       that had not yet learned about a delete made on another device would
+       silently overwrite the server's deleted_at back to null and undo it,
+       with no error and nothing to say it happened. */
     await pullSettings();
     await syncNow(true);
     render();
