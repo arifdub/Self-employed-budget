@@ -1864,6 +1864,40 @@ $('saveT').onclick = () => {
   closeTargets(); render(); toast('Targets updated');
 };
 
+/* ---------- feedback ---------- */
+function openFeedback() {
+  $('fbText').value = '';
+  $('fbEmail').value = (session && session.user && session.user.email) || '';
+  $('fbErr').textContent = '';
+  $('fbSend').disabled = false; $('fbSend').textContent = 'Send';
+  $('fbModal').classList.add('on'); $('fbModal').setAttribute('aria-hidden', 'false');
+}
+function closeFeedback() { $('fbModal').classList.remove('on'); $('fbModal').setAttribute('aria-hidden', 'true'); }
+$('openFeedback').onclick = openFeedback;
+$('fbCancel').onclick = closeFeedback;
+$('fbModal').onclick = e => { if (e.target === $('fbModal')) closeFeedback(); };
+
+$('fbSend').onclick = async () => {
+  const message = $('fbText').value.trim();
+  const email = $('fbEmail').value.trim();
+  if (!message) { $('fbErr').textContent = 'Type a message first.'; return; }
+  if (message.length > 4000) { $('fbErr').textContent = 'Keep it under 4,000 characters.'; return; }
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    $('fbErr').textContent = 'That email address looks off.'; return;
+  }
+  if (!sb) { $('fbErr').textContent = 'Feedback needs a connection — try again shortly.'; return; }
+
+  $('fbErr').textContent = '';
+  $('fbSend').disabled = true; $('fbSend').textContent = 'Sending…';
+  try {
+    const { data, error } = await sb.functions.invoke('send-feedback', { body: { message, email } });
+    if (error || !data || data.ok === false) throw new Error((data && data.message) || 'send failed');
+    closeFeedback(); toast('Thanks — feedback sent');
+  } catch (err) {
+    $('fbSend').disabled = false; $('fbSend').textContent = 'Send';
+    $('fbErr').textContent = 'Could not send — check your connection and try again.';
+  }
+};
 
 /* ---------- reset all data ----------
    Deliberately two steps: open the confirm sheet, then type DELETE. A single-tap

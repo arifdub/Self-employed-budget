@@ -403,11 +403,13 @@ html[data-skin="day"] .brb{background:var(--surf2)}
 /* auth form fields */
 .field{display:flex;flex-direction:column;gap:6px;margin-bottom:11px}
 .field label{font-size:11.5px;font-weight:700;color:var(--mut);letter-spacing:.04em}
-.field input{background:var(--surf);border:1px solid var(--line);color:var(--txt);
+.field input,.field textarea{background:var(--surf);border:1px solid var(--line);color:var(--txt);
   font-family:var(--body);font-size:16px;font-weight:600;padding:13px 14px;border-radius:12px;width:100%}
-.field input::placeholder{color:var(--dim);font-weight:500}
-.field input:focus{outline:2px solid var(--acc);outline-offset:1px}
+.field textarea{font-weight:500;resize:vertical;box-sizing:border-box}
+.field input::placeholder,.field textarea::placeholder{color:var(--dim);font-weight:500}
+.field input:focus,.field textarea:focus{outline:2px solid var(--acc);outline-offset:1px}
 #authErr{margin:2px 0 0;font-size:12.5px;color:var(--bad);font-weight:700;min-height:16px}
+#fbErr{margin:2px 0 0;font-size:12.5px;color:var(--bad);font-weight:700;min-height:16px}
 
 /* install guide steps */
 .steps{list-style:none;margin:4px 0 0;padding:0}

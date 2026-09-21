@@ -364,6 +364,7 @@
         <div class="crange">If it's saving you time, you're welcome to buy the developer a coffee — completely optional, and it helps keep the app going.</div>
         <a class="save ghost" style="margin:12px 0 0;width:100%;box-sizing:border-box;display:block;text-align:center;text-decoration:none"
           href="https://pay.sumup.com/b2c/QXZ1ND2S" target="_blank" rel="noopener noreferrer">☕ Buy the developer a coffee</a>
+        <button class="save ghost" style="margin:10px 0 0;width:100%" id="openFeedback">✉️ Send feedback</button>
       </div>
 
       <div class="sec">About</div>
@@ -620,6 +621,24 @@
       <button class="save ghost" style="margin:8px 0 0;width:100%" id="recPause" hidden>Pause</button>
       <button class="save ghost danger" style="margin:8px 0 0;width:100%" id="recDel" hidden>Delete</button>
       <button class="save ghost" style="margin:8px 0 0;width:100%" id="recCancel">Cancel</button>
+    </div>
+  </div>
+
+  <!-- feedback -->
+  <div class="modal" id="fbModal" aria-hidden="true">
+    <div class="mbox">
+      <h4>Send feedback</h4>
+      <div class="field" style="margin-top:10px">
+        <label for="fbText">Your message</label>
+        <textarea id="fbText" rows="5" placeholder="A bug, an idea, anything you'd like to tell us…"></textarea>
+      </div>
+      <div class="field">
+        <label for="fbEmail">Your email (optional, so we can reply)</label>
+        <input id="fbEmail" type="email" autocapitalize="none" autocomplete="email" placeholder="you@example.com">
+      </div>
+      <p id="fbErr"></p>
+      <button class="save" style="margin:12px 0 0;width:100%" id="fbSend">Send</button>
+      <button class="save ghost" style="margin:8px 0 0;width:100%" id="fbCancel">Cancel</button>
     </div>
   </div>
 
