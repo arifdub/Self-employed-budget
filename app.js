@@ -3030,8 +3030,11 @@ async function syncNow(full) {
       saveQueue();
     }
 
-    // 3. settings
-    await pushSettings();
+    // 3. settings — only once this session has actually seen the cloud's
+    // copy; otherwise this would push whatever is sitting locally (fresh
+    // defaults, on a phone that hasn't pulled the real settings yet) and
+    // overwrite the real thing.
+    if (settingsPulled) await pushSettings();
 
     setAcctState('Signed in');
     if (full) toast('Synced — ' + state.entries.length + ' entries');
@@ -3056,9 +3059,22 @@ async function pushSettings() {
   }, { onConflict: 'user_id' });
 }
 
+/* Whether this session has successfully read the cloud's settings row at
+   least once since sign-in. syncNow()'s automatic settings push checks this
+   before writing — pushing local state that was never actually reconciled
+   against the cloud (because the read failed) would silently overwrite
+   someone's real categories, recurring rules and targets with whatever
+   defaults happened to be sitting on this phone. */
+let settingsPulled = false;
+
 async function pullSettings() {
   if (!sb || !session) return;
-  const { data } = await sb.from('settings').select('*').eq('user_id', session.user.id).maybeSingle();
+  const { data, error } = await sb.from('settings').select('*').eq('user_id', session.user.id).maybeSingle();
+  if (error) {
+    console.warn('pullSettings failed:', error.message || error);
+    return;
+  }
+  settingsPulled = true;
   if (data) {
     state.targets = { day: Number(data.target_day), week: Number(data.target_week), month: Number(data.target_month) };
     if (data.categories && data.categories.income) categories = data.categories;
