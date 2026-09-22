@@ -1649,11 +1649,13 @@ $('save').onclick = () => {
 let entFilter = 'all';
 let editingId = null;
 
-/* Months other than the current one start collapsed — a year of entries is a
-   lot of rows to build and paint for months nobody is looking at right now.
-   Stays populated for the life of the page, so a month someone opens stays
-   open if they flip filters or come back to the sheet later. */
-let expandedMonths = new Set();
+/* The current month starts expanded; every other month starts collapsed — a
+   year of entries is a lot of rows to build and paint for months nobody is
+   looking at right now. Stays populated for the life of the page, so a month
+   someone opens (or closes) stays that way if they flip filters or come back
+   to the sheet later. */
+const curMonthKey = (d => d.getFullYear() + '-' + d.getMonth())(new Date());
+let expandedMonths = new Set([curMonthKey]);
 
 function renderEntries() {
   const rows = [...state.entries]
@@ -1694,10 +1696,8 @@ function renderEntries() {
       g.items.map(entryRowHTML).join('');
   };
 
-  // group the day-groups further by month, so a past month can collapse to
-  // one row instead of building every day and entry inside it.
-  const now = new Date();
-  const curMonthKey = now.getFullYear() + '-' + now.getMonth();
+  // group the day-groups further by month, so a month can collapse to one
+  // row instead of building every day and entry inside it.
   const months = [];
   let curMKey = '', curM = null;
   groups.forEach(g => {
@@ -1713,8 +1713,6 @@ function renderEntries() {
   });
 
   $('entList').innerHTML = months.map(m => {
-    if (m.key === curMonthKey) return m.days.map(dayGroupHTML).join('');
-
     const net = m.inc - m.out;
     const open = expandedMonths.has(m.key);
     return '<button class="monthHead" type="button" data-month="' + m.key + '" aria-expanded="' + open + '">' +
