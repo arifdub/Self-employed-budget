@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.sebudget.twa",
+    "sha256_cert_fingerprints": ["AE:60:AD:85:B4:95:8A:89:75:57:65:9C:17:82:27:F3:F4:DE:C6:64:63:95:50:55:47:B1:CA:8E:B5:FC:2A:16"]
+  }
+}]
