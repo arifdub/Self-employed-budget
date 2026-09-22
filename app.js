@@ -1649,6 +1649,12 @@ $('save').onclick = () => {
 let entFilter = 'all';
 let editingId = null;
 
+/* Months other than the current one start collapsed — a year of entries is a
+   lot of rows to build and paint for months nobody is looking at right now.
+   Stays populated for the life of the page, so a month someone opens stays
+   open if they flip filters or come back to the sheet later. */
+let expandedMonths = new Set();
+
 function renderEntries() {
   const rows = [...state.entries]
     .filter(e => entFilter === 'all' || e.type === entFilter)
@@ -1677,7 +1683,7 @@ function renderEntries() {
   const today = new Date().toDateString();
   const yest = new Date(Date.now() - 864e5).toDateString();
 
-  $('entList').innerHTML = groups.map(g => {
+  const dayGroupHTML = g => {
     const k = g.date.toDateString();
     const label = k === today ? 'Today' : k === yest ? 'Yesterday'
       : g.date.toLocaleDateString(LOCALE, { weekday: 'short', day: 'numeric', month: 'short' });
@@ -1686,10 +1692,49 @@ function renderEntries() {
       '<span style="font-family:var(--mono);letter-spacing:0;text-transform:none;color:' +
       (net >= 0 ? 'var(--good)' : 'var(--bad)') + '">' + (net >= 0 ? '+' : '−') + money(Math.abs(net)) + '</span></div>' +
       g.items.map(entryRowHTML).join('');
+  };
+
+  // group the day-groups further by month, so a past month can collapse to
+  // one row instead of building every day and entry inside it.
+  const now = new Date();
+  const curMonthKey = now.getFullYear() + '-' + now.getMonth();
+  const months = [];
+  let curMKey = '', curM = null;
+  groups.forEach(g => {
+    const mk = g.date.getFullYear() + '-' + g.date.getMonth();
+    if (mk !== curMKey) {
+      curMKey = mk;
+      curM = { key: mk, label: g.date.toLocaleDateString(LOCALE, { month: 'long', year: 'numeric' }),
+        days: [], inc: 0, out: 0, count: 0 };
+      months.push(curM);
+    }
+    curM.days.push(g);
+    curM.inc += g.inc; curM.out += g.out; curM.count += g.items.length;
+  });
+
+  $('entList').innerHTML = months.map(m => {
+    if (m.key === curMonthKey) return m.days.map(dayGroupHTML).join('');
+
+    const net = m.inc - m.out;
+    const open = expandedMonths.has(m.key);
+    return '<button class="monthHead" type="button" data-month="' + m.key + '" aria-expanded="' + open + '">' +
+      '<span class="mName">' + m.label + '</span>' +
+      '<span class="mMeta">' + m.count + (m.count === 1 ? ' entry' : ' entries') +
+      ' <b style="color:' + (net >= 0 ? 'var(--good)' : 'var(--bad)') + '">' +
+      (net >= 0 ? '+' : '−') + money(Math.abs(net)) + '</b> <i class="chev">▸</i></span></button>' +
+      (open ? m.days.map(dayGroupHTML).join('') : '');
   }).join('');
 
   wireSwipeRows($('entList'));
 }
+
+$('entList').addEventListener('click', e => {
+  const btn = e.target.closest('.monthHead');
+  if (!btn) return;
+  const key = btn.dataset.month;
+  if (expandedMonths.has(key)) expandedMonths.delete(key); else expandedMonths.add(key);
+  renderEntries();
+});
 
 function openEdit(id, deleteFocus) {
   const e = state.entries.find(x => x.id === id);
