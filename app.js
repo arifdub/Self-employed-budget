@@ -3446,8 +3446,13 @@ $('resetSend').onclick = async () => {
 };
 
 /* ---------- choosing the new password ----------
-   Arriving back from the email link puts the app in a recovery session, which
-   is the only moment updateUser can change the password without the old one. */
+   Two ways in: arriving back from the forgotten-password email link (a
+   recovery session — updateUser can change the password without the old one
+   only in that moment), or choosing "Change password" while already signed
+   in, which reaches this same modal since updateUser only ever needs an
+   active session, not specifically a recovery one. Only the second way has
+   anything sensible to cancel back to, but Cancel is harmless either way — a
+   recovery link can just be requested again. */
 function openNewPass() {
   $('newPass').value = '';
   $('newPass2').value = '';
@@ -3459,6 +3464,8 @@ function closeNewPass() {
   $('newPassModal').classList.remove('on');
   $('newPassModal').setAttribute('aria-hidden', 'true');
 }
+$('newPassCancel').onclick = closeNewPass;
+$('newPassModal').onclick = e => { if (e.target === $('newPassModal')) closeNewPass(); };
 
 $('newPassSave').onclick = async () => {
   const a = $('newPass').value, b = $('newPass2').value;
