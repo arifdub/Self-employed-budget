@@ -418,6 +418,8 @@ html[data-skin="day"] .brb{background:var(--surf2)}
 .field input:focus,.field textarea:focus{outline:2px solid var(--acc);outline-offset:1px}
 #authErr{margin:2px 0 0;font-size:12.5px;color:var(--bad);font-weight:700;min-height:16px}
 #fbErr{margin:2px 0 0;font-size:12.5px;color:var(--bad);font-weight:700;min-height:16px}
+#newEmailErr{margin:2px 0 0;font-size:12.5px;color:var(--bad);font-weight:700;min-height:16px}
+#delAcctErr{margin:2px 0 0;font-size:12.5px;color:var(--bad);font-weight:700;min-height:16px}
 
 /* install guide steps */
 .steps{list-style:none;margin:4px 0 0;padding:0}

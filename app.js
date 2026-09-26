@@ -1888,7 +1888,7 @@ function enablePullToDismiss(id) {
 
 /* Every sheet in the app, so a new one cannot be added without the gesture —
    the categories sheet was missed exactly that way. */
-['sheet', 'rep', 'ent', 'more', 'cats', 'admin', 'rec'].forEach(enablePullToDismiss);
+['sheet', 'rep', 'ent', 'more', 'cats', 'admin', 'rec', 'acctManage'].forEach(enablePullToDismiss);
 
 /* ---------- targets ---------- */
 function openTargets() {
@@ -1944,8 +1944,14 @@ $('fbSend').onclick = async () => {
 
 /* ---------- reset all data ----------
    Deliberately two steps: open the confirm sheet, then type DELETE. A single-tap
-   destroyer next to ordinary settings is how people lose a month of records. */
-function openReset() {
+   destroyer next to ordinary settings is how people lose a month of records.
+
+   Named openResetEntries/closeResetEntries, not openReset/closeReset — the
+   forgotten-password flow further down declares its own openReset/closeReset,
+   and a same-named function declaration later in the file silently wins for
+   both, which meant this "Delete all entries" button was actually triggering
+   the password-reset flow instead. */
+function openResetEntries() {
   const n = state.entries.length;
   $('resetMeta').textContent = n === 0
     ? 'There are no entries to delete.'
@@ -1955,13 +1961,13 @@ function openReset() {
   $('resetModal').classList.add('on');
   $('resetModal').setAttribute('aria-hidden', 'false');
 }
-function closeReset() {
+function closeResetEntries() {
   $('resetModal').classList.remove('on');
   $('resetModal').setAttribute('aria-hidden', 'true');
 }
-$('resetBtn').onclick = openReset;
-$('rCancel').onclick = closeReset;
-$('resetModal').onclick = e => { if (e.target === $('resetModal')) closeReset(); };
+$('resetBtn').onclick = openResetEntries;
+$('rCancel').onclick = closeResetEntries;
+$('resetModal').onclick = e => { if (e.target === $('resetModal')) closeResetEntries(); };
 $('rConfirm').addEventListener('input', () => {
   $('rGo').disabled = $('rConfirm').value.trim().toUpperCase() !== 'DELETE';
 });
@@ -1971,7 +1977,7 @@ $('rGo').onclick = () => {
   state.entries.forEach(e => markDeleted(e.id));
   state.entries = [];
   saveEntries();
-  closeReset();
+  closeResetEntries();
   render();
   if (typeof renderEntries === 'function') renderEntries();
   toast(n + ' entr' + (n === 1 ? 'y' : 'ies') + ' deleted — starting fresh');
@@ -3124,6 +3130,7 @@ function refreshAccountCard() {
   $('acctBtn').style.display   = signedIn ? 'none' : '';
   $('signOutBtn').style.display = signedIn ? '' : 'none';
   $('syncNowBtn').style.display = signedIn ? '' : 'none';
+  $('manageAcctBtn').style.display = signedIn ? '' : 'none';
 
   if (!sb) {
     setAcctState('Offline mode');
@@ -3143,6 +3150,106 @@ function refreshAccountCard() {
       'Without an account they live only on this phone, and deleting the app deletes them.';
   }
 }
+
+/* ---------- manage account ---------- */
+function openAcctManage() {
+  $('acctEmailOut').textContent = (session && session.user && session.user.email) || '';
+  openSheet('acctManage');
+}
+$('manageAcctBtn').onclick = openAcctManage;
+$('closeAcctManage').onclick = () => closeSheet('acctManage');
+
+/* Password reuses the same modal as the forgotten-password recovery flow —
+   updateUser({ password }) only needs an active session, whichever way it
+   was reached. */
+$('openChangePass').onclick = () => { closeSheet('acctManage'); openNewPass(); };
+
+function openChangeEmail() {
+  $('newEmail').value = '';
+  $('newEmailErr').textContent = '';
+  $('changeEmailModal').classList.add('on');
+  $('changeEmailModal').setAttribute('aria-hidden', 'false');
+}
+function closeChangeEmail() {
+  $('changeEmailModal').classList.remove('on');
+  $('changeEmailModal').setAttribute('aria-hidden', 'true');
+}
+$('openChangeEmail').onclick = openChangeEmail;
+$('newEmailCancel').onclick = closeChangeEmail;
+$('changeEmailModal').onclick = e => { if (e.target === $('changeEmailModal')) closeChangeEmail(); };
+
+$('newEmailSave').onclick = async () => {
+  const email = $('newEmail').value.trim();
+  if (!email || email.indexOf('@') < 0) { $('newEmailErr').textContent = 'Enter a valid email address.'; return; }
+  if (!sb) { $('newEmailErr').textContent = 'No connection to the account service.'; return; }
+
+  $('newEmailSave').disabled = true;
+  $('newEmailSave').textContent = 'Saving…';
+  try {
+    const { error } = await sb.auth.updateUser({ email });
+    if (error) throw error;
+    closeChangeEmail();
+    toast('Check ' + email + ' to confirm the change');
+  } catch (err) {
+    $('newEmailErr').textContent = err.message || 'Could not change the email.';
+  } finally {
+    $('newEmailSave').disabled = false;
+    $('newEmailSave').textContent = 'Save';
+  }
+};
+
+/* Deliberately two steps, same as resetting entries: open the confirm sheet,
+   then type DELETE. There is no undo for this one anywhere. */
+function openDeleteAcct() {
+  $('delAcctConfirm').value = '';
+  $('delAcctErr').textContent = '';
+  $('delAcctGo').disabled = true;
+  $('delAcctGo').textContent = 'Delete my account';
+  $('deleteAcctModal').classList.add('on');
+  $('deleteAcctModal').setAttribute('aria-hidden', 'false');
+}
+function closeDeleteAcct() {
+  $('deleteAcctModal').classList.remove('on');
+  $('deleteAcctModal').setAttribute('aria-hidden', 'true');
+}
+$('openDeleteAcct').onclick = openDeleteAcct;
+$('delAcctCancel').onclick = closeDeleteAcct;
+$('deleteAcctModal').onclick = e => { if (e.target === $('deleteAcctModal')) closeDeleteAcct(); };
+$('delAcctConfirm').addEventListener('input', () => {
+  $('delAcctGo').disabled = $('delAcctConfirm').value.trim().toUpperCase() !== 'DELETE';
+});
+
+$('delAcctGo').onclick = async () => {
+  if ($('delAcctConfirm').value.trim().toUpperCase() !== 'DELETE') return;
+  if (!sb) { $('delAcctErr').textContent = 'No connection to the account service.'; return; }
+
+  $('delAcctGo').disabled = true;
+  $('delAcctGo').textContent = 'Deleting…';
+  try {
+    const { data, error } = await sb.functions.invoke('delete-account');
+    if (error || !data || data.ok === false) throw new Error((data && data.message) || 'delete failed');
+
+    // The account and every row tied to it are gone server-side now — leave
+    // nothing of it behind locally either, rather than a stale copy of
+    // categories, recurring rules and targets that no longer belong to anyone.
+    await sb.auth.signOut();
+    session = null;
+    state.entries = [];
+    tombstones = {}; dirty.clear();
+    categories = JSON.parse(JSON.stringify(DEFAULT_CATS));
+    recurring = [];
+    state.targets = { day: 200, week: 1200, month: 4800 };
+    saveEntries(); saveQueue(); saveSettings();
+
+    closeDeleteAcct(); closeSheet('acctManage'); closeSheet('more');
+    refreshAccountCard(); render();
+    toast('Account deleted');
+  } catch (err) {
+    $('delAcctErr').textContent = 'Could not delete the account — check your connection and try again.';
+    $('delAcctGo').disabled = false;
+    $('delAcctGo').textContent = 'Delete my account';
+  }
+};
 
 /* ---------- auth sheet ---------- */
 let authMode = 'signup';
