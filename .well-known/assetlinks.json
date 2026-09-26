@@ -1,11 +1,23 @@
-[{
-  "relation": ["delegate_permission/common.handle_all_urls"],
-  "target": {
-    "namespace": "android_app",
-    "package_name": "com.sebudget.twa",
-    "sha256_cert_fingerprints": [
-      "54:85:84:99:88:E8:CC:3A:77:9F:13:CB:95:33:04:17:5B:6E:83:5E:FA:8C:35:9E:A3:CA:D4:9A:18:7E:CA:BA",
-      "AE:60:AD:85:B4:95:8A:89:75:57:65:9C:17:82:27:F3:F4:DE:C6:64:63:95:50:55:47:B1:CA:8E:B5:FC:2A:16"
-    ]
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.sebudget.twa",
+      "sha256_cert_fingerprints": [
+        "54:85:84:99:88:E8:CC:3A:77:9F:13:CB:95:33:04:17:5B:6E:83:5E:FA:8C:35:9E:A3:CA:D4:9A:18:7E:CA:BA",
+        "AE:60:AD:85:B4:95:8A:89:75:57:65:9C:17:82:27:F3:F4:DE:C6:64:63:95:50:55:47:B1:CA:8E:B5:FC:2A:16"
+      ]
+    }
+  },
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.Sebudget.app",
+      "sha256_cert_fingerprints": [
+        "4D:91:75:A1:32:97:41:D1:AE:04:52:97:65:CE:C6:C3:61:A9:BE:B1:DB:24:5C:87:48:72:32:7A:FF:F6:52:33"
+      ]
+    }
   }
-}]
+]
