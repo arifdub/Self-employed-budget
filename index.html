@@ -511,15 +511,30 @@
   <div class="modal" id="resetAskModal" aria-hidden="true">
     <div class="mbox">
       <h4>Reset your password</h4>
-      <p>We will email you a link. Open it on this phone and you can choose a new password.</p>
+      <p>We will email you a 6-digit code (and a link, if that's easier on this device).</p>
       <div class="field">
         <label for="resetEmail">Email</label>
         <input id="resetEmail" type="email" autocomplete="email" autocapitalize="none"
                spellcheck="false" placeholder="you@example.com">
       </div>
       <p id="resetErr"></p>
-      <button class="save" style="margin:12px 0 0;width:100%" id="resetSend">Send the link</button>
+      <button class="save" style="margin:12px 0 0;width:100%" id="resetSend">Send the code</button>
       <button class="save ghost" style="margin:8px 0 0;width:100%" id="resetCancel">Back</button>
+    </div>
+  </div>
+
+  <!-- reset: enter the code -->
+  <div class="modal" id="verifyResetModal" aria-hidden="true">
+    <div class="mbox">
+      <h4>Enter the code</h4>
+      <p>We sent a 6-digit code to <b id="verifyResetEmail"></b>. On some devices the email's link may not open correctly — the code always works.</p>
+      <div class="field">
+        <label for="verifyResetCode">6-digit code</label>
+        <input id="verifyResetCode" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="123456" maxlength="6">
+      </div>
+      <p id="verifyResetErr"></p>
+      <button class="save" style="margin:12px 0 0;width:100%" id="verifyResetGo">Continue</button>
+      <button class="save ghost" style="margin:8px 0 0;width:100%" id="verifyResetCancel">Cancel</button>
     </div>
   </div>
 

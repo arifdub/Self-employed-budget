@@ -3418,6 +3418,8 @@ $('forgotBtn').onclick = openReset;
 $('resetCancel').onclick = () => { closeReset(); openAuth('signin'); };
 $('resetAskModal').onclick = e => { if (e.target === $('resetAskModal')) closeReset(); };
 
+let resettingEmail = '';
+
 $('resetSend').onclick = async () => {
   const email = $('resetEmail').value.trim();
   if (!email || email.indexOf('@') < 0) { $('resetErr').textContent = 'Enter a valid email address.'; return; }
@@ -3428,20 +3430,61 @@ $('resetSend').onclick = async () => {
   try {
     /* The PKCE reset link returns as ?code=… which looks identical to a normal
        sign-in, so the app could not tell the two apart and simply signed the
-       user in. Adding our own marker to the redirect makes it unambiguous. */
+       user in. Adding our own marker to the redirect makes it unambiguous.
+       The link still helps on a plain browser, but on a phone with the app
+       installed, Android can hand the tap straight to the installed app
+       instead of wherever the reset was actually requested from — a
+       different storage, with no record of that request, so the link's own
+       one-time code has nothing to complete against and just silently does
+       nothing. The 6-digit code sent alongside it has no such problem: it is
+       typed in by hand, right here, so there is no link for anything to
+       intercept. */
     const { error } = await sb.auth.resetPasswordForEmail(email, {
       redirectTo: window.location.origin + window.location.pathname + '?reset=1'
     });
     if (error) throw error;
+    resettingEmail = email;
     closeReset();
-    /* Deliberately does not say whether the address exists. Confirming which
-       emails have accounts would let anyone test addresses against the app. */
-    toast('If that address has an account, the link is on its way');
+    openVerifyReset();
   } catch (err) {
     $('resetErr').textContent = err.message || 'Could not send the email. Try again.';
   } finally {
     $('resetSend').disabled = false;
-    $('resetSend').textContent = 'Send the link';
+    $('resetSend').textContent = 'Send the code';
+  }
+};
+
+function openVerifyReset() {
+  $('verifyResetEmail').textContent = resettingEmail;
+  $('verifyResetCode').value = '';
+  $('verifyResetErr').textContent = '';
+  $('verifyResetModal').classList.add('on');
+  $('verifyResetModal').setAttribute('aria-hidden', 'false');
+}
+function closeVerifyReset() {
+  $('verifyResetModal').classList.remove('on');
+  $('verifyResetModal').setAttribute('aria-hidden', 'true');
+}
+$('verifyResetCancel').onclick = closeVerifyReset;
+$('verifyResetModal').onclick = e => { if (e.target === $('verifyResetModal')) closeVerifyReset(); };
+
+$('verifyResetGo').onclick = async () => {
+  const token = $('verifyResetCode').value.trim();
+  if (!/^\d{6}$/.test(token)) { $('verifyResetErr').textContent = 'Enter the 6-digit code from the email.'; return; }
+  if (!sb) { $('verifyResetErr').textContent = 'No connection to the account service.'; return; }
+
+  $('verifyResetGo').disabled = true;
+  $('verifyResetGo').textContent = 'Checking…';
+  try {
+    const { error } = await sb.auth.verifyOtp({ email: resettingEmail, token, type: 'recovery' });
+    if (error) throw error;
+    closeVerifyReset();
+    openNewPass();
+  } catch (err) {
+    $('verifyResetErr').textContent = 'That code is wrong or has expired — check the email, or request a new one.';
+  } finally {
+    $('verifyResetGo').disabled = false;
+    $('verifyResetGo').textContent = 'Continue';
   }
 };
 

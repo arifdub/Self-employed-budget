@@ -943,7 +943,7 @@ html[data-skin="day"] .brk-per{background:rgba(37,99,235,.05);  border-color:rgb
   font-family:var(--body);font-size:12.5px;font-weight:800;cursor:pointer;padding:8px 6px}
 .linkBtn{background:none;border:0;color:var(--acc);font-family:var(--body);
   font-size:12.5px;font-weight:700;cursor:pointer;padding:2px 0;margin:-4px 0 8px;text-align:left}
-#resetErr,#newPassErr{margin:8px 0 0;font-size:12.5px;color:var(--bad);font-weight:700;min-height:16px}
+#resetErr,#newPassErr,#verifyResetErr{margin:8px 0 0;font-size:12.5px;color:var(--bad);font-weight:700;min-height:16px}
 
 
 /* recurring list */
