@@ -511,7 +511,7 @@
   <div class="modal" id="resetAskModal" aria-hidden="true">
     <div class="mbox">
       <h4>Reset your password</h4>
-      <p>We will email you a 6-digit code (and a link, if that's easier on this device).</p>
+      <p>We will email you a code (and a link, if that's easier on this device).</p>
       <div class="field">
         <label for="resetEmail">Email</label>
         <input id="resetEmail" type="email" autocomplete="email" autocapitalize="none"
@@ -527,10 +527,10 @@
   <div class="modal" id="verifyResetModal" aria-hidden="true">
     <div class="mbox">
       <h4>Enter the code</h4>
-      <p>We sent a 6-digit code to <b id="verifyResetEmail"></b>. On some devices the email's link may not open correctly — the code always works.</p>
+      <p>We sent a code to <b id="verifyResetEmail"></b>. On some devices the email's link may not open correctly — the code always works.</p>
       <div class="field">
-        <label for="verifyResetCode">6-digit code</label>
-        <input id="verifyResetCode" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="123456" maxlength="6">
+        <label for="verifyResetCode">Code from the email</label>
+        <input id="verifyResetCode" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="Enter the code" maxlength="12">
       </div>
       <p id="verifyResetErr"></p>
       <button class="save" style="margin:12px 0 0;width:100%" id="verifyResetGo">Continue</button>

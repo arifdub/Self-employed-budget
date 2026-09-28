@@ -3436,9 +3436,11 @@ $('resetSend').onclick = async () => {
        instead of wherever the reset was actually requested from — a
        different storage, with no record of that request, so the link's own
        one-time code has nothing to complete against and just silently does
-       nothing. The 6-digit code sent alongside it has no such problem: it is
-       typed in by hand, right here, so there is no link for anything to
-       intercept. */
+       nothing. The code sent alongside it has no such problem: it is typed
+       in by hand, right here, so there is no link for anything to
+       intercept. Its length is whatever Supabase's OTP setting for this
+       project is configured to (not necessarily 6), so this never assumes
+       a fixed length. */
     const { error } = await sb.auth.resetPasswordForEmail(email, {
       redirectTo: window.location.origin + window.location.pathname + '?reset=1'
     });
@@ -3470,7 +3472,7 @@ $('verifyResetModal').onclick = e => { if (e.target === $('verifyResetModal')) c
 
 $('verifyResetGo').onclick = async () => {
   const token = $('verifyResetCode').value.trim();
-  if (!/^\d{6}$/.test(token)) { $('verifyResetErr').textContent = 'Enter the 6-digit code from the email.'; return; }
+  if (!/^\d{4,12}$/.test(token)) { $('verifyResetErr').textContent = 'Enter the code from the email.'; return; }
   if (!sb) { $('verifyResetErr').textContent = 'No connection to the account service.'; return; }
 
   $('verifyResetGo').disabled = true;
