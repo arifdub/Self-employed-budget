@@ -63,6 +63,33 @@
 </head>
 <body>
 
+<!-- app lock: visible by default so there is no flash of real content before
+     this script can decide whether a PIN is actually set. -->
+<div id="lockScreen" class="lockScreen" aria-hidden="false">
+  <div class="lockBox">
+    <img src="icons/icon-192-v2.png" alt="" width="56" height="56" class="lockLogo">
+    <h2>Enter your PIN</h2>
+    <div class="lockDots" id="lockDots">
+      <span></span><span></span><span></span><span></span>
+    </div>
+    <input id="lockInput" type="password" inputmode="numeric" autocomplete="off" maxlength="4" class="lockHiddenInput" aria-label="PIN">
+    <p id="lockErr"></p>
+    <button class="save ghost" id="lockBiometricBtn" style="margin-top:4px;display:none">Use Face ID / Fingerprint</button>
+    <button class="linklike" id="lockForgotBtn" type="button">Forgot PIN?</button>
+  </div>
+</div>
+<script>
+  // Runs the instant this element exists, well before app.js loads — the
+  // common case (no PIN set) should never show this screen even briefly.
+  (function () {
+    try {
+      if (!localStorage.getItem('seb.pin.hash')) {
+        document.getElementById('lockScreen').setAttribute('aria-hidden', 'true');
+      }
+    } catch (e) { /* storage unavailable; fail open rather than lock someone out */ }
+  })();
+</script>
+
 <main class="app" id="app">
 
   <!-- ============ HOME ============ -->
@@ -313,6 +340,15 @@
         <button class="save ghost" style="margin:8px 0 0;width:100%;display:none" id="syncNowBtn">Sync now</button>
         <button class="save ghost" style="margin:8px 0 0;width:100%;display:none" id="manageAcctBtn">Manage account</button>
         <button class="save ghost" style="margin:8px 0 0;width:100%;display:none" id="signOutBtn">Sign out</button>
+      </div>
+
+      <div class="sec">App lock</div>
+      <div class="card" id="pinCard">
+        <div class="crow"><span class="clab">PIN lock</span><span class="cval" id="pinStatus">Off</span></div>
+        <div class="crange">Require a PIN to open the app on this device. Your entries and account are not affected — this only locks the screen.</div>
+        <button class="save ghost" style="margin:12px 0 0;width:100%" id="pinSetBtn">Set a PIN</button>
+        <button class="save ghost" style="margin:8px 0 0;width:100%;display:none" id="bioToggleBtn">Use Face ID / Fingerprint instead</button>
+        <button class="save ghost danger" style="margin:8px 0 0;width:100%;display:none" id="pinRemoveBtn">Turn off PIN lock</button>
       </div>
 
       <div class="sec">Install</div>
@@ -634,6 +670,25 @@
       <p id="delAcctErr"></p>
       <button class="save ghost danger" style="margin:12px 0 0;width:100%" id="delAcctGo" disabled>Delete my account</button>
       <button class="save ghost" style="margin:8px 0 0;width:100%" id="delAcctCancel">Cancel</button>
+    </div>
+  </div>
+
+  <!-- set a PIN -->
+  <div class="modal" id="setPinModal" aria-hidden="true">
+    <div class="mbox">
+      <h4>Set a PIN</h4>
+      <p>Choose a 4-digit PIN. You'll need it to open the app on this device.</p>
+      <div class="field" style="margin-top:10px">
+        <label for="pinNew">New PIN</label>
+        <input id="pinNew" type="password" inputmode="numeric" autocomplete="off" maxlength="4" placeholder="••••">
+      </div>
+      <div class="field">
+        <label for="pinNew2">Confirm PIN</label>
+        <input id="pinNew2" type="password" inputmode="numeric" autocomplete="off" maxlength="4" placeholder="••••">
+      </div>
+      <p id="setPinErr"></p>
+      <button class="save" style="margin:12px 0 0;width:100%" id="setPinSave">Save PIN</button>
+      <button class="save ghost" style="margin:8px 0 0;width:100%" id="setPinCancel">Cancel</button>
     </div>
   </div>
 

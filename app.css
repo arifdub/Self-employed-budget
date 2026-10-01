@@ -420,6 +420,23 @@ html[data-skin="day"] .brb{background:var(--surf2)}
 #fbErr{margin:2px 0 0;font-size:12.5px;color:var(--bad);font-weight:700;min-height:16px}
 #newEmailErr{margin:2px 0 0;font-size:12.5px;color:var(--bad);font-weight:700;min-height:16px}
 #delAcctErr{margin:2px 0 0;font-size:12.5px;color:var(--bad);font-weight:700;min-height:16px}
+#setPinErr{margin:2px 0 0;font-size:12.5px;color:var(--bad);font-weight:700;min-height:16px}
+
+/* app lock */
+.lockScreen{position:fixed;inset:0;z-index:999;background:var(--bg);
+  display:flex;align-items:center;justify-content:center;flex-direction:column}
+.lockScreen[aria-hidden="true"]{display:none}
+.lockBox{display:flex;flex-direction:column;align-items:center;max-width:300px;padding:0 24px;text-align:center;cursor:text}
+.lockLogo{border-radius:16px;margin-bottom:18px}
+.lockBox h2{font-family:var(--dspl);font-size:19px;margin:0 0 22px;color:var(--txt);font-weight:700}
+.lockDots{display:flex;gap:18px;margin-bottom:20px}
+.lockDots span{width:16px;height:16px;border-radius:50%;border:2px solid var(--line);background:transparent;
+  transition:background .15s,border-color .15s}
+.lockDots span.filled{background:var(--acc);border-color:var(--acc)}
+.lockHiddenInput{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+#lockErr{min-height:16px;font-size:12.5px;color:var(--bad);font-weight:700;margin:0 0 4px}
+.linklike{background:none;border:0;color:var(--mut);font-size:13px;text-decoration:underline;
+  cursor:pointer;padding:10px;margin-top:4px}
 
 /* install guide steps */
 .steps{list-style:none;margin:4px 0 0;padding:0}

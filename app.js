@@ -1808,6 +1808,7 @@ document.querySelectorAll('.nb').forEach(b => b.onclick = () => {
     const cc = ['income','business','personal'].reduce((a,t) => a + visibleCats(t).length, 0);
     $('catSummary').textContent = cc + ' in use';
     drawRecurring();
+    refreshPinCard();
     openSheet('more');
   }
   else { closeSheet('rep'); closeSheet('more'); closeSheet('ent'); }
@@ -3251,6 +3252,176 @@ $('delAcctGo').onclick = async () => {
   }
 };
 
+/* ---------- app lock (PIN / Face ID / fingerprint) ----------
+   A device-only screen lock, not an account security feature — it gates
+   seeing this device's copy of the app, nothing more. The PIN is never sent
+   anywhere; only its SHA-256 hash is kept, in localStorage, checked
+   entirely on this device. Losing it costs nothing more than tapping
+   "Forgot PIN?", since there is no server-side secret riding on it.
+
+   Face ID / fingerprint uses WebAuthn's platform authenticator. There is no
+   server to hand a public key to, so the signed assertion is never verified
+   cryptographically — the thing actually relied on is that the OS itself
+   refuses to return a successful assertion without a real biometric match
+   first. That is enough for a convenience unlock, not enough for anything
+   that needs to resist a sophisticated attacker — which matches what this
+   feature is actually for. */
+const PIN_HASH_KEY = 'seb.pin.hash';
+const BIO_CRED_KEY = 'seb.pin.bioCredId';
+
+function hasPin() { try { return !!localStorage.getItem(PIN_HASH_KEY); } catch (e) { return false; } }
+function hasBiometric() { try { return !!localStorage.getItem(BIO_CRED_KEY); } catch (e) { return false; } }
+function biometricSupported() { return !!window.PublicKeyCredential; }
+
+async function sha256Hex(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function paintLockDots() {
+  const n = $('lockInput').value.length;
+  $('lockDots').querySelectorAll('span').forEach((s, i) => s.classList.toggle('filled', i < n));
+}
+
+function showLock() {
+  $('lockScreen').setAttribute('aria-hidden', 'false');
+  $('lockInput').value = '';
+  paintLockDots();
+  $('lockErr').textContent = '';
+  $('lockBiometricBtn').style.display = hasBiometric() ? '' : 'none';
+  setTimeout(() => $('lockInput').focus(), 50);
+  if (hasBiometric()) tryBiometricUnlock();
+}
+function hideLock() {
+  $('lockScreen').setAttribute('aria-hidden', 'true');
+}
+
+$('lockScreen').addEventListener('click', e => {
+  if (e.target.closest('#lockBiometricBtn') || e.target.closest('#lockForgotBtn')) return;
+  $('lockInput').focus();
+});
+
+$('lockInput').addEventListener('input', async () => {
+  $('lockInput').value = $('lockInput').value.replace(/\D/g, '').slice(0, 4);
+  paintLockDots();
+  if ($('lockInput').value.length < 4) return;
+
+  const hash = await sha256Hex($('lockInput').value);
+  if (hash === localStorage.getItem(PIN_HASH_KEY)) {
+    hideLock();
+  } else {
+    $('lockErr').textContent = 'Wrong PIN — try again.';
+    $('lockInput').value = '';
+    paintLockDots();
+  }
+});
+
+async function enrollBiometric() {
+  if (!biometricSupported()) return false;
+  try {
+    const cred = await navigator.credentials.create({
+      publicKey: {
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        rp: { name: 'SE Budget' },
+        user: {
+          id: crypto.getRandomValues(new Uint8Array(16)),
+          name: 'se-budget-device', displayName: 'SE Budget'
+        },
+        pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+        authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required' },
+        timeout: 60000
+      }
+    });
+    if (!cred) return false;
+    const idB64 = btoa(String.fromCharCode(...new Uint8Array(cred.rawId)));
+    localStorage.setItem(BIO_CRED_KEY, idB64);
+    return true;
+  } catch (e) { return false; }
+}
+
+async function tryBiometricUnlock() {
+  const idB64 = localStorage.getItem(BIO_CRED_KEY);
+  if (!idB64 || !biometricSupported()) return false;
+  try {
+    const rawId = Uint8Array.from(atob(idB64), c => c.charCodeAt(0));
+    const assertion = await navigator.credentials.get({
+      publicKey: {
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        allowCredentials: [{ type: 'public-key', id: rawId }],
+        userVerification: 'required',
+        timeout: 60000
+      }
+    });
+    if (assertion) { hideLock(); return true; }
+  } catch (e) { /* cancelled, no match, or no enrolled biometric — fall back to the PIN */ }
+  return false;
+}
+$('lockBiometricBtn').onclick = () => tryBiometricUnlock();
+
+$('lockForgotBtn').onclick = () => {
+  if (confirm('Remove the PIN lock on this device? Your entries and account are not affected.')) {
+    localStorage.removeItem(PIN_HASH_KEY);
+    localStorage.removeItem(BIO_CRED_KEY);
+    hideLock();
+    toast('PIN lock turned off');
+  }
+};
+
+function refreshPinCard() {
+  const on = hasPin();
+  $('pinStatus').textContent = on ? 'On' : 'Off';
+  $('pinSetBtn').textContent = on ? 'Change PIN' : 'Set a PIN';
+  $('pinRemoveBtn').style.display = on ? '' : 'none';
+  $('bioToggleBtn').style.display = (on && biometricSupported()) ? '' : 'none';
+  $('bioToggleBtn').textContent = hasBiometric() ? 'Turn off Face ID / Fingerprint' : 'Use Face ID / Fingerprint instead';
+}
+
+function openSetPin() {
+  $('pinNew').value = ''; $('pinNew2').value = '';
+  $('setPinErr').textContent = '';
+  $('setPinModal').classList.add('on');
+  $('setPinModal').setAttribute('aria-hidden', 'false');
+}
+function closeSetPin() {
+  $('setPinModal').classList.remove('on');
+  $('setPinModal').setAttribute('aria-hidden', 'true');
+}
+$('pinSetBtn').onclick = openSetPin;
+$('setPinCancel').onclick = closeSetPin;
+$('setPinModal').onclick = e => { if (e.target === $('setPinModal')) closeSetPin(); };
+[$('pinNew'), $('pinNew2')].forEach(inp => inp.addEventListener('input', () => {
+  inp.value = inp.value.replace(/\D/g, '').slice(0, 4);
+}));
+
+$('setPinSave').onclick = async () => {
+  const a = $('pinNew').value, b = $('pinNew2').value;
+  if (a.length !== 4) { $('setPinErr').textContent = 'Enter a 4-digit PIN.'; return; }
+  if (a !== b) { $('setPinErr').textContent = 'The two PINs do not match.'; return; }
+  localStorage.setItem(PIN_HASH_KEY, await sha256Hex(a));
+  closeSetPin();
+  refreshPinCard();
+  toast('PIN set');
+};
+
+$('pinRemoveBtn').onclick = () => {
+  localStorage.removeItem(PIN_HASH_KEY);
+  localStorage.removeItem(BIO_CRED_KEY);
+  refreshPinCard();
+  toast('PIN lock turned off');
+};
+
+$('bioToggleBtn').onclick = async () => {
+  if (hasBiometric()) {
+    localStorage.removeItem(BIO_CRED_KEY);
+    refreshPinCard();
+    toast('Face ID / Fingerprint turned off');
+    return;
+  }
+  const ok = await enrollBiometric();
+  toast(ok ? 'Face ID / Fingerprint enabled' : 'Could not set up Face ID / Fingerprint on this device');
+  refreshPinCard();
+};
+
 /* ---------- auth sheet ---------- */
 let authMode = 'signup';
 
@@ -3817,4 +3988,5 @@ document.addEventListener('visibilitychange', () => {
   if (dirty.size) syncNow(false);
 });
 
+if (hasPin()) showLock();
 initAuth();
