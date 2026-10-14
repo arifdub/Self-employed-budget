@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Uber VAT Calculator — SE Budget</title>
+<meta name="description" content="Work out the VAT due on Uber's commission from your yearly Uber earnings — a free calculator for Irish self-employed drivers.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://sebudget.com/ubervat/">
+<style>
+  :root{
+    --bg:#121A2F; --surf:#1A2340; --surf2:#232E50; --line:#2A3559;
+    --txt:#FFFFFF; --mut:#9AA6C4; --dim:#6E7A9C; --acc:#FFB020; --on-acc:#121A2F;
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --bg:#FAF8FF; --surf:#FFFFFF; --surf2:#F3EEFF; --line:#EBE4F8;
+      --txt:#1C1027; --mut:#6B6480; --dim:#A99CC4; --acc:#6D28D9; --on-acc:#FFFFFF;
+    }
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--txt);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    line-height:1.6;
+  }
+  .wrap{max-width:560px; margin:0 auto; padding:32px 20px 64px}
+  .back{display:inline-block; margin-bottom:20px; color:var(--mut); text-decoration:none; font-size:14px}
+  .back:hover{color:var(--acc)}
+  h1{font-size:24px; margin:0 0 6px}
+  .sub{color:var(--mut); font-size:14.5px; margin:0 0 28px}
+  .card{background:var(--surf); border:1px solid var(--line); border-radius:16px; padding:20px; margin-bottom:16px}
+  .field{display:flex; flex-direction:column; gap:6px; margin-bottom:16px}
+  .field:last-child{margin-bottom:0}
+  label{font-size:12.5px; font-weight:700; color:var(--mut); letter-spacing:.03em}
+  .inputRow{position:relative}
+  input{
+    width:100%; background:var(--surf2); border:1px solid var(--line); color:var(--txt);
+    font-size:17px; font-weight:600; padding:13px 14px; border-radius:12px;
+    font-family:inherit;
+  }
+  input:focus{outline:2px solid var(--acc); outline-offset:1px}
+  .pct input{padding-right:34px}
+  .pctSign{position:absolute; right:14px; top:50%; transform:translateY(-50%); color:var(--mut); font-weight:700; pointer-events:none}
+
+  .results{margin-top:20px}
+  .rrow{display:flex; justify-content:space-between; align-items:baseline; padding:10px 0; border-bottom:1px solid var(--line)}
+  .rrow:last-child{border-bottom:0}
+  .rlab{font-size:13.5px; color:var(--mut)}
+  .rval{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:16px; font-weight:700}
+  .rrow.total .rlab{color:var(--txt); font-weight:700}
+  .rrow.total .rval{color:var(--acc); font-size:19px}
+
+  .note{font-size:12.5px; color:var(--dim); line-height:1.6; margin-top:20px}
+  .note b{color:var(--mut)}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <a class="back" href="/">&larr; Back to SE Budget</a>
+    <h1>Uber VAT Calculator</h1>
+    <p class="sub">Work out the VAT due on Uber's commission from your yearly Uber earnings.</p>
+
+    <div class="card">
+      <div class="field">
+        <label for="earnings">Your yearly Uber earnings (€)</label>
+        <div class="inputRow">
+          <input id="earnings" type="number" inputmode="decimal" min="0" step="0.01" placeholder="10000">
+        </div>
+      </div>
+      <div class="field">
+        <label for="commission">Uber's commission rate</label>
+        <div class="inputRow pct">
+          <input id="commission" type="number" inputmode="decimal" min="0" max="100" step="0.1" value="12">
+          <span class="pctSign">%</span>
+        </div>
+      </div>
+      <div class="field">
+        <label for="vatRate">VAT rate on the commission</label>
+        <div class="inputRow pct">
+          <input id="vatRate" type="number" inputmode="decimal" min="0" max="100" step="0.1" value="23">
+          <span class="pctSign">%</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card results">
+      <div class="rrow">
+        <span class="rlab">Uber's commission</span>
+        <span class="rval" id="outCommission">€0.00</span>
+      </div>
+      <div class="rrow">
+        <span class="rlab">VAT due on that commission</span>
+        <span class="rval" id="outVat">€0.00</span>
+      </div>
+      <div class="rrow total">
+        <span class="rlab">Commission + VAT</span>
+        <span class="rval" id="outTotal">€0.00</span>
+      </div>
+    </div>
+
+    <p class="note">
+      <b>Example:</b> €10,000 in earnings × 12% commission = €1,200 commission. VAT at 23% on that €1,200 = €276.
+      <br><br>
+      Uber charges this commission without Irish VAT, since Uber B.V. is based in the Netherlands —
+      most self-employed Irish drivers must self-account for this VAT under the reverse charge mechanism,
+      rather than Uber adding it to an invoice. This calculator just does the arithmetic; it isn't tax advice —
+      check with Revenue or an accountant for how it applies to your own situation.
+    </p>
+  </div>
+
+  <script>
+    const earnings = document.getElementById('earnings');
+    const commission = document.getElementById('commission');
+    const vatRate = document.getElementById('vatRate');
+    const outCommission = document.getElementById('outCommission');
+    const outVat = document.getElementById('outVat');
+    const outTotal = document.getElementById('outTotal');
+
+    const eur = n => '€' + n.toLocaleString('en-IE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    function recalc() {
+      const e = Math.max(0, parseFloat(earnings.value) || 0);
+      const c = Math.max(0, parseFloat(commission.value) || 0);
+      const v = Math.max(0, parseFloat(vatRate.value) || 0);
+
+      const commissionAmt = e * (c / 100);
+      const vatAmt = commissionAmt * (v / 100);
+
+      outCommission.textContent = eur(commissionAmt);
+      outVat.textContent = eur(vatAmt);
+      outTotal.textContent = eur(commissionAmt + vatAmt);
+    }
+
+    [earnings, commission, vatRate].forEach(el => el.addEventListener('input', recalc));
+    recalc();
+  </script>
+</body>
+</html>
