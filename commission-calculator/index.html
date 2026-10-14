@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Commission Calculator — Uber & FreeNow vs Tapper Taxi</title>
+<meta name="description" content="Compare what Uber and FreeNow's commission actually costs you each month against Tapper Taxi's fixed monthly fee.">
+<meta name="robots" content="noindex, nofollow">
+<style>
+  :root{
+    --bg:#121A2F; --surf:#1A2340; --surf2:#232E50; --line:#2A3559;
+    --txt:#FFFFFF; --mut:#9AA6C4; --dim:#6E7A9C; --acc:#FFB020; --on-acc:#121A2F;
+    --good:#4ADE80; --bad:#FB7185;
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --bg:#FAF8FF; --surf:#FFFFFF; --surf2:#F3EEFF; --line:#EBE4F8;
+      --txt:#1C1027; --mut:#6B6480; --dim:#A99CC4; --acc:#6D28D9; --on-acc:#FFFFFF;
+      --good:#1A9B5C; --bad:#E11D48;
+    }
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--txt);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    line-height:1.6;
+  }
+  .wrap{max-width:560px; margin:0 auto; padding:32px 20px 64px}
+  h1{font-size:22px; margin:0 0 6px}
+  .sub{color:var(--mut); font-size:14.5px; margin:0 0 28px}
+  .card{background:var(--surf); border:1px solid var(--line); border-radius:16px; padding:20px; margin-bottom:16px}
+  .cardTitle{font-size:13px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; color:var(--mut); margin:0 0 14px}
+  .field{display:flex; flex-direction:column; gap:6px; margin-bottom:16px}
+  .field:last-child{margin-bottom:0}
+  label{font-size:12.5px; font-weight:700; color:var(--mut); letter-spacing:.03em}
+  .inputRow{position:relative}
+  input{
+    width:100%; background:var(--surf2); border:1px solid var(--line); color:var(--txt);
+    font-size:17px; font-weight:600; padding:13px 14px; border-radius:12px;
+    font-family:inherit;
+  }
+  input:focus{outline:2px solid var(--acc); outline-offset:1px}
+  .pct input{padding-right:34px}
+  .pctSign{position:absolute; right:14px; top:50%; transform:translateY(-50%); color:var(--mut); font-weight:700; pointer-events:none}
+  .twoCol{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+
+  .rrow{display:flex; justify-content:space-between; align-items:baseline; padding:9px 0; border-bottom:1px solid var(--line)}
+  .rrow:last-child{border-bottom:0}
+  .rlab{font-size:13.5px; color:var(--mut)}
+  .rval{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:15.5px; font-weight:700}
+  .rrow.sub .rlab{padding-left:12px; font-size:12.5px}
+  .rrow.plat{border-bottom:0; padding-bottom:2px}
+  .rrow.plat .rlab{color:var(--txt); font-weight:700; font-size:13.5px}
+  .rrow.plat .rval{color:var(--txt)}
+  .rrow.total{border-top:1px solid var(--line); margin-top:4px; padding-top:12px}
+  .rrow.total .rlab{color:var(--txt); font-weight:700}
+  .rrow.total .rval{color:var(--acc); font-size:17px}
+
+  .saveCard{background:var(--surf); border:2px solid var(--acc); border-radius:16px; padding:24px 20px; text-align:center}
+  .saveLine{font-size:13px; color:var(--mut); margin:0 0 8px}
+  .saveAmt{font-size:30px; font-weight:800; margin:0}
+  .saveAmt.good{color:var(--good)}
+  .saveAmt.bad{color:var(--bad)}
+
+  .note{font-size:12.5px; color:var(--dim); line-height:1.6; margin-top:20px}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Commission Calculator</h1>
+    <p class="sub">What Uber and FreeNow's commission costs you each month, against Tapper Taxi's fixed fee.</p>
+
+    <div class="card">
+      <div class="cardTitle">Monthly income</div>
+      <div class="twoCol">
+        <div class="field">
+          <label for="uberIncome">Uber (€)</label>
+          <input id="uberIncome" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0">
+        </div>
+        <div class="field">
+          <label for="freenowIncome">FreeNow (€)</label>
+          <input id="freenowIncome" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cardTitle">Rates</div>
+      <div class="twoCol">
+        <div class="field">
+          <label for="uberRate">Uber commission</label>
+          <div class="inputRow pct">
+            <input id="uberRate" type="number" inputmode="decimal" min="0" max="100" step="0.1" value="12">
+            <span class="pctSign">%</span>
+          </div>
+        </div>
+        <div class="field">
+          <label for="freenowRate">FreeNow commission</label>
+          <div class="inputRow pct">
+            <input id="freenowRate" type="number" inputmode="decimal" min="0" max="100" step="0.1" value="15">
+            <span class="pctSign">%</span>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label for="vatRate">VAT on commission</label>
+        <div class="inputRow pct">
+          <input id="vatRate" type="number" inputmode="decimal" min="0" max="100" step="0.1" value="23">
+          <span class="pctSign">%</span>
+        </div>
+      </div>
+      <div class="field">
+        <label for="tapperFee">Tapper Taxi — fixed monthly fee (€)</label>
+        <input id="tapperFee" type="number" inputmode="decimal" min="0" step="0.01" value="120">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cardTitle">Breakdown</div>
+
+      <div class="rrow plat"><span class="rlab">Uber</span><span class="rval"></span></div>
+      <div class="rrow sub"><span class="rlab">Commission</span><span class="rval" id="outUberCommission">€0.00</span></div>
+      <div class="rrow sub"><span class="rlab">VAT on commission</span><span class="rval" id="outUberVat">€0.00</span></div>
+
+      <div class="rrow plat" style="margin-top:14px"><span class="rlab">FreeNow</span><span class="rval"></span></div>
+      <div class="rrow sub"><span class="rlab">Commission</span><span class="rval" id="outFreenowCommission">€0.00</span></div>
+      <div class="rrow sub"><span class="rlab">VAT on commission</span><span class="rval" id="outFreenowVat">€0.00</span></div>
+
+      <div class="rrow total">
+        <span class="rlab">Uber + FreeNow total cost</span>
+        <span class="rval" id="outPlatformTotal">€0.00</span>
+      </div>
+      <div class="rrow">
+        <span class="rlab">Tapper Taxi monthly fee</span>
+        <span class="rval" id="outTapperFee">€0.00</span>
+      </div>
+    </div>
+
+    <div class="saveCard">
+      <p class="saveLine" id="saveLine">You save with Tapper Taxi</p>
+      <p class="saveAmt good" id="saveAmt">€0.00</p>
+    </div>
+
+    <p class="note">
+      Commission and VAT are calculated the same way as the Uber VAT calculator: commission = income × commission rate,
+      VAT = commission × VAT rate. Tapper Taxi is treated as a flat monthly fee with no commission or VAT taken off your fares.
+      This is a simple comparison of these numbers, not tax or financial advice — your actual commission rates, VAT treatment
+      and any other fees may differ.
+    </p>
+  </div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    const inputs = ['uberIncome','freenowIncome','uberRate','freenowRate','vatRate','tapperFee'].map($);
+
+    const eur = n => '€' + n.toLocaleString('en-IE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const num = el => Math.max(0, parseFloat(el.value) || 0);
+
+    function recalc() {
+      const uberIncome = num($('uberIncome'));
+      const freenowIncome = num($('freenowIncome'));
+      const uberRate = num($('uberRate'));
+      const freenowRate = num($('freenowRate'));
+      const vatRate = num($('vatRate'));
+      const tapperFee = num($('tapperFee'));
+
+      const uberCommission = uberIncome * (uberRate / 100);
+      const uberVat = uberCommission * (vatRate / 100);
+      const freenowCommission = freenowIncome * (freenowRate / 100);
+      const freenowVat = freenowCommission * (vatRate / 100);
+
+      const platformTotal = uberCommission + uberVat + freenowCommission + freenowVat;
+
+      $('outUberCommission').textContent = eur(uberCommission);
+      $('outUberVat').textContent = eur(uberVat);
+      $('outFreenowCommission').textContent = eur(freenowCommission);
+      $('outFreenowVat').textContent = eur(freenowVat);
+      $('outPlatformTotal').textContent = eur(platformTotal);
+      $('outTapperFee').textContent = eur(tapperFee);
+
+      const diff = platformTotal - tapperFee;
+      if (diff >= 0) {
+        $('saveLine').textContent = 'You save with Tapper Taxi';
+        $('saveAmt').textContent = eur(diff);
+        $('saveAmt').className = 'saveAmt good';
+      } else {
+        $('saveLine').textContent = 'Uber + FreeNow would cost you less, by';
+        $('saveAmt').textContent = eur(-diff);
+        $('saveAmt').className = 'saveAmt bad';
+      }
+    }
+
+    inputs.forEach(el => el.addEventListener('input', recalc));
+    recalc();
+  </script>
+</body>
+</html>
