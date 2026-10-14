@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Commission Calculator — Uber & FreeNow vs Tapper Taxi</title>
-<meta name="description" content="Compare what Uber and FreeNow's commission actually costs you each month against Tapper Taxi's fixed monthly fee.">
+<meta name="description" content="See what Uber and FreeNow's commission costs on your own income, compared to Tapper Taxi's fixed fee.">
 <meta name="robots" content="noindex, nofollow">
 <style>
   :root{
@@ -33,32 +33,38 @@
   .field{display:flex; flex-direction:column; gap:6px; margin-bottom:16px}
   .field:last-child{margin-bottom:0}
   label{font-size:12.5px; font-weight:700; color:var(--mut); letter-spacing:.03em}
-  .inputRow{position:relative}
   input{
     width:100%; background:var(--surf2); border:1px solid var(--line); color:var(--txt);
-    font-size:17px; font-weight:600; padding:13px 14px; border-radius:12px;
+    font-size:18px; font-weight:700; padding:14px; border-radius:12px;
     font-family:inherit;
   }
   input:focus{outline:2px solid var(--acc); outline-offset:1px}
-  .pct input{padding-right:34px}
-  .pctSign{position:absolute; right:14px; top:50%; transform:translateY(-50%); color:var(--mut); font-weight:700; pointer-events:none}
-  .twoCol{display:grid; grid-template-columns:1fr 1fr; gap:10px}
 
-  .rrow{display:flex; justify-content:space-between; align-items:baseline; padding:9px 0; border-bottom:1px solid var(--line)}
-  .rrow:last-child{border-bottom:0}
+  .seg{display:flex; background:var(--surf2); border:1px solid var(--line); border-radius:12px; padding:4px}
+  .seg button{
+    flex:1; background:none; border:0; padding:11px 0; border-radius:9px;
+    font-family:inherit; font-size:14px; font-weight:700; color:var(--mut); cursor:pointer;
+  }
+  .seg button[aria-pressed="true"]{background:var(--acc); color:var(--on-acc)}
+
+  .platCard{background:var(--surf); border:1px solid var(--line); border-radius:16px; padding:18px 20px; margin-bottom:14px}
+  .platHead{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px}
+  .platName{font-size:15px; font-weight:800}
+  .platRate{font-size:12px; color:var(--mut); font-weight:600}
+  .rrow{display:flex; justify-content:space-between; align-items:baseline; padding:6px 0}
   .rlab{font-size:13.5px; color:var(--mut)}
-  .rval{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:15.5px; font-weight:700}
-  .rrow.sub .rlab{padding-left:12px; font-size:12.5px}
-  .rrow.plat{border-bottom:0; padding-bottom:2px}
-  .rrow.plat .rlab{color:var(--txt); font-weight:700; font-size:13.5px}
-  .rrow.plat .rval{color:var(--txt)}
-  .rrow.total{border-top:1px solid var(--line); margin-top:4px; padding-top:12px}
-  .rrow.total .rlab{color:var(--txt); font-weight:700}
-  .rrow.total .rval{color:var(--acc); font-size:17px}
+  .rval{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:15px; font-weight:700}
+  .rrow.cost{border-top:1px solid var(--line); margin-top:4px; padding-top:10px}
+  .rrow.cost .rlab{color:var(--txt); font-weight:700}
+  .rrow.cost .rval{color:var(--acc); font-size:17px}
 
-  .saveCard{background:var(--surf); border:2px solid var(--acc); border-radius:16px; padding:24px 20px; text-align:center}
-  .saveLine{font-size:13px; color:var(--mut); margin:0 0 8px}
-  .saveAmt{font-size:30px; font-weight:800; margin:0}
+  .tapperField{margin-top:12px}
+  .tapperField label{display:flex; justify-content:space-between; align-items:center}
+  .tapperField input{margin-top:6px; font-size:16px}
+
+  .saveCard{background:var(--surf); border:2px solid var(--acc); border-radius:16px; padding:22px 20px; text-align:center; margin-bottom:14px}
+  .saveLab{font-size:13px; color:var(--mut); margin:0 0 6px}
+  .saveAmt{font-size:27px; font-weight:800; margin:0}
   .saveAmt.good{color:var(--good)}
   .saveAmt.bad{color:var(--bad)}
 
@@ -68,129 +74,136 @@
 <body>
   <div class="wrap">
     <h1>Commission Calculator</h1>
-    <p class="sub">What Uber and FreeNow's commission costs you each month, against Tapper Taxi's fixed fee.</p>
+    <p class="sub">See what Uber and FreeNow's commission costs on your own income, compared to Tapper Taxi's fixed fee.</p>
 
     <div class="card">
-      <div class="cardTitle">Monthly income</div>
-      <div class="twoCol">
-        <div class="field">
-          <label for="uberIncome">Uber (€)</label>
-          <input id="uberIncome" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0">
-        </div>
-        <div class="field">
-          <label for="freenowIncome">FreeNow (€)</label>
-          <input id="freenowIncome" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0">
+      <div class="field">
+        <label for="income">Your income</label>
+        <input id="income" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0">
+      </div>
+      <div class="field" style="margin-bottom:0">
+        <label>Is that weekly or monthly?</label>
+        <div class="seg">
+          <button type="button" id="freqWeekly" aria-pressed="false">Weekly</button>
+          <button type="button" id="freqMonthly" aria-pressed="true">Monthly</button>
         </div>
       </div>
     </div>
 
-    <div class="card">
-      <div class="cardTitle">Rates</div>
-      <div class="twoCol">
-        <div class="field">
-          <label for="uberRate">Uber commission</label>
-          <div class="inputRow pct">
-            <input id="uberRate" type="number" inputmode="decimal" min="0" max="100" step="0.1" value="12">
-            <span class="pctSign">%</span>
-          </div>
-        </div>
-        <div class="field">
-          <label for="freenowRate">FreeNow commission</label>
-          <div class="inputRow pct">
-            <input id="freenowRate" type="number" inputmode="decimal" min="0" max="100" step="0.1" value="15">
-            <span class="pctSign">%</span>
-          </div>
-        </div>
+    <div class="platCard">
+      <div class="platHead">
+        <span class="platName">Uber</span>
+        <span class="platRate" id="uberRateLabel">12% commission + 23% VAT</span>
       </div>
-      <div class="field">
-        <label for="vatRate">VAT on commission</label>
-        <div class="inputRow pct">
-          <input id="vatRate" type="number" inputmode="decimal" min="0" max="100" step="0.1" value="23">
-          <span class="pctSign">%</span>
-        </div>
+      <div class="rrow"><span class="rlab">Commission</span><span class="rval" id="outUberCommission">€0.00</span></div>
+      <div class="rrow"><span class="rlab">VAT on commission</span><span class="rval" id="outUberVat">€0.00</span></div>
+      <div class="rrow cost"><span class="rlab">Uber commission + VAT</span><span class="rval" id="outUberTotal">€0.00</span></div>
+    </div>
+
+    <div class="platCard">
+      <div class="platHead">
+        <span class="platName">FreeNow</span>
+        <span class="platRate" id="freenowRateLabel">15% commission + 23% VAT</span>
       </div>
-      <div class="field">
-        <label for="tapperFee">Tapper Taxi — fixed monthly fee (€)</label>
+      <div class="rrow"><span class="rlab">Commission</span><span class="rval" id="outFreenowCommission">€0.00</span></div>
+      <div class="rrow"><span class="rlab">VAT on commission</span><span class="rval" id="outFreenowVat">€0.00</span></div>
+      <div class="rrow cost"><span class="rlab">FreeNow commission + VAT</span><span class="rval" id="outFreenowTotal">€0.00</span></div>
+    </div>
+
+    <div class="platCard">
+      <div class="platHead">
+        <span class="platName">Tapper Taxi</span>
+        <span class="platRate">fixed fee, no commission</span>
+      </div>
+      <div class="tapperField">
+        <label for="tapperFee"><span id="tapperFeeLabel">Monthly fee (€)</span></label>
         <input id="tapperFee" type="number" inputmode="decimal" min="0" step="0.01" value="120">
       </div>
     </div>
 
-    <div class="card">
-      <div class="cardTitle">Breakdown</div>
-
-      <div class="rrow plat"><span class="rlab">Uber</span><span class="rval"></span></div>
-      <div class="rrow sub"><span class="rlab">Commission</span><span class="rval" id="outUberCommission">€0.00</span></div>
-      <div class="rrow sub"><span class="rlab">VAT on commission</span><span class="rval" id="outUberVat">€0.00</span></div>
-
-      <div class="rrow plat" style="margin-top:14px"><span class="rlab">FreeNow</span><span class="rval"></span></div>
-      <div class="rrow sub"><span class="rlab">Commission</span><span class="rval" id="outFreenowCommission">€0.00</span></div>
-      <div class="rrow sub"><span class="rlab">VAT on commission</span><span class="rval" id="outFreenowVat">€0.00</span></div>
-
-      <div class="rrow total">
-        <span class="rlab">Uber + FreeNow total cost</span>
-        <span class="rval" id="outPlatformTotal">€0.00</span>
-      </div>
-      <div class="rrow">
-        <span class="rlab">Tapper Taxi monthly fee</span>
-        <span class="rval" id="outTapperFee">€0.00</span>
-      </div>
-    </div>
-
     <div class="saveCard">
-      <p class="saveLine" id="saveLine">You save with Tapper Taxi</p>
-      <p class="saveAmt good" id="saveAmt">€0.00</p>
+      <p class="saveLab" id="saveUberLab">You save with Tapper Taxi instead of Uber</p>
+      <p class="saveAmt good" id="saveUberAmt">€0.00</p>
+    </div>
+    <div class="saveCard">
+      <p class="saveLab" id="saveFreenowLab">You save with Tapper Taxi instead of FreeNow</p>
+      <p class="saveAmt good" id="saveFreenowAmt">€0.00</p>
     </div>
 
     <p class="note">
-      Commission and VAT are calculated the same way as the Uber VAT calculator: commission = income × commission rate,
-      VAT = commission × VAT rate. Tapper Taxi is treated as a flat monthly fee with no commission or VAT taken off your fares.
-      This is a simple comparison of these numbers, not tax or financial advice — your actual commission rates, VAT treatment
-      and any other fees may differ.
+      Enter your income once, choose weekly or monthly, and this shows what the same income would actually cost you in
+      commission and VAT on Uber or FreeNow, against Tapper Taxi's fixed fee for that same period (€120/month or €30/week
+      by default — edit it if yours is different). Commission = income × rate; VAT = commission × 23%. This is a simple
+      comparison, not tax or financial advice — your actual rates and any other fees may differ.
     </p>
   </div>
 
   <script>
     const $ = id => document.getElementById(id);
-    const inputs = ['uberIncome','freenowIncome','uberRate','freenowRate','vatRate','tapperFee'].map($);
-
     const eur = n => '€' + n.toLocaleString('en-IE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const num = el => Math.max(0, parseFloat(el.value) || 0);
 
-    function recalc() {
-      const uberIncome = num($('uberIncome'));
-      const freenowIncome = num($('freenowIncome'));
-      const uberRate = num($('uberRate'));
-      const freenowRate = num($('freenowRate'));
-      const vatRate = num($('vatRate'));
-      const tapperFee = num($('tapperFee'));
+    const UBER_RATE = 12, FREENOW_RATE = 15, VAT_RATE = 23;
+    const TAPPER_MONTHLY = 120, TAPPER_WEEKLY = 30;
 
-      const uberCommission = uberIncome * (uberRate / 100);
-      const uberVat = uberCommission * (vatRate / 100);
-      const freenowCommission = freenowIncome * (freenowRate / 100);
-      const freenowVat = freenowCommission * (vatRate / 100);
+    let freq = 'monthly';
+    let tapperTouched = false; // stop overwriting it once someone edits it by hand
 
-      const platformTotal = uberCommission + uberVat + freenowCommission + freenowVat;
+    function setFreq(f) {
+      freq = f;
+      $('freqWeekly').setAttribute('aria-pressed', String(f === 'weekly'));
+      $('freqMonthly').setAttribute('aria-pressed', String(f === 'monthly'));
+      $('tapperFeeLabel').textContent = (f === 'weekly' ? 'Weekly fee (€)' : 'Monthly fee (€)');
+      if (!tapperTouched) {
+        $('tapperFee').value = f === 'weekly' ? TAPPER_WEEKLY : TAPPER_MONTHLY;
+      }
+      recalc();
+    }
 
-      $('outUberCommission').textContent = eur(uberCommission);
-      $('outUberVat').textContent = eur(uberVat);
-      $('outFreenowCommission').textContent = eur(freenowCommission);
-      $('outFreenowVat').textContent = eur(freenowVat);
-      $('outPlatformTotal').textContent = eur(platformTotal);
-      $('outTapperFee').textContent = eur(tapperFee);
+    $('freqWeekly').onclick = () => setFreq('weekly');
+    $('freqMonthly').onclick = () => setFreq('monthly');
+    $('tapperFee').addEventListener('input', () => { tapperTouched = true; recalc(); });
+    $('income').addEventListener('input', recalc);
 
-      const diff = platformTotal - tapperFee;
+    function platformCost(income, rate) {
+      const commission = income * (rate / 100);
+      const vat = commission * (VAT_RATE / 100);
+      return { commission, vat, total: commission + vat };
+    }
+
+    function paintSaving(prefix, cost, tapperFee) {
+      const diff = cost - tapperFee;
+      const platform = prefix === 'saveUber' ? 'Uber' : 'FreeNow';
       if (diff >= 0) {
-        $('saveLine').textContent = 'You save with Tapper Taxi';
-        $('saveAmt').textContent = eur(diff);
-        $('saveAmt').className = 'saveAmt good';
+        $(prefix + 'Lab').textContent = 'You save with Tapper Taxi instead of ' + platform;
+        $(prefix + 'Amt').textContent = eur(diff);
+        $(prefix + 'Amt').className = 'saveAmt good';
       } else {
-        $('saveLine').textContent = 'Uber + FreeNow would cost you less, by';
-        $('saveAmt').textContent = eur(-diff);
-        $('saveAmt').className = 'saveAmt bad';
+        $(prefix + 'Lab').textContent = platform + ' would cost you less, by';
+        $(prefix + 'Amt').textContent = eur(-diff);
+        $(prefix + 'Amt').className = 'saveAmt bad';
       }
     }
 
-    inputs.forEach(el => el.addEventListener('input', recalc));
+    function recalc() {
+      const income = num($('income'));
+      const tapperFee = num($('tapperFee'));
+
+      const uber = platformCost(income, UBER_RATE);
+      const freenow = platformCost(income, FREENOW_RATE);
+
+      $('outUberCommission').textContent = eur(uber.commission);
+      $('outUberVat').textContent = eur(uber.vat);
+      $('outUberTotal').textContent = eur(uber.total);
+
+      $('outFreenowCommission').textContent = eur(freenow.commission);
+      $('outFreenowVat').textContent = eur(freenow.vat);
+      $('outFreenowTotal').textContent = eur(freenow.total);
+
+      paintSaving('saveUber', uber.total, tapperFee);
+      paintSaving('saveFreenow', freenow.total, tapperFee);
+    }
+
     recalc();
   </script>
 </body>
