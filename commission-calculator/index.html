@@ -103,11 +103,9 @@
     <div class="platCard">
       <div class="platHead">
         <span class="platName">FreeNow</span>
-        <span class="platRate" id="freenowRateLabel">15% commission + 23% VAT</span>
+        <span class="platRate" id="freenowRateLabel">15% commission, no VAT</span>
       </div>
-      <div class="rrow"><span class="rlab">Commission</span><span class="rval" id="outFreenowCommission">€0.00</span></div>
-      <div class="rrow"><span class="rlab">VAT on commission</span><span class="rval" id="outFreenowVat">€0.00</span></div>
-      <div class="rrow cost"><span class="rlab">FreeNow commission + VAT</span><span class="rval" id="outFreenowTotal">€0.00</span></div>
+      <div class="rrow cost"><span class="rlab">FreeNow commission</span><span class="rval" id="outFreenowTotal">€0.00</span></div>
     </div>
 
     <div class="platCard">
@@ -131,10 +129,10 @@
     </div>
 
     <p class="note">
-      Enter your income once, choose weekly or monthly, and this shows what the same income would actually cost you in
-      commission and VAT on Uber or FreeNow, against Tap a Taxi's fixed fee for that same period (€120/month or €30/week
-      by default — edit it if yours is different). Commission = income × rate; VAT = commission × 23%. This is a simple
-      comparison, not tax or financial advice — your actual rates and any other fees may differ.
+      Enter your income once, choose weekly or monthly, and this shows what the same income would actually cost you on
+      Uber (12% commission + 23% VAT on that commission) or FreeNow (a flat 15% commission, no VAT), against Tap a Taxi's
+      fixed fee for that same period (€120/month or €30/week by default — edit it if yours is different). This is a
+      simple comparison, not tax or financial advice — your actual rates and any other fees may differ.
     </p>
   </div>
 
@@ -165,9 +163,9 @@
     $('tapperFee').addEventListener('input', () => { tapperTouched = true; recalc(); });
     $('income').addEventListener('input', recalc);
 
-    function platformCost(income, rate) {
+    function platformCost(income, rate, withVat) {
       const commission = income * (rate / 100);
-      const vat = commission * (VAT_RATE / 100);
+      const vat = withVat ? commission * (VAT_RATE / 100) : 0;
       return { commission, vat, total: commission + vat };
     }
 
@@ -189,15 +187,13 @@
       const income = num($('income'));
       const tapperFee = num($('tapperFee'));
 
-      const uber = platformCost(income, UBER_RATE);
-      const freenow = platformCost(income, FREENOW_RATE);
+      const uber = platformCost(income, UBER_RATE, true);
+      const freenow = platformCost(income, FREENOW_RATE, false);
 
       $('outUberCommission').textContent = eur(uber.commission);
       $('outUberVat').textContent = eur(uber.vat);
       $('outUberTotal').textContent = eur(uber.total);
 
-      $('outFreenowCommission').textContent = eur(freenow.commission);
-      $('outFreenowVat').textContent = eur(freenow.vat);
       $('outFreenowTotal').textContent = eur(freenow.total);
 
       paintSaving('saveUber', uber.total, tapperFee);
