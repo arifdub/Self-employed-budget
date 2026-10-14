@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Commission Calculator — Uber & FreeNow vs Tapper Taxi</title>
-<meta name="description" content="See what Uber and FreeNow's commission costs on your own income, compared to Tapper Taxi's fixed fee.">
+<title>Commission Calculator — Uber & FreeNow vs Tap a Taxi</title>
+<meta name="description" content="See what Uber and FreeNow's commission costs on your own income, compared to Tap a Taxi's fixed fee.">
 <meta name="robots" content="noindex, nofollow">
 <style>
   :root{
@@ -74,7 +74,7 @@
 <body>
   <div class="wrap">
     <h1>Commission Calculator</h1>
-    <p class="sub">See what Uber and FreeNow's commission costs on your own income, compared to Tapper Taxi's fixed fee.</p>
+    <p class="sub">See what Uber and FreeNow's commission costs on your own income, compared to Tap a Taxi's fixed fee.</p>
 
     <div class="card">
       <div class="field">
@@ -112,7 +112,7 @@
 
     <div class="platCard">
       <div class="platHead">
-        <span class="platName">Tapper Taxi</span>
+        <span class="platName">Tap a Taxi (TAT)</span>
         <span class="platRate">fixed fee, no commission</span>
       </div>
       <div class="tapperField">
@@ -122,17 +122,17 @@
     </div>
 
     <div class="saveCard">
-      <p class="saveLab" id="saveUberLab">You save with Tapper Taxi instead of Uber</p>
+      <p class="saveLab" id="saveUberLab">You save with Tap a Taxi instead of Uber</p>
       <p class="saveAmt good" id="saveUberAmt">€0.00</p>
     </div>
     <div class="saveCard">
-      <p class="saveLab" id="saveFreenowLab">You save with Tapper Taxi instead of FreeNow</p>
+      <p class="saveLab" id="saveFreenowLab">You save with Tap a Taxi instead of FreeNow</p>
       <p class="saveAmt good" id="saveFreenowAmt">€0.00</p>
     </div>
 
     <p class="note">
       Enter your income once, choose weekly or monthly, and this shows what the same income would actually cost you in
-      commission and VAT on Uber or FreeNow, against Tapper Taxi's fixed fee for that same period (€120/month or €30/week
+      commission and VAT on Uber or FreeNow, against Tap a Taxi's fixed fee for that same period (€120/month or €30/week
       by default — edit it if yours is different). Commission = income × rate; VAT = commission × 23%. This is a simple
       comparison, not tax or financial advice — your actual rates and any other fees may differ.
     </p>
@@ -175,7 +175,7 @@
       const diff = cost - tapperFee;
       const platform = prefix === 'saveUber' ? 'Uber' : 'FreeNow';
       if (diff >= 0) {
-        $(prefix + 'Lab').textContent = 'You save with Tapper Taxi instead of ' + platform;
+        $(prefix + 'Lab').textContent = 'You save with Tap a Taxi instead of ' + platform;
         $(prefix + 'Amt').textContent = eur(diff);
         $(prefix + 'Amt').className = 'saveAmt good';
       } else {
