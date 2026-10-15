@@ -1546,9 +1546,9 @@ function drawDateRow() {
 
   $('eDate').value = isoDay(d);
   $('eDate').max = isoDay(today);
-  $('dLabel').textContent = offset === 0 ? 'Today'
-    : offset === 1 ? 'Yesterday'
-    : d.toLocaleDateString(LOCALE, { weekday: 'short', day: 'numeric', month: 'short' });
+  $('dLabel').textContent = offset > 1
+    ? d.toLocaleDateString(LOCALE, { weekday: 'short', day: 'numeric', month: 'short' })
+    : 'Pick a date';
   $('dLabel').parentElement.setAttribute('aria-pressed', offset > 1);
 }
 
@@ -1847,6 +1847,10 @@ function enablePullToDismiss(id) {
   sheet.addEventListener('touchstart', ev => {
     if (ev.touches.length !== 1 || !sheet.classList.contains('up')) { active = false; return; }
     if (!atTop()) { active = false; return; }
+    // don't arm the drag over a real form control — a tap's natural finger jitter
+    // can otherwise cross the move threshold and preventDefault() cancels the
+    // click Android needs to open a native picker (e.g. <input type="date">).
+    if (ev.target.closest('input, button, select, textarea, label')) { active = false; return; }
     const t = ev.touches[0];
     startY = t.clientY; startX = t.clientX;
     dy = 0; axis = null; active = true; t0 = Date.now();
