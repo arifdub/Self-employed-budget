@@ -1562,6 +1562,16 @@ $('eDate').addEventListener('change', () => {
   const [y, m, day] = $('eDate').value.split('-').map(Number);
   setDraftDate(new Date(y, m - 1, day));
 });
+/* Android Chrome can silently skip rendering the native picker for a date
+   input left at opacity:0 (our styling trick), even though the click still
+   fires — iOS Safari isn't affected. Forcing it open explicitly, inside the
+   same click, works around that; browsers without showPicker() (iOS) just
+   fall back to their normal default-action behaviour. */
+if (typeof $('eDate').showPicker === 'function') {
+  $('eDate').addEventListener('click', () => {
+    try { $('eDate').showPicker(); } catch (err) {}
+  });
+}
 
 /* ---------- add sheet ---------- */
 ['1','2','3','4','5','6','7','8','9','00','0','⌫'].forEach(k => {
