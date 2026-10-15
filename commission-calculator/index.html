@@ -82,10 +82,11 @@
         <input id="income" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0">
       </div>
       <div class="field" style="margin-bottom:0">
-        <label>Is that weekly or monthly?</label>
+        <label>Is that weekly, monthly, or yearly?</label>
         <div class="seg">
           <button type="button" id="freqWeekly" aria-pressed="false">Weekly</button>
           <button type="button" id="freqMonthly" aria-pressed="true">Monthly</button>
+          <button type="button" id="freqYearly" aria-pressed="false">Yearly</button>
         </div>
       </div>
     </div>
@@ -131,7 +132,8 @@
     <p class="note">
       Enter your income once, choose weekly or monthly, and this shows what the same income would actually cost you on
       Uber (12% commission + 23% VAT on that commission) or FreeNow (a flat 15% commission, no VAT), against Tap a Taxi's
-      fixed fee for that same period (€120/month or €30/week by default — edit it if yours is different). This is a
+      fixed fee for that same period (€30/week, €120/month, or €1,320/year by default — a year is priced as 11 months
+      since Tap a Taxi gives January free; edit it if yours is different). This is a
       simple comparison, not tax or financial advice — your actual rates and any other fees may differ.
     </p>
   </div>
@@ -142,7 +144,12 @@
     const num = el => Math.max(0, parseFloat(el.value) || 0);
 
     const UBER_RATE = 12, FREENOW_RATE = 15, VAT_RATE = 23;
-    const TAPPER_MONTHLY = 120, TAPPER_WEEKLY = 30;
+    const TAPPER_WEEKLY = 30, TAPPER_MONTHLY = 120;
+    // Tap a Taxi gives January free, so a full year is 11 months' fee, not 12.
+    const TAPPER_YEARLY = TAPPER_MONTHLY * 11;
+
+    const FREQ_LABEL = { weekly: 'Weekly fee (€)', monthly: 'Monthly fee (€)', yearly: 'Yearly fee (€) — 11 months, Jan free' };
+    const TAPPER_DEFAULT = { weekly: TAPPER_WEEKLY, monthly: TAPPER_MONTHLY, yearly: TAPPER_YEARLY };
 
     let freq = 'monthly';
     let tapperTouched = false; // stop overwriting it once someone edits it by hand
@@ -151,15 +158,17 @@
       freq = f;
       $('freqWeekly').setAttribute('aria-pressed', String(f === 'weekly'));
       $('freqMonthly').setAttribute('aria-pressed', String(f === 'monthly'));
-      $('tapperFeeLabel').textContent = (f === 'weekly' ? 'Weekly fee (€)' : 'Monthly fee (€)');
+      $('freqYearly').setAttribute('aria-pressed', String(f === 'yearly'));
+      $('tapperFeeLabel').textContent = FREQ_LABEL[f];
       if (!tapperTouched) {
-        $('tapperFee').value = f === 'weekly' ? TAPPER_WEEKLY : TAPPER_MONTHLY;
+        $('tapperFee').value = TAPPER_DEFAULT[f];
       }
       recalc();
     }
 
     $('freqWeekly').onclick = () => setFreq('weekly');
     $('freqMonthly').onclick = () => setFreq('monthly');
+    $('freqYearly').onclick = () => setFreq('yearly');
     $('tapperFee').addEventListener('input', () => { tapperTouched = true; recalc(); });
     $('income').addEventListener('input', recalc);
 
