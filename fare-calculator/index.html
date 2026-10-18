@@ -7,6 +7,19 @@
 <meta name="description" content="Estimate a taxi fare from distance, time of day, pre-booking and passenger count, using the NTA maximum fare tariff.">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://sebudget.com/fare-calculator/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="SE Budget">
+<meta property="og:url" content="https://sebudget.com/fare-calculator/">
+<meta property="og:title" content="Taxi Fare Calculator — SE Budget">
+<meta property="og:description" content="Estimate a taxi fare from distance, time of day, pre-booking and passenger count, using the NTA maximum fare tariff.">
+<meta property="og:image" content="https://sebudget.com/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="en_IE">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Taxi Fare Calculator — SE Budget">
+<meta name="twitter:description" content="Estimate a taxi fare from distance, time of day, pre-booking and passenger count.">
+<meta name="twitter:image" content="https://sebudget.com/og-image.png">
 <style>
   :root{
     --bg:#121A2F; --surf:#1A2340; --surf2:#232E50; --line:#2A3559;
@@ -173,7 +186,7 @@
     const shareBtn = $('shareBtn');
     const shareLabel = shareBtn.textContent;
     shareBtn.addEventListener('click', async () => {
-      const data = { title: 'Taxi Fare Calculator — SE Budget', text: 'Estimate a taxi fare from distance, time of day, pre-booking and passengers.', url: location.href };
+      const data = { url: location.href };
       if (navigator.share) { try { await navigator.share(data); } catch (err) {} return; }
       try {
         await navigator.clipboard.writeText(location.href);

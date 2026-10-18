@@ -6,6 +6,19 @@
 <title>Commission Calculator — Uber & FreeNow vs Tap a Taxi</title>
 <meta name="description" content="See what Uber and FreeNow's commission costs on your own income, compared to Tap a Taxi's fixed fee.">
 <meta name="robots" content="noindex, nofollow">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="SE Budget">
+<meta property="og:url" content="https://sebudget.com/commission-calculator/">
+<meta property="og:title" content="Commission Calculator — Uber & FreeNow vs Tap a Taxi">
+<meta property="og:description" content="See what Uber and FreeNow's commission costs on your own income, compared to Tap a Taxi's fixed fee.">
+<meta property="og:image" content="https://sebudget.com/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="en_IE">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Commission Calculator — Uber & FreeNow vs Tap a Taxi">
+<meta name="twitter:description" content="See what Uber and FreeNow's commission costs compared to Tap a Taxi's fixed fee.">
+<meta name="twitter:image" content="https://sebudget.com/og-image.png">
 <style>
   :root{
     --bg:#121A2F; --surf:#1A2340; --surf2:#232E50; --line:#2A3559;
@@ -164,7 +177,7 @@
     const shareBtn = $('shareBtn');
     const shareLabel = shareBtn.textContent;
     shareBtn.addEventListener('click', async () => {
-      const data = { title: 'Commission Calculator — Uber & FreeNow vs Tap a Taxi', text: 'See what Uber and FreeNow\'s commission costs compared to Tap a Taxi\'s fixed fee.', url: location.href };
+      const data = { url: location.href };
       if (navigator.share) { try { await navigator.share(data); } catch (err) {} return; }
       try {
         await navigator.clipboard.writeText(location.href);
