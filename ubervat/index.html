@@ -25,10 +25,12 @@
     line-height:1.6;
   }
   .wrap{max-width:560px; margin:0 auto; padding:32px 20px 64px}
-  .back{display:inline-flex; align-items:center; gap:6px; margin-bottom:20px; padding:10px 16px;
+  .topRow{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:20px}
+  .back,.shareBtn{display:inline-flex; align-items:center; gap:6px; padding:10px 16px;
     border-radius:11px; background:var(--surf); border:1px solid var(--line);
-    color:var(--txt); text-decoration:none; font-size:13.5px; font-weight:700}
-  .back:hover{border-color:var(--acc); color:var(--acc)}
+    color:var(--txt); text-decoration:none; font-size:13.5px; font-weight:700;
+    font-family:inherit; cursor:pointer}
+  .back:hover,.shareBtn:hover{border-color:var(--acc); color:var(--acc)}
   h1{font-size:24px; margin:0 0 6px}
   .sub{color:var(--mut); font-size:14.5px; margin:0 0 28px}
   .card{background:var(--surf); border:1px solid var(--line); border-radius:16px; padding:20px; margin-bottom:16px}
@@ -59,7 +61,10 @@
 </head>
 <body>
   <div class="wrap">
-    <a class="back" href="/">&larr; Back to SE Budget</a>
+    <div class="topRow">
+      <a class="back" href="/">&larr; Back to SE Budget</a>
+      <button class="shareBtn" id="shareBtn" type="button">Share ↗</button>
+    </div>
     <h1>Uber VAT Calculator</h1>
     <p class="sub">Work out the VAT due on Uber's commission from your yearly Uber earnings.</p>
 
@@ -120,6 +125,18 @@
     const outTotal = document.getElementById('outTotal');
 
     const eur = n => '€' + n.toLocaleString('en-IE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    const shareBtn = document.getElementById('shareBtn');
+    const shareLabel = shareBtn.textContent;
+    shareBtn.addEventListener('click', async () => {
+      const data = { title: 'Uber VAT Calculator — SE Budget', text: 'Work out the VAT due on Uber\'s commission.', url: location.href };
+      if (navigator.share) { try { await navigator.share(data); } catch (err) {} return; }
+      try {
+        await navigator.clipboard.writeText(location.href);
+        shareBtn.textContent = 'Link copied!';
+        setTimeout(() => shareBtn.textContent = shareLabel, 1800);
+      } catch (err) { prompt('Copy this link:', location.href); }
+    });
 
     function recalc() {
       const e = Math.max(0, parseFloat(earnings.value) || 0);
