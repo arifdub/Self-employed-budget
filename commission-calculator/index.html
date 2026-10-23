@@ -3,21 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Commission Calculator — Uber & FreeNow vs Tap a Taxi</title>
-<meta name="description" content="See what Uber and FreeNow's commission costs on your own income, compared to Tap a Taxi's fixed fee.">
+<title>Commission Calculator — Uber, FreeNow & Bolt vs Tap a Taxi</title>
+<meta name="description" content="See what Uber, FreeNow and Bolt's commission costs on your own income, compared to Tap a Taxi's fixed fee.">
 <meta name="robots" content="noindex, nofollow">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="SE Budget">
 <meta property="og:url" content="https://sebudget.com/commission-calculator/">
-<meta property="og:title" content="Commission Calculator — Uber & FreeNow vs Tap a Taxi">
-<meta property="og:description" content="See what Uber and FreeNow's commission costs on your own income, compared to Tap a Taxi's fixed fee.">
+<meta property="og:title" content="Commission Calculator — Uber, FreeNow & Bolt vs Tap a Taxi">
+<meta property="og:description" content="See what Uber, FreeNow and Bolt's commission costs on your own income, compared to Tap a Taxi's fixed fee.">
 <meta property="og:image" content="https://sebudget.com/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:locale" content="en_IE">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Commission Calculator — Uber & FreeNow vs Tap a Taxi">
-<meta name="twitter:description" content="See what Uber and FreeNow's commission costs compared to Tap a Taxi's fixed fee.">
+<meta name="twitter:title" content="Commission Calculator — Uber, FreeNow & Bolt vs Tap a Taxi">
+<meta name="twitter:description" content="See what Uber, FreeNow and Bolt's commission costs compared to Tap a Taxi's fixed fee.">
 <meta name="twitter:image" content="https://sebudget.com/og-image.png">
 <style>
   :root{
@@ -97,7 +97,7 @@
       <button class="shareBtn" id="shareBtn" type="button">Share ↗</button>
     </div>
     <h1>Commission Calculator</h1>
-    <p class="sub">See what Uber and FreeNow's commission costs on your own income, compared to Tap a Taxi's fixed fee.</p>
+    <p class="sub">See what Uber, FreeNow and Bolt's commission costs on your own income, compared to Tap a Taxi's fixed fee.</p>
 
     <div class="card">
       <div class="field">
@@ -134,6 +134,17 @@
 
     <div class="platCard">
       <div class="platHead">
+        <span class="platName">Bolt</span>
+        <span class="platRate" id="boltRateLabel">10% commission + 23% VAT</span>
+      </div>
+      <div class="rrow"><span class="rlab">Commission</span><span class="rval" id="outBoltCommission">€0.00</span></div>
+      <div class="rrow"><span class="rlab">VAT on commission</span><span class="rval" id="outBoltVat">€0.00</span></div>
+      <div class="rrow cost"><span class="rlab">Bolt commission + VAT</span><span class="rval" id="outBoltTotal">€0.00</span></div>
+      <div class="rrow" style="padding-top:2px"><span class="rlab" style="font-size:11.5px">Bolt deducts and pays this VAT for you — Uber's VAT you must self-account for in your own return.</span></div>
+    </div>
+
+    <div class="platCard">
+      <div class="platHead">
         <span class="platName">Tap a Taxi (TAT)</span>
         <span class="platRate">fixed fee, no commission</span>
       </div>
@@ -151,13 +162,21 @@
       <p class="saveLab" id="saveFreenowLab">You save with Tap a Taxi instead of FreeNow</p>
       <p class="saveAmt good" id="saveFreenowAmt">€0.00</p>
     </div>
+    <div class="saveCard">
+      <p class="saveLab" id="saveBoltLab">You save with Tap a Taxi instead of Bolt</p>
+      <p class="saveAmt good" id="saveBoltAmt">€0.00</p>
+    </div>
 
     <p class="note">
       Enter your income once, choose weekly or monthly, and this shows what the same income would actually cost you on
-      Uber (12% commission + 23% VAT on that commission) or FreeNow (a flat 15% commission, no VAT), against Tap a Taxi's
-      fixed fee for that same period (€30/week, €120/month, or €1,320/year by default — a year is priced as 11 months
-      since Tap a Taxi gives January free; edit it if yours is different). This is a
-      simple comparison, not tax or financial advice — your actual rates and any other fees may differ.
+      Uber (12% commission + 23% VAT on that commission), FreeNow (a flat 15% commission, no VAT) or Bolt (10% commission
+      + 23% VAT on that commission), against Tap a Taxi's fixed fee for that same period (€30/week, €120/month, or
+      €1,320/year by default — a year is priced as 11 months since Tap a Taxi gives January free; edit it if yours is
+      different). Bolt and Uber charge the same VAT rate on their commission, but Bolt deducts and remits that VAT
+      itself, while Uber (based in the Netherlands) doesn't — Irish drivers must self-account for Uber's VAT under the
+      reverse charge mechanism in their own VAT return. The euro amount is the same either way; only who handles the
+      paperwork differs. This is a simple comparison, not tax or financial advice — your actual rates and any other
+      fees may differ.
     </p>
   </div>
 
@@ -166,7 +185,7 @@
     const eur = n => '€' + n.toLocaleString('en-IE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const num = el => Math.max(0, parseFloat(el.value) || 0);
 
-    const UBER_RATE = 12, FREENOW_RATE = 15, VAT_RATE = 23;
+    const UBER_RATE = 12, FREENOW_RATE = 15, BOLT_RATE = 10, VAT_RATE = 23;
     const TAPPER_WEEKLY = 30, TAPPER_MONTHLY = 120;
     // Tap a Taxi gives January free, so a full year is 11 months' fee, not 12.
     const TAPPER_YEARLY = TAPPER_MONTHLY * 11;
@@ -213,9 +232,11 @@
       return { commission, vat, total: commission + vat };
     }
 
+    const PLATFORM_LABEL = { saveUber: 'Uber', saveFreenow: 'FreeNow', saveBolt: 'Bolt' };
+
     function paintSaving(prefix, cost, tapperFee) {
       const diff = cost - tapperFee;
-      const platform = prefix === 'saveUber' ? 'Uber' : 'FreeNow';
+      const platform = PLATFORM_LABEL[prefix];
       if (diff >= 0) {
         $(prefix + 'Lab').textContent = 'You save with Tap a Taxi instead of ' + platform;
         $(prefix + 'Amt').textContent = eur(diff);
@@ -233,6 +254,7 @@
 
       const uber = platformCost(income, UBER_RATE, true);
       const freenow = platformCost(income, FREENOW_RATE, false);
+      const bolt = platformCost(income, BOLT_RATE, true);
 
       $('outUberCommission').textContent = eur(uber.commission);
       $('outUberVat').textContent = eur(uber.vat);
@@ -240,8 +262,13 @@
 
       $('outFreenowTotal').textContent = eur(freenow.total);
 
+      $('outBoltCommission').textContent = eur(bolt.commission);
+      $('outBoltVat').textContent = eur(bolt.vat);
+      $('outBoltTotal').textContent = eur(bolt.total);
+
       paintSaving('saveUber', uber.total, tapperFee);
       paintSaving('saveFreenow', freenow.total, tapperFee);
+      paintSaving('saveBolt', bolt.total, tapperFee);
     }
 
     recalc();
