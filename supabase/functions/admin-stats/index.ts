@@ -82,6 +82,32 @@ Deno.serve(async (req) => {
     weeks[key] = (weeks[key] || 0) + 1;
   });
 
+  // Anonymous page views — just a path, a browser-generated id, and a time.
+  const { data: views } = await admin
+    .from('page_views')
+    .select('path, visitor_id, created_at')
+    .order('created_at', { ascending: true });
+
+  const vRows = views ?? [];
+  const uniqueVisitors = new Set(vRows.map(r => r.visitor_id));
+  const visitorsSince = (d: number) =>
+    new Set(vRows.filter(r => r.created_at > since(d)).map(r => r.visitor_id)).size;
+
+  const byPath: Record<string, number> = {};
+  vRows.forEach(r => { byPath[r.path] = (byPath[r.path] || 0) + 1; });
+  const topPages = Object.entries(byPath).sort((a, b) => b[1] - a[1]).slice(0, 15);
+
+  // "Landing page" = the first page each visitor's browser ever recorded —
+  // vRows is already sorted oldest first, so the first time we see a visitor
+  // id is their landing page.
+  const landingByVisitor = new Map<string, string>();
+  vRows.forEach(r => {
+    if (!landingByVisitor.has(r.visitor_id)) landingByVisitor.set(r.visitor_id, r.path);
+  });
+  const landingCounts: Record<string, number> = {};
+  landingByVisitor.forEach(path => { landingCounts[path] = (landingCounts[path] || 0) + 1; });
+  const topLanding = Object.entries(landingCounts).sort((a, b) => b[1] - a[1]).slice(0, 15);
+
   return Response.json({
     ok: true,
     users: {
@@ -107,5 +133,14 @@ Deno.serve(async (req) => {
       per_user: withEntries.size ? +(rows.length / withEntries.size).toFixed(1) : 0,
     },
     signups_by_week: Object.entries(weeks).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 8),
+    visitors: {
+      total: uniqueVisitors.size,
+      visitors_7d: visitorsSince(7),
+      visitors_30d: visitorsSince(30),
+      views_total: vRows.length,
+      views_7d: vRows.filter(r => r.created_at > since(7)).length,
+    },
+    pages: topPages,
+    landing_pages: topLanding,
   }, { headers: cors });
 });

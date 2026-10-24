@@ -65,6 +65,7 @@
 
     <h2>Analytics (optional, off by default)</h2>
     <p>The app may ask, on first visit, whether you're willing to allow Google Analytics so the developer can see roughly how many people use the app. It only loads if you tap "Allow" — declining means nothing loads at all. When enabled, IP addresses are anonymized, and no entry data, category names, or amounts are ever included — Google only ever sees that a visit happened, not what you did in the app.</p>
+    <p>Separately, every page (including this one and the calculator tools) records a basic, always-on visit counter: the page path, a random id your browser generates for itself and stores locally, and the time. This isn't linked to your account, name or email, sends nothing to Google or any other third party, and exists only so the developer can see how many people are using the site and which pages they land on.</p>
 
     <h2>Supporting the developer</h2>
     <p>The "Buy the developer a coffee" button opens a payment page hosted entirely by SumUp, a separate payment provider, in a new browser tab. The app never sees, collects, or stores any payment or card details — that page is entirely outside the app and governed by SumUp's own privacy policy.</p>
@@ -99,5 +100,6 @@
     <h2>Contact</h2>
     <p>Questions, requests, or concerns about your data: <a href="mailto:arifdub@gmail.com">arifdub@gmail.com</a>.</p>
   </div>
+  <script src="/visit.js"></script>
 </body>
 </html>

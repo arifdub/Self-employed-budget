@@ -2741,7 +2741,31 @@ function drawAdmin() {
 
   const pct = (a, b) => b ? Math.round(a / b * 100) + '%' : '0%';
 
+  const pageName = p => p === '/' ? 'Home (app)'
+    : p.replace(/^\//, '').replace(/\/$/, '').replace(/-/g, ' ').replace(/^./, c => c.toUpperCase()) || 'Home (app)';
+
   $('adminBody').innerHTML =
+    '<div class="sec">Visitors</div>' +
+    '<div class="aGrid">' +
+      stat('Total visitors', (d.visitors ? d.visitors.total : 0).toLocaleString(LOCALE), 'all time') +
+      stat('Last 7 days', d.visitors ? d.visitors.visitors_7d : 0, 'visitors') +
+      stat('Page views', d.visitors ? d.visitors.views_total.toLocaleString(LOCALE) : 0, '+' + (d.visitors ? d.visitors.views_7d : 0) + ' this week') +
+    '</div>' +
+
+    '<div class="sec">Where they land</div>' +
+    '<div class="card">' +
+      (d.landing_pages && d.landing_pages.length
+        ? d.landing_pages.map(([p, n]) => row(pageName(p), n, '')).join('')
+        : '<div class="empty">Nothing yet</div>') +
+    '</div>' +
+
+    '<div class="sec">Views by page</div>' +
+    '<div class="card">' +
+      (d.pages && d.pages.length
+        ? d.pages.map(([p, n]) => row(pageName(p), n, '')).join('')
+        : '<div class="empty">Nothing yet</div>') +
+    '</div>' +
+
     '<div class="sec">People</div>' +
     '<div class="aGrid">' +
       stat('Signed up', d.users.total, '+' + d.users.new_7d + ' this week') +
