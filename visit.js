@@ -6,8 +6,22 @@
    no IP captured by the app, nothing that identifies a person — just a
    count. Fails silently; a visitor counter is never worth breaking a page
    over.
+
+   Gated on the SAME consent choice as Google Analytics ('seb.consent.v1'),
+   because storing that random id in localStorage is "storing information
+   on the user's device" under the ePrivacy Regulation just as much as a
+   cookie would be — it needs consent first, not a banner that appears
+   after it already ran. If that choice hasn't been made yet (e.g. someone
+   landed straight on a calculator page without visiting the app first),
+   nothing is recorded until they do visit the app and answer the prompt —
+   the same storage key is shared across every page on this site.
    --------------------------------------------------------------- */
 (function () {
+  var CONSENT_KEY = 'seb.consent.v1';
+  var consent = null;
+  try { consent = localStorage.getItem(CONSENT_KEY); } catch (e) {}
+  if (consent !== 'yes') return;
+
   var URL = 'https://wfuvnnpjsajiotmukwws.supabase.co';
   var ANON = 'sb_publishable_W3QSdM4LLwNJ21pYrptRRw_rqqKyjkW';
   var KEY = 'seb.visitor.id';

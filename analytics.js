@@ -8,17 +8,23 @@
    consent BEFORE it loads — not a banner that appears while it is already
    running. This file therefore waits for a stored consent choice and does
    nothing until it gets one.
+
+   This same choice also gates the basic anonymous visit counter (visit.js,
+   shared across every page on this site) — so the prompt below is asked
+   regardless of whether Google Analytics itself is configured, otherwise the
+   visit counter would never get a chance to be allowed.
    --------------------------------------------------------------- */
 (function () {
   var cfg = window.SEB_CONFIG || {};
   var ID = cfg.gaMeasurementId;
-  if (!ID || ID.indexOf('G-') !== 0) return;          // not configured: do nothing
+  var hasGA = !!ID && ID.indexOf('G-') === 0;
 
   var KEY = 'seb.consent.v1';
   var choice = null;
   try { choice = localStorage.getItem(KEY); } catch (e) {}
 
   function loadGA() {
+    if (!hasGA) return;
     var s = document.createElement('script');
     s.async = true;
     s.src = 'https://www.googletagmanager.com/gtag/js?id=' + ID;
@@ -42,7 +48,7 @@
     var bar = document.createElement('div');
     bar.className = 'consent';
     bar.innerHTML =
-      '<span>We use Google Analytics to see how many people use the app. No personal data, and nothing about your entries.</span>' +
+      '<span>We use basic analytics (and a simple visit counter) to see how many people use the app. No personal data, and nothing about your entries.</span>' +
       '<span class="consentBtns">' +
         '<button id="cNo">No thanks</button>' +
         '<button id="cYes" class="primary">Allow</button>' +
