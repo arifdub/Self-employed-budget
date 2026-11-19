@@ -774,17 +774,33 @@ function tapTaxiIncome(inc) {
    12% + 23% VAT, FreeNow at a flat 15%, Bolt at 10% + 23% VAT (VAT Bolt pays
    itself, unlike Uber) — applied to the Tap a Taxi income for the period, against
    Tap a Taxi's real billing: a fixed €120 charged on the 1st of every month,
-   with January free. A Month/Day/Custom period is charged for every calendar
-   month it touches — two calendar months in range means two €120 charges
-   (or just one if one of them is January) — not a daily proration, since
-   that is not how the fee actually gets billed. */
+   with January free. A Month/Day/Custom/Year period is charged for every
+   calendar month it touches — two calendar months in range means two €120
+   charges (or just one if one of them is January) — not a daily proration,
+   since that is not how the fee actually gets billed. Months before the date
+   someone actually started paying Tap a Taxi (set below, stored on this
+   device) are not charged at all — there is no fee to compare against for a
+   month before they signed up. */
+// The first month actually billed at the full €120 (told to us directly —
+// October's first payment was something else, November 1st was the first
+// €120 charge). Used until someone overrides it in the field below.
+const TAPPER_START_DEFAULT = '2026-11-01';
+
+function tapperStartDate() {
+  let v = TAPPER_START_DEFAULT;
+  try { v = localStorage.getItem('seb.tapperStart') || TAPPER_START_DEFAULT; } catch (e) {}
+  if (v === 'none') return null;           // explicitly cleared: charge every month
+  const [y, m, d] = v.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
 function monthsTouched(from, to) {
   const lastDay = new Date(to.getTime() - 1);
   const months = [];
   let y = from.getFullYear(), m = from.getMonth();
   const endKey = lastDay.getFullYear() * 12 + lastDay.getMonth();
   while (y * 12 + m <= endKey) {
-    months.push(m);
+    months.push({ y, m });
     m++; if (m > 11) { m = 0; y++; }
   }
   return months;
@@ -792,10 +808,26 @@ function monthsTouched(from, to) {
 
 function tapperFeeForPeriod(p, ref) {
   if (p === 'week') return 30;
-  if (p === 'year') return 120 * 11; // January free
   const { from, to } = periodRange(p, ref);
-  return monthsTouched(from, to).reduce((sum, m) => sum + (m === 0 ? 0 : 120), 0);
+  const start = tapperStartDate();
+  const startKey = start ? start.getFullYear() * 12 + start.getMonth() : -Infinity;
+  return monthsTouched(from, to).reduce((sum, { y, m }) => {
+    if (y * 12 + m < startKey) return sum; // not yet a Tap a Taxi customer that month
+    return sum + (m === 0 ? 0 : 120); // January free
+  }, 0);
 }
+
+(function () {
+  const input = $('tapperStartInput');
+  try {
+    const saved = localStorage.getItem('seb.tapperStart');
+    input.value = saved === 'none' ? '' : (saved || TAPPER_START_DEFAULT);
+  } catch (e) { input.value = TAPPER_START_DEFAULT; }
+  input.addEventListener('change', () => {
+    try { localStorage.setItem('seb.tapperStart', input.value || 'none'); } catch (e) {}
+    renderReport();
+  });
+})();
 
 function platformCommissionCost(income, rate, withVat) {
   const commission = income * (rate / 100);
