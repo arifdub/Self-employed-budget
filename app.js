@@ -747,6 +747,8 @@ function renderReport() {
   $('wSrc').textContent = when;
   $('wBiz').textContent = when;
   $('wHome').textContent = when;
+  $('wSave').textContent = when;
+  drawTapperSavings(p, ref, I);
 
   breakdown('srcBrk', inc, I, false, 'No income recorded in this period',
             countsFor('income', p, ref), 'Gross income');
@@ -754,6 +756,41 @@ function renderReport() {
             null, 'Total business expenses');
   breakdown('homeBrk', home, H, true, 'No home costs in this period',
             null, 'Total home & personal');
+}
+
+/* ---------- Tap a Taxi savings (reports) ----------
+   Same commission figures as the standalone commission calculator — Uber at
+   12% + 23% VAT, FreeNow at a flat 15%, Bolt at 10% + 23% VAT (VAT Bolt pays
+   itself, unlike Uber) — applied to this period's actual gross income, against
+   Tap a Taxi's fixed fee prorated to the number of days the period covers. */
+function tapperFeeForPeriod(p, ref) {
+  if (p === 'week')  return 30;
+  if (p === 'month') return 120;
+  if (p === 'year')  return 120 * 11; // January free
+  const { from, to } = periodRange(p, ref);
+  const days = Math.max(1, Math.round((to - from) / 864e5));
+  return (120 / 30) * days;
+}
+
+function platformCommissionCost(income, rate, withVat) {
+  const commission = income * (rate / 100);
+  const vat = withVat ? commission * 0.23 : 0;
+  return commission + vat;
+}
+
+function drawTapperSavings(p, ref, income) {
+  const tapperFee = tapperFeeForPeriod(p, ref);
+  const costs = {
+    saveUberAmt: platformCommissionCost(income, 12, true),
+    saveFreenowAmt: platformCommissionCost(income, 15, false),
+    saveBoltAmt: platformCommissionCost(income, 10, true),
+  };
+  Object.keys(costs).forEach(id => {
+    const diff = costs[id] - tapperFee;
+    const el = $(id);
+    if (diff >= 0) { el.textContent = 'Saved ' + money(diff); el.className = 'saveAmt'; }
+    else { el.textContent = 'Cost ' + money(-diff) + ' more'; el.className = 'saveAmt bad'; }
+  });
 }
 
 function stepReport(delta) {
