@@ -808,6 +808,7 @@ function drawTapperSavings(p, ref, income) {
   $('saveRows').hidden = income <= 0;
   if (income <= 0) return;
 
+  $('saveIncomeAmt').textContent = money(income);
   const tapperFee = tapperFeeForPeriod(p, ref);
   const costs = {
     saveUberAmt: platformCommissionCost(income, 12, true),
