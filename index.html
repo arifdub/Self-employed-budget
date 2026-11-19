@@ -450,6 +450,8 @@
         <div class="crange">Entries sync to your account and appear on every device you sign in on. Recurring entries, voice and batch input, and reports with CSV and PDF export.</div>
         <a class="save ghost" style="margin:12px 0 0;width:100%;box-sizing:border-box;display:block;text-align:center;text-decoration:none"
           href="/privacy.html" target="_blank" rel="noopener noreferrer">Privacy policy</a>
+        <a class="save ghost" style="margin:8px 0 0;width:100%;box-sizing:border-box;display:block;text-align:center;text-decoration:none"
+          href="/terms.html" target="_blank" rel="noopener noreferrer">Terms of service</a>
       </div>
       <div style="height:20px"></div>
     </div>
@@ -575,6 +577,12 @@
       </div>
 
       <button class="linkBtn" id="forgotBtn" hidden>Forgot your password?</button>
+
+      <label class="termsRow" id="termsField" hidden>
+        <input type="checkbox" id="authTerms">
+        <span>I agree to the <a href="/terms.html" target="_blank" rel="noopener noreferrer">Terms of Service</a>
+          and <a href="/privacy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.</span>
+      </label>
 
       <p id="authErr"></p>
       <button class="save" style="margin:12px 0 0;width:100%" id="authGo">Create account</button>

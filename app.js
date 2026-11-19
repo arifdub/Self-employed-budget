@@ -3565,6 +3565,7 @@ let authMode = 'signup';
 function openAuth(mode) {
   authMode = mode || 'signup';
   paintAuth();
+  $('authTerms').checked = false;
   $('authErr').textContent = '';
   $('authModal').classList.add('on');
   $('authModal').setAttribute('aria-hidden', 'false');
@@ -3581,6 +3582,7 @@ function paintAuth() {
     : 'Sign in and your entries come straight back.';
   $('nameField').style.display = signup ? '' : 'none';
   $('confirmField').hidden = !signup;
+  $('termsField').hidden = !signup;
   $('forgotBtn').hidden = signup;
   $('authGo').textContent = signup ? 'Create account' : 'Sign in';
   $('authSwitch').textContent = signup ? 'I already have an account' : 'Create a new account instead';
@@ -3604,6 +3606,10 @@ $('authGo').onclick = async () => {
     if (!name) { $('authErr').textContent = 'Enter your name.'; return; }
     if (pass !== $('authPass2').value) {
       $('authErr').textContent = 'The two passwords do not match.';
+      return;
+    }
+    if (!$('authTerms').checked) {
+      $('authErr').textContent = 'Please agree to the Terms of Service and Privacy Policy to continue.';
       return;
     }
   }
@@ -3678,6 +3684,10 @@ $('syncNowBtn').onclick = () => syncNow(true);
    same URL with a session already established. */
 $('googleBtn').onclick = async () => {
   if (!sb) { $('authErr').textContent = 'No connection to the account service.'; return; }
+  if (authMode === 'signup' && !$('authTerms').checked) {
+    $('authErr').textContent = 'Please agree to the Terms of Service and Privacy Policy to continue.';
+    return;
+  }
   $('googleBtn').disabled = true;
   $('authErr').textContent = '';
   try {
