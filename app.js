@@ -748,7 +748,7 @@ function renderReport() {
   $('wBiz').textContent = when;
   $('wHome').textContent = when;
   $('wSave').textContent = when;
-  drawTapperSavings(p, ref, I);
+  drawTapperSavings(p, ref, tapTaxiIncome(inc));
 
   breakdown('srcBrk', inc, I, false, 'No income recorded in this period',
             countsFor('income', p, ref), 'Gross income');
@@ -759,9 +759,20 @@ function renderReport() {
 }
 
 /* ---------- Tap a Taxi savings (reports) ----------
-   Same commission figures as the standalone commission calculator — Uber at
+   This compares what you actually earned through Tap a Taxi against what
+   that same fare income would have cost in commission on Uber/FreeNow/Bolt —
+   not your total income across every source, since the other platforms'
+   commission never touched the fares you drove for Tap a Taxi in the first
+   place. Matches on the category name rather than a fixed key, so it still
+   works if the "TapTaxi" category gets renamed (e.g. to "Tap a Taxi"). */
+function tapTaxiIncome(inc) {
+  const key = Object.keys(inc).find(k => /tap.*taxi|taptaxi/i.test(k));
+  return key ? inc[key] : 0;
+}
+
+/* Same commission figures as the standalone commission calculator — Uber at
    12% + 23% VAT, FreeNow at a flat 15%, Bolt at 10% + 23% VAT (VAT Bolt pays
-   itself, unlike Uber) — applied to this period's actual gross income, against
+   itself, unlike Uber) — applied to the Tap a Taxi income for the period, against
    Tap a Taxi's real billing: a fixed €120 charged on the 1st of every month,
    with January free. A Month/Day/Custom period is charged for every calendar
    month it touches — two calendar months in range means two €120 charges
@@ -793,6 +804,10 @@ function platformCommissionCost(income, rate, withVat) {
 }
 
 function drawTapperSavings(p, ref, income) {
+  $('saveEmpty').hidden = income > 0;
+  $('saveRows').hidden = income <= 0;
+  if (income <= 0) return;
+
   const tapperFee = tapperFeeForPeriod(p, ref);
   const costs = {
     saveUberAmt: platformCommissionCost(income, 12, true),
