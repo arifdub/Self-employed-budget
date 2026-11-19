@@ -762,14 +762,28 @@ function renderReport() {
    Same commission figures as the standalone commission calculator — Uber at
    12% + 23% VAT, FreeNow at a flat 15%, Bolt at 10% + 23% VAT (VAT Bolt pays
    itself, unlike Uber) — applied to this period's actual gross income, against
-   Tap a Taxi's fixed fee prorated to the number of days the period covers. */
+   Tap a Taxi's real billing: a fixed €120 charged on the 1st of every month,
+   with January free. A Month/Day/Custom period is charged for every calendar
+   month it touches — two calendar months in range means two €120 charges
+   (or just one if one of them is January) — not a daily proration, since
+   that is not how the fee actually gets billed. */
+function monthsTouched(from, to) {
+  const lastDay = new Date(to.getTime() - 1);
+  const months = [];
+  let y = from.getFullYear(), m = from.getMonth();
+  const endKey = lastDay.getFullYear() * 12 + lastDay.getMonth();
+  while (y * 12 + m <= endKey) {
+    months.push(m);
+    m++; if (m > 11) { m = 0; y++; }
+  }
+  return months;
+}
+
 function tapperFeeForPeriod(p, ref) {
-  if (p === 'week')  return 30;
-  if (p === 'month') return 120;
-  if (p === 'year')  return 120 * 11; // January free
+  if (p === 'week') return 30;
+  if (p === 'year') return 120 * 11; // January free
   const { from, to } = periodRange(p, ref);
-  const days = Math.max(1, Math.round((to - from) / 864e5));
-  return (120 / 30) * days;
+  return monthsTouched(from, to).reduce((sum, m) => sum + (m === 0 ? 0 : 120), 0);
 }
 
 function platformCommissionCost(income, rate, withVat) {
