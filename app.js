@@ -811,10 +811,28 @@ function tapperFeeForPeriod(p, ref) {
   const { from, to } = periodRange(p, ref);
   const start = tapperStartDate();
   const startKey = start ? start.getFullYear() * 12 + start.getMonth() : -Infinity;
-  return monthsTouched(from, to).reduce((sum, { y, m }) => {
-    if (y * 12 + m < startKey) return sum; // not yet a Tap a Taxi customer that month
-    return sum + (m === 0 ? 0 : 120); // January free
-  }, 0);
+
+  // Month and Year are real calendar periods, so they're charged the real
+  // monthly fee — €120 per calendar month touched, 0 before the start date
+  // or in January.
+  if (p === 'month' || p === 'year') {
+    return monthsTouched(from, to).reduce((sum, { y, m }) => {
+      if (y * 12 + m < startKey) return sum;
+      return sum + (m === 0 ? 0 : 120);
+    }, 0);
+  }
+
+  // Day and Custom are usually much shorter than a month, so charging a
+  // whole €120 month's fee against one day's income massively overstates
+  // the cost. Prorate instead: €120/30 per day, 0 before the start date or
+  // in January, summed over every day the period actually covers.
+  let sum = 0;
+  for (let d = new Date(from); d < to; d = addDays(d, 1)) {
+    const key = d.getFullYear() * 12 + d.getMonth();
+    if (key < startKey || d.getMonth() === 0) continue;
+    sum += 120 / 30;
+  }
+  return sum;
 }
 
 (function () {
