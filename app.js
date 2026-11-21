@@ -842,17 +842,17 @@ function drawTapperSavings(p, ref, income) {
 
   $('saveIncomeAmt').textContent = money(income);
   const tapperFee = tapperFeeForPeriod(p, ref);
-  const costs = {
-    saveUberAmt: platformCommissionCost(income, 12, true),
-    saveFreenowAmt: platformCommissionCost(income, 15, false),
-    saveBoltAmt: platformCommissionCost(income, 10, true),
-  };
-  Object.keys(costs).forEach(id => {
-    const diff = costs[id] - tapperFee;
-    const el = $(id);
-    if (diff >= 0) { el.textContent = 'Saved ' + money(diff); el.className = 'saveAmt'; }
-    else { el.textContent = 'Cost ' + money(-diff) + ' more'; el.className = 'saveAmt bad'; }
-  });
+  const costs = [
+    platformCommissionCost(income, 12, true),  // Uber
+    platformCommissionCost(income, 15, false), // FreeNow
+    platformCommissionCost(income, 10, true),  // Bolt
+  ];
+  const avgDiff = (costs.reduce((sum, c) => sum + (c - tapperFee), 0)) / costs.length;
+
+  const el = $('saveAvgAmt');
+  if (avgDiff >= 0) { el.textContent = 'Saved ' + money(avgDiff); el.className = 'saveAmt'; }
+  else { el.textContent = 'Cost ' + money(-avgDiff) + ' more'; el.className = 'saveAmt bad'; }
+  $('saveAvgNote').textContent = 'Average vs Uber, FreeNow and Bolt';
 }
 
 function stepReport(delta) {
